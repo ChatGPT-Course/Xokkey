@@ -176,7 +176,7 @@
     </div>
     
     <div class="footer">
-        Hockey Shootouts V(b-1.0)
+        Hockey Shootouts © 2023
     </div>
 
     <script>
@@ -196,6 +196,9 @@
             document.cookie = `tg_user_id=${currentUser.id}; path=/; max-age=604800`; // 7 дней
             document.cookie = `tg_name=${encodeURIComponent(currentUser.first_name || '')} ${encodeURIComponent(currentUser.last_name || '')}; path=/; max-age=604800`;
             document.cookie = `tg_username=${currentUser.username || ''}; path=/; max-age=604800`;
+            
+            // Проверяем и создаем/обновляем запись пользователя
+            checkAndCreateUser();
         } else {
             // Если не в Telegram WebApp, показываем тестовые данные
             currentUser = {
@@ -212,6 +215,58 @@
         
         // Загружаем баланс пользователя
         loadUserBalance(currentUser.id);
+        
+        // Функция для проверки и создания/обновления пользователя
+        async function checkAndCreateUser() {
+            try {
+                // Проверяем существование пользователя
+                const response = await fetch(`${NOCODB_API}?where=(tg_user_id,eq,${currentUser.id})`, {
+                    headers: {
+                        "xc-token": NOCODB_KEY
+                    }
+                });
+                
+                const data = await response.json();
+                
+                const fullName = `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim();
+                const avatarUrl = currentUser.photo_url || '';
+                
+                if (data.list.length === 0) {
+                    // Создаем нового пользователя
+                    await fetch(NOCODB_API, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            "xc-token": NOCODB_KEY
+                        },
+                        body: JSON.stringify({
+                            tg_user_id: currentUser.id,
+                            name: fullName,
+                            username: currentUser.username || '',
+                            avatar: avatarUrl,
+                            point: 0
+                        })
+                    });
+                } else {
+                    // Обновляем существующего пользователя
+                    const userRecord = data.list[0];
+                    await fetch(`${NOCODB_API}/${userRecord.Id}`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            "xc-token": NOCODB_KEY
+                        },
+                        body: JSON.stringify({
+                            name: fullName,
+                            username: currentUser.username || '',
+                            avatar: avatarUrl
+                        })
+                    });
+                }
+            } catch (error) {
+                console.error("Ошибка при проверке/создании пользователя:", error);
+            }
+        }
         
         // Функция для загрузки баланса пользователя
         async function loadUserBalance(userId) {
@@ -238,11 +293,11 @@
         });
         
         document.getElementById('craft-btn').addEventListener('click', () => {
-            alert('Функция крафта в разработке');
+            window.location.href = "craft.html";
         });
         
         document.getElementById('exchange-btn').addEventListener('click', () => {
-            alert('Функция обменника в разработке');
+            window.location.href = "obmen.html";
         });
         
         document.getElementById('play-btn').addEventListener('click', () => {
