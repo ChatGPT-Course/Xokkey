@@ -265,10 +265,16 @@
             justify-content: center;
             margin: 0 auto 10px;
             font-size: 30px;
+            background-size: cover;
+            background-position: center;
         }
         
         .player-name {
             font-weight: bold;
+            max-width: 120px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         
         .waiting-player {
@@ -448,6 +454,7 @@
         // Конфигурация Nocodb
         const NOCODB_API = "https://app.nocodb.com/api/v1/db/data/weamcfo6/p27jdsmk69wuimh/meefo7wdwoh5mtv";
         const ROOMS_API = "https://app.nocodb.com/api/v1/db/data/weamcfo6/p27jdsmk69wuimh/mznem6p3jztsgsl";
+        const USERS_API = "https://app.nocodb.com/api/v1/db/data/weamcfo6/p27jdsmk69wuimh/mc6qh91f060pv4y";
         const NOCODB_KEY = "bocQfycJpJsTG_tbwEf8ma8E5rhoig0njMDXFWtJ";
         
         // Инициализация Telegram WebApp
@@ -456,6 +463,7 @@
         let currentRoom = null;
         let refreshInterval = null;
         let roomCheckInterval = null;
+        let balanceCheckInterval = null;
         
         // Проверяем, запущено ли в Telegram WebApp
         if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
@@ -471,14 +479,22 @@
             };
         }
         
-        // Загружаем баланс пользователя
-        loadUserBalance(currentUser.id);
+        // Инициализация приложения
+        initApp();
         
-        // Загружаем список комнат
-        loadRooms();
-        
-        // Устанавливаем интервал обновления комнат
-        refreshInterval = setInterval(loadRooms, 3000);
+        async function initApp() {
+            // Загружаем баланс пользователя
+            await loadUserBalance(currentUser.id);
+            
+            // Загружаем список комнат
+            await loadRooms();
+            
+            // Устанавливаем интервал обновления комнат
+            refreshInterval = setInterval(loadRooms, 1000);
+            
+            // Устанавливаем интервал обновления баланса
+            balanceCheckInterval = setInterval(() => loadUserBalance(currentUser.id), 1000);
+        }
         
         // Функция для загрузки баланса пользователя
         async function loadUserBalance(userId) {
@@ -511,7 +527,7 @@
                 });
                 
                 const data = await response.json();
-                displayRooms(data.list);
+                await displayRooms(data.list);
                 
             } catch (error) {
                 console.error("Ошибка при загрузке комнат:", error);
@@ -523,7 +539,7 @@
         }
         
         // Функция для отображения списка комнат
-        function displayRooms(rooms) {
+        async function displayRooms(rooms) {
             const roomsList = document.getElementById('rooms-list');
             roomsList.innerHTML = '';
             
@@ -532,11 +548,14 @@
                 return;
             }
             
-            rooms.forEach(room => {
+            for (const room of rooms) {
                 // Не показываем комнаты, где пользователь уже участвует
                 if (room.id_creator === currentUser.id || room.id_joining === currentUser.id) {
-                    return;
+                    continue;
                 }
+                
+                // Получаем данные создателя комнаты
+                const creatorData = await getUserData(room.id_creator);
                 
                 const roomElement = document.createElement('div');
                 roomElement.className = 'room-card';
@@ -547,7 +566,7 @@
                         <div class="room-creator">Комната #${room.Id}</div>
                         <div class="room-bet">${room.bet} 🏒</div>
                     </div>
-                    <div class="room-status">Создатель: ${getUserName(room.id_creator)}</div>
+                    <div class="room-status">Создатель: ${creatorData ? creatorData.name || `Игрок #${room.id_creator}` : `Игрок #${room.id_creator}`}</div>
                     <div class="room-actions">
                         <button class="btn btn-primary join-room-btn">Присоединиться</button>
                     </div>
@@ -559,16 +578,30 @@
                 roomElement.querySelector('.join-room-btn').addEventListener('click', () => {
                     joinRoom(room.Id);
                 });
-            });
+            }
         }
         
-        // Функция для получения имени пользователя
-        function getUserName(userId) {
-            if (userId === currentUser.id) return 'Вы';
-            return `Игрок #${userId}`;
+        // Функция для получения данных пользователя
+        async function getUserData(userId) {
+            try {
+                const response = await fetch(`${USERS_API}?where=(tg_user_id,eq,${userId})`, {
+                    headers: {
+                        "xc-token": NOCODB_KEY
+                    }
+                });
+                
+                const data = await response.json();
+                if (data.list.length > 0) {
+                    return data.list[0];
+                }
+                return null;
+            } catch (error) {
+                console.error("Ошибка при получении данных пользователя:", error);
+                return null;
+            }
         }
         
-        // Функция для создания комнаты
+       // Функция для создания комнаты
         async function createRoom(betAmount) {
             try {
                 // Проверяем баланс пользователя
@@ -700,7 +733,7 @@
                 
                 // Если комнаты больше нет, возвращаем в лобби
                 if (!roomData) {
-                    showMessage('Комната закрыта', 'Комната была удалена создателем');
+                    showMessage('Комната закрыта', 'Комната была удалена');
                     leaveRoom();
                     return;
                 }
@@ -717,24 +750,33 @@
                     })
                 });
                 
+                // Если статус комнаты изменился на "Закрыта"
+                if (roomData.status === "Закрыта") {
+                    showMessage('Комната закрыта', 'Комната была закрыта создателем');
+                    leaveRoom();
+                    return;
+                }
+                
                 // Проверяем, не покинул ли противник комнату
-                if (roomData.status === "Набор игроков" && roomData.id_joining && 
-                    (currentUser.id === roomData.id_creator || currentUser.id === roomData.id_joining)) {
+                if (roomData.status === "Набор игроков" && 
+                    ((currentUser.id === roomData.id_creator && roomData.id_joining) || 
+                     (currentUser.id === roomData.id_joining && roomData.id_creator))) {
                     
                     // Проверяем время последней активности противника
                     const lastActive = new Date(roomData.last_active);
                     const now = new Date();
-                    const diffMinutes = (now - lastActive) / (1000 * 60);
+                    const diffSeconds = (now - lastActive) / 1000;
                     
-                    if (diffMinutes > 1) { // Если противник не активен более 1 минуты
+                    if (diffSeconds > 5) { // Если противник не активен более 5 секунд
                         showMessage('Противник покинул игру', 'Ваш противник вышел из комнаты');
+                        await deleteRoom(roomData.Id);
                         leaveRoom();
                         return;
                     }
                 }
                 
                 // Обновляем данные комнаты
-                updateRoomScreen(roomData);
+                await updateRoomScreen(roomData);
                 
             } catch (error) {
                 console.error("Ошибка при проверке статуса комнаты:", error);
@@ -758,22 +800,15 @@
                     }
                 });
                 
-                const roomData = await roomResponse.json();
-                
-                // Если пользователь создатель комнаты
-                if (currentRoom.id_creator === currentUser.id) {
-                    // Если в комнате нет второго игрока - удаляем комнату
-                    if (!roomData.id_joining) {
-                        await fetch(`${ROOMS_API}/${currentRoom.Id}`, {
-                            method: 'DELETE',
-                            headers: {
-                                "xc-token": NOCODB_KEY
-                            }
-                        });
+                if (roomResponse.ok) {
+                    const roomData = await roomResponse.json();
+                    
+                    // Если пользователь создатель комнаты - удаляем комнату
+                    if (currentRoom.id_creator === currentUser.id) {
+                        await deleteRoom(currentRoom.Id);
                     } 
-                    // Если в комнате есть второй игрок - только выходим сам
-                    else {
-                        // Оповещаем второго игрока, что создатель вышел
+                    // Если пользователь присоединившийся игрок - очищаем поле id_joining
+                    else if (currentRoom.id_joining === currentUser.id) {
                         await fetch(`${ROOMS_API}/${currentRoom.Id}`, {
                             method: 'PATCH',
                             headers: {
@@ -781,25 +816,10 @@
                                 "xc-token": NOCODB_KEY
                             },
                             body: JSON.stringify({
-                                status: "Закрыта",
-                                id_creator: null
+                                id_joining: null
                             })
                         });
                     }
-                } 
-                // Если пользователь присоединившийся игрок
-                else if (currentRoom.id_joining === currentUser.id) {
-                    // Очищаем поле id_joining
-                    await fetch(`${ROOMS_API}/${currentRoom.Id}`, {
-                        method: 'PATCH',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            "xc-token": NOCODB_KEY
-                        },
-                        body: JSON.stringify({
-                            id_joining: null
-                        })
-                    });
                 }
             } catch (error) {
                 console.error("Ошибка при выходе из комнаты:", error);
@@ -807,6 +827,20 @@
                 stopRoomChecking();
                 currentRoom = null;
                 showLobbyScreen();
+            }
+        }
+        
+        // Функция для удаления комнаты
+        async function deleteRoom(roomId) {
+            try {
+                await fetch(`${ROOMS_API}/${roomId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        "xc-token": NOCODB_KEY
+                    }
+                });
+            } catch (error) {
+                console.error("Ошибка при удалении комнаты:", error);
             }
         }
         
@@ -859,25 +893,54 @@
         }
         
         // Функция для обновления данных на экране комнаты
-        function updateRoomScreen(roomData) {
+        async function updateRoomScreen(roomData) {
             document.getElementById('room-status-text').textContent = roomData.status;
             document.getElementById('room-bet-text').textContent = roomData.bet;
             
-            // Устанавливаем аватар и имя создателя
+            // Получаем данные создателя комнаты
+            const creatorData = await getUserData(roomData.id_creator);
             const creatorAvatar = document.getElementById('creator-avatar');
             const creatorName = document.getElementById('creator-name');
             
-            creatorName.textContent = getUserName(roomData.id_creator);
+            if (creatorData) {
+                creatorName.textContent = creatorData.name || `Игрок #${roomData.id_creator}`;
+                if (creatorData.avatar) {
+                    creatorAvatar.style.backgroundImage = `url(${creatorData.avatar})`;
+                    creatorAvatar.textContent = '';
+                } else {
+                    creatorAvatar.style.backgroundImage = '';
+                    creatorAvatar.textContent = '👤';
+                }
+            } else {
+                creatorName.textContent = `Игрок #${roomData.id_creator}`;
+                creatorAvatar.style.backgroundImage = '';
+                creatorAvatar.textContent = '👤';
+            }
             
             // Устанавливаем аватар и имя присоединившегося игрока
             const joiningPlayer = document.getElementById('joining-player');
             
             if (roomData.id_joining) {
+                const joiningData = await getUserData(roomData.id_joining);
+                
                 joiningPlayer.classList.remove('waiting-player');
-                joiningPlayer.querySelector('.player-avatar').textContent = '👤';
-                joiningPlayer.querySelector('.player-name').textContent = getUserName(roomData.id_joining);
+                if (joiningData) {
+                    joiningPlayer.querySelector('.player-name').textContent = joiningData.name || `Игрок #${roomData.id_joining}`;
+                    if (joiningData.avatar) {
+                        joiningPlayer.querySelector('.player-avatar').style.backgroundImage = `url(${joiningData.avatar})`;
+                        joiningPlayer.querySelector('.player-avatar').textContent = '';
+                    } else {
+                        joiningPlayer.querySelector('.player-avatar').style.backgroundImage = '';
+                        joiningPlayer.querySelector('.player-avatar').textContent = '👤';
+                    }
+                } else {
+                    joiningPlayer.querySelector('.player-name').textContent = `Игрок #${roomData.id_joining}`;
+                    joiningPlayer.querySelector('.player-avatar').style.backgroundImage = '';
+                    joiningPlayer.querySelector('.player-avatar').textContent = '👤';
+                }
             } else {
                 joiningPlayer.classList.add('waiting-player');
+                joiningPlayer.querySelector('.player-avatar').style.backgroundImage = '';
                 joiningPlayer.querySelector('.player-avatar').textContent = '?';
                 joiningPlayer.querySelector('.player-name').textContent = 'Ожидание...';
             }
@@ -920,7 +983,7 @@
         function startRoomChecking(roomId) {
             stopRoomChecking();
             checkRoomStatus(roomId);
-            roomCheckInterval = setInterval(() => checkRoomStatus(roomId), 5000);
+            roomCheckInterval = setInterval(() => checkRoomStatus(roomId), 1000);
         }
         
         // Функция для остановки проверки статуса комнаты
@@ -943,8 +1006,13 @@
         document.getElementById('confirm-create-btn').addEventListener('click', () => {
             const betAmount = parseInt(document.getElementById('bet-amount').value);
             
-            if (isNaN(betAmount) || betAmount <= 0) {
+            if (isNaN(betAmount) {
                 showMessage('Ошибка', 'Введите корректную сумму ставки');
+                return;
+            }
+            
+            if (betAmount <= 0) {
+                showMessage('Ошибка', 'Ставка должна быть больше 0');
                 return;
             }
             
@@ -966,14 +1034,9 @@
         window.addEventListener('beforeunload', async () => {
             if (currentRoom) {
                 try {
-                    // Если пользователь создатель комнаты и нет второго игрока - удаляем комнату
-                    if (currentRoom.id_creator === currentUser.id && !currentRoom.id_joining) {
-                        await fetch(`${ROOMS_API}/${currentRoom.Id}`, {
-                            method: 'DELETE',
-                            headers: {
-                                "xc-token": NOCODB_KEY
-                            }
-                        });
+                    // Если пользователь создатель комнаты - удаляем комнату
+                    if (currentRoom.id_creator === currentUser.id) {
+                        await deleteRoom(currentRoom.Id);
                     }
                     // Если пользователь присоединившийся игрок - очищаем поле id_joining
                     else if (currentRoom.id_joining === currentUser.id) {
