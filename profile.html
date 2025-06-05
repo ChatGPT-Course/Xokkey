@@ -1,1 +1,285 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мой профиль - Hockey Shootouts</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        
+        .header {
+            width: 100%;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-sizing: border-box;
+            background-color: #2c3e50;
+        }
+        
+        .app-title {
+            font-size: 22px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #00b4db, #0083b0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+        }
+        
+        .profile-container {
+            flex-grow: 1;
+            padding: 20px;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .profile-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+            width: 100%;
+            max-width: 400px;
+            background-color: white;
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .avatar {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #1e5799 0%,#207cca 51%,#2989d8 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 15px;
+            color: white;
+            font-weight: bold;
+            font-size: 24px;
+        }
+        
+        .user-info {
+            flex-grow: 1;
+        }
+        
+        .username {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .userid {
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+        
+        .inventory {
+            width: 100%;
+            max-width: 400px;
+            background-color: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .inventory-title {
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+        
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            gap: 10px;
+        }
+        
+        .card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 10px;
+            text-align: center;
+            background-color: #f9f9f9;
+        }
+        
+        .card-image {
+            width: 100%;
+            height: 100px;
+            background: linear-gradient(135deg, #f5f7fa 0%,#c3cfe2 100%);
+            border-radius: 5px;
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 40px;
+            color: #2c3e50;
+        }
+        
+        .card-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .card-rarity {
+            font-size: 12px;
+            color: #7f8c8d;
+        }
+        
+        .no-cards {
+            text-align: center;
+            color: #7f8c8d;
+            font-style: italic;
+            padding: 20px;
+        }
+        
+        .back-btn {
+            padding: 12px 25px;
+            background-color: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            margin-top: 20px;
+            width: 100%;
+            max-width: 400px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="app-title">Hockey Shootouts</div>
+    </div>
+    
+    <div class="profile-container" id="profile-page">
+        <div class="profile-header">
+            <div class="avatar" id="user-avatar"></div>
+            <div class="user-info">
+                <div class="username" id="profile-username">Пользователь</div>
+                <div class="userid">ID: <span id="profile-userid"></span></div>
+            </div>
+        </div>
+        
+        <div class="inventory">
+            <h3 class="inventory-title">Инвентарь</h3>
+            <div class="cards-grid" id="cards-container">
+                <!-- Карточки будут загружены через JS -->
+            </div>
+        </div>
+        
+        <button class="back-btn" id="back-btn">Назад</button>
+    </div>
 
+    <script>
+        // Конфигурация Nocodb
+        const NOCODB_API = "https://app.nocodb.com/api/v1/db/data/weamcfo6/p27jdsmk69wuimh/meefo7wdwoh5mtv";
+        const NOCODB_KEY = "bocQfycJpJsTG_tbwEf8ma8E5rhoig0njMDXFWtJ";
+        
+        // Инициализация Telegram WebApp
+        const tg = window.Telegram.WebApp;
+        let currentUser = null;
+        
+        // Получаем данные пользователя из cookie
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+        }
+        
+        // Проверяем, запущено ли в Telegram WebApp
+        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+            currentUser = tg.initDataUnsafe.user;
+        } else {
+            // Если не в Telegram WebApp, используем данные из cookie
+            currentUser = {
+                id: getCookie('tg_user_id') || '12345',
+                first_name: getCookie('tg_name')?.split(' ')[0] || 'Тестовый',
+                last_name: getCookie('tg_name')?.split(' ')[1] || 'Пользователь',
+                username: getCookie('tg_username') || 'test_user'
+            };
+        }
+        
+        // Устанавливаем аватар и информацию о пользователе
+        const avatar = document.getElementById('user-avatar');
+        const initials = (currentUser.first_name ? currentUser.first_name[0] : '') + 
+                       (currentUser.last_name ? currentUser.last_name[0] : '');
+        avatar.textContent = initials || '?';
+        
+        document.getElementById('profile-username').textContent = 
+            `${currentUser.first_name || ''} ${currentUser.last_name || ''}`;
+        document.getElementById('profile-userid').textContent = currentUser.id;
+        
+        // Загружаем карточки пользователя
+        loadUserCards(currentUser.id);
+        
+        // Функция для загрузки карточек пользователя
+        async function loadUserCards(userId) {
+            try {
+                const response = await fetch(`${NOCODB_API}?where=(tg_user_id,eq,${userId})`, {
+                    headers: {
+                        "xc-token": NOCODB_KEY
+                    }
+                });
+                
+                const data = await response.json();
+                const cardsContainer = document.getElementById('cards-container');
+                cardsContainer.innerHTML = '';
+                
+                if (data.list.length > 0) {
+                    const userData = data.list[0];
+                    
+                    if (userData.card && userData.card.trim() !== '') {
+                        const cards = userData.card.split(',').map(c => c.trim()).filter(c => c !== '');
+                        
+                        if (cards.length > 0) {
+                            cards.forEach(card => {
+                                const cardParts = card.match(/(.*?)\((.*?)\)/);
+                                if (cardParts) {
+                                    const cardName = cardParts[1];
+                                    const cardRarity = cardParts[2];
+                                    
+                                    const cardElement = document.createElement('div');
+                                    cardElement.className = 'card';
+                                    cardElement.innerHTML = `
+                                        <div class="card-image">🏒</div>
+                                        <div class="card-name">${cardName}</div>
+                                        <div class="card-rarity">${cardRarity}</div>
+                                    `;
+                                    cardsContainer.appendChild(cardElement);
+                                }
+                            });
+                        } else {
+                            cardsContainer.innerHTML = '<div class="no-cards">Карточек нет</div>';
+                        }
+                    } else {
+                        cardsContainer.innerHTML = '<div class="no-cards">Карточек нет</div>';
+                    }
+                } else {
+                    cardsContainer.innerHTML = '<div class="no-cards">Карточек нет</div>';
+                }
+            } catch (error) {
+                console.error("Ошибка при загрузке карточек:", error);
+                const cardsContainer = document.getElementById('cards-container');
+                cardsContainer.innerHTML = '<div class="no-cards">Ошибка загрузки карточек</div>';
+            }
+        }
+        
+        // Обработчик кнопки "Назад"
+        document.getElementById('back-btn').addEventListener('click', () => {
+            window.location.href = "index.html";
+        });
+    </script>
+</body>
+</html>
