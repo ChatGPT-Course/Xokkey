@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hockey Shootouts - Крафт</title>
+    <title>Крафт - Hockey Shootouts</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
@@ -67,17 +67,16 @@
             justify-content: center;
             padding: 30px 20px;
             text-align: center;
-            gap: 30px;
         }
         
         .page-title {
-            font-size: 32px;
-            font-weight: bold;
-            margin-bottom: 20px;
+            font-size: 28px;
+            margin-bottom: 30px;
+            color: var(--accent);
         }
         
         .btn {
-            padding: 15px 30px;
+            padding: 15px 25px;
             font-size: 18px;
             font-weight: bold;
             border: none;
@@ -86,8 +85,7 @@
             transition: all 0.3s ease;
             background: linear-gradient(to right, var(--accent), var(--accent-light));
             color: white;
-            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
-            text-decoration: none;
+            margin-top: 20px;
         }
         
         .btn:hover {
@@ -106,8 +104,8 @@
     </div>
     
     <div class="main-content">
-        <div class="page-title">Крафт</div>
-        <a href="index.html" class="btn">Назад</a>
+        <h1 class="page-title">Крафт</h1>
+        <button class="btn" onclick="window.location.href='index.html'">Назад</button>
     </div>
 
     <script>
@@ -115,29 +113,16 @@
         const NOCODB_API = "https://app.nocodb.com/api/v1/db/data/weamcfo6/p27jdsmk69wuimh/meefo7wdwoh5mtv";
         const NOCODB_KEY = "bocQfycJpJsTG_tbwEf8ma8E5rhoig0njMDXFWtJ";
         
-        // Инициализация Telegram WebApp
-        const tg = window.Telegram.WebApp;
-        let currentUser = null;
-        
-        // Проверяем, запущено ли в Telegram WebApp
-        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-            currentUser = tg.initDataUnsafe.user;
-        } else {
-            // Если не в Telegram WebApp, используем тестовые данные
-            currentUser = {
-                id: 12345,
-                first_name: "Тестовый",
-                last_name: "Пользователь",
-                username: "test_user"
-            };
-        }
-        
         // Загружаем баланс пользователя
-        loadUserBalance(currentUser.id);
+        loadUserBalance();
         
         // Функция для загрузки баланса пользователя
-        async function loadUserBalance(userId) {
+        async function loadUserBalance() {
             try {
+                // Получаем user_id из cookie
+                const userId = getCookie('tg_user_id');
+                if (!userId) return;
+                
                 const response = await fetch(`${NOCODB_API}?where=(tg_user_id,eq,${userId})`, {
                     headers: {
                         "xc-token": NOCODB_KEY
@@ -152,6 +137,13 @@
             } catch (error) {
                 console.error("Ошибка при загрузке баланса:", error);
             }
+        }
+        
+        // Функция для получения cookie
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
         }
     </script>
 </body>
