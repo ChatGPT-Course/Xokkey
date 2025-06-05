@@ -3,14 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мой профиль - Hockey Shootouts</title>
+    <title>Профиль - Hockey Shootouts</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
+        :root {
+            --primary: #1a2a3a;
+            --secondary: #2d3e50;
+            --accent: #e74c3c;
+            --accent-light: #ff6b5b;
+            --text: #ffffff;
+            --text-secondary: #bdc3c7;
+            --card-bg: rgba(255, 255, 255, 0.1);
+        }
+        
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #f0f0f0;
+            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            color: var(--text);
             display: flex;
             flex-direction: column;
             min-height: 100vh;
@@ -18,81 +29,73 @@
         
         .header {
             width: 100%;
-            height: 60px;
+            height: 70px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             box-sizing: border-box;
-            background-color: #2c3e50;
-            padding: 0 15px;
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 0 20px;
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         .app-title {
-            font-size: 22px;
+            font-size: 24px;
             font-weight: bold;
-            color: white;
+            background: linear-gradient(to right, #fff, #e74c3c);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
         }
         
         .balance {
             display: flex;
             align-items: center;
-            gap: 5px;
-            color: white;
+            gap: 8px;
             font-weight: bold;
-            background-color: rgba(0,0,0,0.2);
-            padding: 5px 12px;
-            border-radius: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 8px 15px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
         .profile-container {
             flex-grow: 1;
             padding: 20px;
-            box-sizing: border-box;
             display: flex;
             flex-direction: column;
             align-items: center;
+            gap: 20px;
         }
         
         .profile-card {
             width: 100%;
             max-width: 400px;
-            background: linear-gradient(135deg, #3498db, #2c3e50);
+            background: rgba(0, 0, 0, 0.2);
             border-radius: 15px;
             padding: 20px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            color: white;
-            margin-bottom: 20px;
-            position: relative;
-            overflow: hidden;
-        }
-        
-        .profile-card::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            right: -50%;
-            width: 100%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
         }
         
         .profile-header {
             display: flex;
             align-items: center;
-            margin-bottom: 15px;
+            margin-bottom: 20px;
         }
         
         .avatar {
-            width: 70px;
-            height: 70px;
+            width: 80px;
+            height: 80px;
             border-radius: 50%;
-            background-color: white;
+            background: rgba(255, 255, 255, 0.1);
             display: flex;
             align-items: center;
             justify-content: center;
             overflow: hidden;
             margin-right: 15px;
-            border: 3px solid white;
+            border: 3px solid var(--accent);
         }
         
         .avatar img {
@@ -106,43 +109,53 @@
         }
         
         .username {
-            font-size: 18px;
+            font-size: 20px;
             font-weight: bold;
             margin-bottom: 5px;
         }
         
         .userid {
             font-size: 14px;
-            opacity: 0.8;
+            color: var(--text-secondary);
         }
         
-        .user-balance {
+        .stats {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 5px;
-            background-color: rgba(255,255,255,0.2);
-            padding: 8px 15px;
-            border-radius: 20px;
-            margin-top: 10px;
+            justify-content: space-between;
+            margin-top: 20px;
+        }
+        
+        .stat-item {
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 24px;
             font-weight: bold;
+            color: var(--accent);
+        }
+        
+        .stat-label {
+            font-size: 12px;
+            color: var(--text-secondary);
         }
         
         .inventory {
             width: 100%;
             max-width: 400px;
-            background-color: white;
-            padding: 20px;
+            background: rgba(0, 0, 0, 0.2);
             border-radius: 15px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
+            padding: 20px;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
         
-        .inventory-title {
+        .section-title {
             font-size: 20px;
             margin-bottom: 15px;
-            color: #2c3e50;
-            text-align: center;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
         .cards-grid {
@@ -152,96 +165,46 @@
         }
         
         .card {
+            background: rgba(255, 255, 255, 0.1);
             border-radius: 10px;
-            padding: 10px;
+            padding: 15px;
             text-align: center;
+            transition: all 0.3s ease;
             position: relative;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-            transition: transform 0.2s;
+            overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.05);
         }
         
         .card:hover {
             transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
         }
         
         .card-common {
-            background-color: white;
-            border: 1px solid #ddd;
+            background: linear-gradient(135deg, rgba(52, 152, 219, 0.2), rgba(41, 128, 185, 0.2));
         }
         
         .card-epic {
-            background: linear-gradient(135deg, #b993d6, #8ca6db);
-            color: white;
+            background: linear-gradient(135deg, rgba(155, 89, 182, 0.2), rgba(142, 68, 173, 0.2));
         }
         
         .card-mythic {
-            background: linear-gradient(135deg, #ff416c, #ff4b2b);
-            color: white;
+            background: linear-gradient(135deg, rgba(231, 76, 60, 0.2), rgba(192, 57, 43, 0.2));
         }
         
         .card-legendary {
-            background: linear-gradient(135deg, #f9d423, #ff4e50);
-            box-shadow: 0 0 15px rgba(255,215,0,0.5);
-            color: white;
-        }
-        
-        .card-menu {
-            position: absolute;
-            top: 5px;
-            right: 5px;
-            width: 25px;
-            height: 25px;
-            border-radius: 50%;
-            background-color: rgba(0,0,0,0.3);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            color: white;
-            font-size: 12px;
-        }
-        
-        .card-menu:hover {
-            background-color: rgba(0,0,0,0.5);
-        }
-        
-        .card-menu-options {
-            display: none;
-            position: absolute;
-            top: 30px;
-            right: 0;
-            background-color: white;
-            border-radius: 8px;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
-            z-index: 10;
-            overflow: hidden;
-        }
-        
-        .card-menu-options button {
-            display: block;
-            width: 100%;
-            padding: 8px 15px;
-            border: none;
-            background: none;
-            text-align: left;
-            cursor: pointer;
-            font-size: 14px;
-        }
-        
-        .card-menu-options button:hover {
-            background-color: #f5f5f5;
+            background: linear-gradient(135deg, rgba(241, 196, 15, 0.2), rgba(243, 156, 18, 0.2));
+            box-shadow: 0 0 20px rgba(241, 196, 15, 0.3);
         }
         
         .card-image {
             width: 100%;
-            height: 100px;
-            background-color: rgba(255,255,255,0.3);
-            border-radius: 8px;
-            margin-bottom: 10px;
+            height: 80px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 40px;
+            margin-bottom: 10px;
         }
         
         .card-name {
@@ -251,32 +214,37 @@
         
         .card-rarity {
             font-size: 12px;
+            color: var(--text-secondary);
             font-style: italic;
         }
         
         .no-cards {
             text-align: center;
-            color: #7f8c8d;
+            color: var(--text-secondary);
             font-style: italic;
             padding: 20px;
             grid-column: span 2;
         }
         
         .back-btn {
-            padding: 12px 25px;
-            background-color: #e74c3c;
+            padding: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            background: linear-gradient(to right, var(--accent), var(--accent-light));
             color: white;
             border: none;
-            border-radius: 8px;
+            border-radius: 12px;
             cursor: pointer;
-            font-weight: bold;
+            transition: all 0.3s ease;
             width: 100%;
             max-width: 400px;
-            transition: background-color 0.2s;
+            margin-top: 20px;
+            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
         }
         
         .back-btn:hover {
-            background-color: #c0392b;
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(231, 76, 60, 0.6);
         }
     </style>
 </head>
@@ -300,20 +268,33 @@
                     <div class="userid">ID: <span id="profile-userid"></span></div>
                 </div>
             </div>
-            <div class="user-balance">
-                <span id="profile-balance">0</span>
-                <span>🏒</span>
+            
+            <div class="stats">
+                <div class="stat-item">
+                    <div class="stat-value" id="games-played">0</div>
+                    <div class="stat-label">Игр</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="cards-count">0</div>
+                    <div class="stat-label">Карточек</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-value" id="profile-balance">0</div>
+                    <div class="stat-label">Клюшек</div>
+                </div>
             </div>
         </div>
         
         <div class="inventory">
-            <h3 class="inventory-title">Инвентарь</h3>
+            <h3 class="section-title">
+                <span>Инвентарь</span>
+            </h3>
             <div class="cards-grid" id="cards-container">
                 <!-- Карточки будут загружены через JS -->
             </div>
         </div>
         
-        <button class="back-btn" id="back-btn">Назад</button>
+        <button class="back-btn" id="back-btn">Назад в меню</button>
     </div>
 
     <script>
@@ -353,7 +334,7 @@
         
         // Устанавливаем информацию о пользователе
         document.getElementById('profile-username').textContent = 
-            `${currentUser.first_name || ''} ${currentUser.last_name || ''}${currentUser.username ? ` (@${currentUser.username})` : ''}`;
+            `${currentUser.first_name || ''} ${currentUser.last_name || ''}`;
         document.getElementById('profile-userid').textContent = currentUser.id;
         
         // Загружаем аватар пользователя
@@ -363,7 +344,7 @@
         } else {
             const initials = (currentUser.first_name ? currentUser.first_name[0] : '') + 
                           (currentUser.last_name ? currentUser.last_name[0] : '');
-            avatar.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:24px;color:#2c3e50;font-weight:bold;">${initials || '?'}</div>`;
+            avatar.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:30px;color:#fff;font-weight:bold;">${initials || '?'}</div>`;
         }
         
         // Загружаем данные пользователя
@@ -383,12 +364,18 @@
                 if (data.list.length > 0) {
                     const userData = data.list[0];
                     
-                    // Устанавливаем баланс
+                    // Устанавливаем баланс и статистику
                     document.getElementById('profile-balance').textContent = userData.point || 0;
                     document.getElementById('balance').innerHTML = `<span>Клюшек: ${userData.point || 0}</span> <span>🏒</span>`;
                     
                     // Загружаем карточки
                     loadUserCards(userData.card);
+                    
+                    // Обновляем счетчик карточек
+                    if (userData.card) {
+                        const cardsCount = userData.card.split(',').filter(c => c.trim() !== '').length;
+                        document.getElementById('cards-count').textContent = cardsCount;
+                    }
                 }
             } catch (error) {
                 console.error("Ошибка при загрузке данных пользователя:", error);
@@ -433,29 +420,10 @@
                 cardElement.className = `card card-${card.rarity.toLowerCase()}`;
                 
                 cardElement.innerHTML = `
-                    <div class="card-menu">⋮</div>
-                    <div class="card-menu-options">
-                        <button class="transfer-btn">Передать</button>
-                        <button class="sell-btn">Продать</button>
-                    </div>
                     <div class="card-image">🏒</div>
                     <div class="card-name">${card.name}</div>
                     <div class="card-rarity">${card.rarity}</div>
                 `;
-                
-                // Добавляем обработчики для меню карточки
-                const menuBtn = cardElement.querySelector('.card-menu');
-                const menuOptions = cardElement.querySelector('.card-menu-options');
-                
-                menuBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    menuOptions.style.display = menuOptions.style.display === 'block' ? 'none' : 'block';
-                });
-                
-                // Закрываем меню при клике вне его
-                document.addEventListener('click', () => {
-                    menuOptions.style.display = 'none';
-                });
                 
                 cardsContainer.appendChild(cardElement);
             });
