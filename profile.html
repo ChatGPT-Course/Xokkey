@@ -18,12 +18,14 @@
         
         .header {
             width: 100%;
-            height: 50px;
+            height: 60px;
             display: flex;
-            justify-content: center;
+            justify-content: space-between;
             align-items: center;
             box-sizing: border-box;
             background-color: #2c3e50;
+            padding: 0 15px;
+            position: relative;
         }
         
         .app-title {
@@ -32,7 +34,20 @@
             background: linear-gradient(135deg, #00b4db, #0083b0);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            text-align: center;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        
+        .balance {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            color: white;
+            font-weight: bold;
+            background-color: rgba(0,0,0,0.2);
+            padding: 5px 10px;
+            border-radius: 15px;
         }
         
         .profile-container {
@@ -46,32 +61,34 @@
         
         .profile-header {
             display: flex;
+            flex-direction: column;
             align-items: center;
             margin-bottom: 20px;
             width: 100%;
             max-width: 400px;
             background-color: white;
-            padding: 15px;
+            padding: 20px;
             border-radius: 10px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
         }
         
         .avatar {
-            width: 70px;
-            height: 70px;
+            width: 80px;
+            height: 80px;
             border-radius: 50%;
             background: linear-gradient(135deg, #1e5799 0%,#207cca 51%,#2989d8 100%);
             display: flex;
             align-items: center;
             justify-content: center;
-            margin-right: 15px;
             color: white;
             font-weight: bold;
-            font-size: 24px;
+            font-size: 32px;
+            margin-bottom: 15px;
         }
         
         .user-info {
-            flex-grow: 1;
+            text-align: center;
+            margin-bottom: 10px;
         }
         
         .username {
@@ -83,6 +100,17 @@
         .userid {
             font-size: 14px;
             color: #7f8c8d;
+            margin-bottom: 10px;
+        }
+        
+        .user-balance {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-weight: bold;
+            background-color: #f8f9fa;
+            padding: 5px 15px;
+            border-radius: 15px;
         }
         
         .inventory {
@@ -92,6 +120,7 @@
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
         }
         
         .inventory-title {
@@ -102,7 +131,7 @@
         
         .cards-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+            grid-template-columns: repeat(2, 1fr);
             gap: 10px;
         }
         
@@ -111,20 +140,39 @@
             border-radius: 8px;
             padding: 10px;
             text-align: center;
-            background-color: #f9f9f9;
+        }
+        
+        /* Стили для разных редкостей карточек */
+        .card-common {
+            background-color: white;
+        }
+        
+        .card-epic {
+            background: linear-gradient(135deg, #b993d6, #8ca6db);
+            color: white;
+        }
+        
+        .card-mythic {
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+            color: white;
+        }
+        
+        .card-legendary {
+            background: linear-gradient(135deg, #f9d423, #ff4e50);
+            box-shadow: 0 0 10px rgba(255,215,0,0.5);
+            color: white;
         }
         
         .card-image {
             width: 100%;
             height: 100px;
-            background: linear-gradient(135deg, #f5f7fa 0%,#c3cfe2 100%);
+            background-color: rgba(255,255,255,0.3);
             border-radius: 5px;
             margin-bottom: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 40px;
-            color: #2c3e50;
         }
         
         .card-name {
@@ -134,7 +182,7 @@
         
         .card-rarity {
             font-size: 12px;
-            color: #7f8c8d;
+            font-style: italic;
         }
         
         .no-cards {
@@ -142,6 +190,7 @@
             color: #7f8c8d;
             font-style: italic;
             padding: 20px;
+            grid-column: span 2;
         }
         
         .back-btn {
@@ -152,7 +201,6 @@
             border-radius: 8px;
             cursor: pointer;
             font-weight: bold;
-            margin-top: 20px;
             width: 100%;
             max-width: 400px;
         }
@@ -160,7 +208,12 @@
 </head>
 <body>
     <div class="header">
+        <div></div>
         <div class="app-title">Hockey Shootouts</div>
+        <div class="balance" id="balance">
+            <span>0</span> 
+            <span>🪙</span>
+        </div>
     </div>
     
     <div class="profile-container" id="profile-page">
@@ -169,6 +222,10 @@
             <div class="user-info">
                 <div class="username" id="profile-username">Пользователь</div>
                 <div class="userid">ID: <span id="profile-userid"></span></div>
+                <div class="user-balance">
+                    <span id="profile-balance">0</span>
+                    <span>🪙</span>
+                </div>
             </div>
         </div>
         
@@ -187,9 +244,13 @@
         const NOCODB_API = "https://app.nocodb.com/api/v1/db/data/weamcfo6/p27jdsmk69wuimh/meefo7wdwoh5mtv";
         const NOCODB_KEY = "bocQfycJpJsTG_tbwEf8ma8E5rhoig0njMDXFWtJ";
         
-        // Инициализация Telegram WebApp
-        const tg = window.Telegram.WebApp;
-        let currentUser = null;
+        // Порядок сортировки редкостей
+        const rarityOrder = {
+            'Легендарная': 4,
+            'Мифическая': 3,
+            'Эпическая': 2,
+            'Простая': 1
+        };
         
         // Получаем данные пользователя из cookie
         function getCookie(name) {
@@ -199,6 +260,9 @@
         }
         
         // Проверяем, запущено ли в Telegram WebApp
+        const tg = window.Telegram.WebApp;
+        let currentUser = null;
+        
         if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
             currentUser = tg.initDataUnsafe.user;
         } else {
@@ -217,15 +281,21 @@
                        (currentUser.last_name ? currentUser.last_name[0] : '');
         avatar.textContent = initials || '?';
         
-        document.getElementById('profile-username').textContent = 
-            `${currentUser.first_name || ''} ${currentUser.last_name || ''}`;
+        const usernameText = `${currentUser.first_name || ''} ${currentUser.last_name || ''}`;
+        const usernameElement = document.getElementById('profile-username');
+        usernameElement.textContent = usernameText;
+        
+        if (currentUser.username) {
+            usernameElement.textContent += ` (@${currentUser.username})`;
+        }
+        
         document.getElementById('profile-userid').textContent = currentUser.id;
         
-        // Загружаем карточки пользователя
-        loadUserCards(currentUser.id);
+        // Загружаем данные пользователя
+        loadUserData(currentUser.id);
         
-        // Функция для загрузки карточек пользователя
-        async function loadUserCards(userId) {
+        // Функция для загрузки данных пользователя
+        async function loadUserData(userId) {
             try {
                 const response = await fetch(`${NOCODB_API}?where=(tg_user_id,eq,${userId})`, {
                     headers: {
@@ -234,46 +304,67 @@
                 });
                 
                 const data = await response.json();
-                const cardsContainer = document.getElementById('cards-container');
-                cardsContainer.innerHTML = '';
                 
                 if (data.list.length > 0) {
                     const userData = data.list[0];
                     
-                    if (userData.card && userData.card.trim() !== '') {
-                        const cards = userData.card.split(',').map(c => c.trim()).filter(c => c !== '');
-                        
-                        if (cards.length > 0) {
-                            cards.forEach(card => {
-                                const cardParts = card.match(/(.*?)\((.*?)\)/);
-                                if (cardParts) {
-                                    const cardName = cardParts[1];
-                                    const cardRarity = cardParts[2];
-                                    
-                                    const cardElement = document.createElement('div');
-                                    cardElement.className = 'card';
-                                    cardElement.innerHTML = `
-                                        <div class="card-image">🏒</div>
-                                        <div class="card-name">${cardName}</div>
-                                        <div class="card-rarity">${cardRarity}</div>
-                                    `;
-                                    cardsContainer.appendChild(cardElement);
-                                }
-                            });
-                        } else {
-                            cardsContainer.innerHTML = '<div class="no-cards">Карточек нет</div>';
-                        }
-                    } else {
-                        cardsContainer.innerHTML = '<div class="no-cards">Карточек нет</div>';
-                    }
-                } else {
-                    cardsContainer.innerHTML = '<div class="no-cards">Карточек нет</div>';
+                    // Устанавливаем баланс
+                    document.getElementById('profile-balance').textContent = userData.point || 0;
+                    document.getElementById('balance').innerHTML = `<span>${userData.point || 0}</span> <span>🪙</span>`;
+                    
+                    // Загружаем карточки
+                    loadUserCards(userData.card);
                 }
             } catch (error) {
-                console.error("Ошибка при загрузке карточек:", error);
-                const cardsContainer = document.getElementById('cards-container');
-                cardsContainer.innerHTML = '<div class="no-cards">Ошибка загрузки карточек</div>';
+                console.error("Ошибка при загрузке данных пользователя:", error);
             }
+        }
+        
+        // Функция для загрузки карточек пользователя
+        function loadUserCards(cardsString) {
+            const cardsContainer = document.getElementById('cards-container');
+            cardsContainer.innerHTML = '';
+            
+            if (!cardsString || cardsString.trim() === '') {
+                cardsContainer.innerHTML = '<div class="no-cards">Карточек нет</div>';
+                return;
+            }
+            
+            const cards = cardsString.split(',').map(c => c.trim()).filter(c => c !== '');
+            
+            if (cards.length === 0) {
+                cardsContainer.innerHTML = '<div class="no-cards">Карточек нет</div>';
+                return;
+            }
+            
+            // Сортируем карточки по редкости
+            const sortedCards = cards.map(card => {
+                const cardParts = card.match(/(.*?)\((.*?)\)/);
+                if (cardParts) {
+                    return {
+                        name: cardParts[1],
+                        rarity: cardParts[2],
+                        fullName: card,
+                        rarityOrder: rarityOrder[cardParts[2]] || 0
+                    };
+                }
+                return null;
+            }).filter(card => card !== null)
+              .sort((a, b) => b.rarityOrder - a.rarityOrder);
+            
+            // Отображаем отсортированные карточки
+            sortedCards.forEach(card => {
+                const cardElement = document.createElement('div');
+                cardElement.className = `card card-${card.rarity.toLowerCase()}`;
+                
+                cardElement.innerHTML = `
+                    <div class="card-image">🏒</div>
+                    <div class="card-name">${card.name}</div>
+                    <div class="card-rarity">${card.rarity}</div>
+                `;
+                
+                cardsContainer.appendChild(cardElement);
+            });
         }
         
         // Обработчик кнопки "Назад"
