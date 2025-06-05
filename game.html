@@ -319,6 +319,56 @@
         .refreshing .refresh-icon {
             transform: rotate(360deg);
         }
+        
+        /* Модальное окно сообщения */
+        .message-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(5px);
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .message-content {
+            background: linear-gradient(135deg, #0f2027, #203a43);
+            border-radius: 15px;
+            padding: 25px;
+            width: 90%;
+            max-width: 400px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            text-align: center;
+        }
+        
+        .message-title {
+            font-size: 22px;
+            margin-bottom: 20px;
+            color: var(--accent);
+        }
+        
+        .message-text {
+            margin-bottom: 30px;
+            font-size: 16px;
+        }
+        
+        .message-btn {
+            padding: 12px 25px;
+            font-size: 16px;
+            font-weight: bold;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(to right, var(--accent), var(--accent-light));
+            color: white;
+            margin: 0 auto;
+        }
     </style>
 </head>
 <body>
@@ -384,6 +434,15 @@
             </div>
         </div>
     </div>
+    
+    <!-- Модальное окно сообщения -->
+    <div class="message-modal" id="message-modal">
+        <div class="message-content">
+            <h3 class="message-title" id="message-title">Внимание!</h3>
+            <div class="message-text" id="message-text"></div>
+            <button class="message-btn" id="message-ok-btn">OK</button>
+        </div>
+    </div>
 
     <script>
         // Конфигурация Nocodb
@@ -396,6 +455,7 @@
         let currentUser = null;
         let currentRoom = null;
         let refreshInterval = null;
+        let roomCheckInterval = null;
         
         // Проверяем, запущено ли в Telegram WebApp
         if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
@@ -406,7 +466,8 @@
                 id: 12345,
                 first_name: "Тестовый",
                 last_name: "Пользователь",
-                username: "test_user"
+                username: "test_user",
+                photo_url: ""
             };
         }
         
@@ -417,7 +478,7 @@
         loadRooms();
         
         // Устанавливаем интервал обновления комнат
-        refreshInterval = setInterval(loadRooms, 1000);
+        refreshInterval = setInterval(loadRooms, 3000);
         
         // Функция для загрузки баланса пользователя
         async function loadUserBalance(userId) {
@@ -452,10 +513,6 @@
                 const data = await response.json();
                 displayRooms(data.list);
                 
-                // Проверяем, не находится ли пользователь уже в комнате
-                if (currentRoom) {
-                    checkRoomStatus(currentRoom.Id);
-                }
             } catch (error) {
                 console.error("Ошибка при загрузке комнат:", error);
             } finally {
@@ -476,6 +533,11 @@
             }
             
             rooms.forEach(room => {
+                // Не показываем комнаты, где пользователь уже участвует
+                if (room.id_creator === currentUser.id || room.id_joining === currentUser.id) {
+                    return;
+                }
+                
                 const roomElement = document.createElement('div');
                 roomElement.className = 'room-card';
                 roomElement.dataset.roomId = room.Id;
@@ -500,7 +562,7 @@
             });
         }
         
-        // Функция для получения имени пользователя (упрощенная версия)
+        // Функция для получения имени пользователя
         function getUserName(userId) {
             if (userId === currentUser.id) return 'Вы';
             return `Игрок #${userId}`;
@@ -509,6 +571,22 @@
         // Функция для создания комнаты
         async function createRoom(betAmount) {
             try {
+                // Проверяем баланс пользователя
+                const balanceResponse = await fetch(`${NOCODB_API}?where=(tg_user_id,eq,${currentUser.id})`, {
+                    headers: {
+                        "xc-token": NOCODB_KEY
+                    }
+                });
+                
+                const balanceData = await balanceResponse.json();
+                if (balanceData.list.length > 0) {
+                    const balance = balanceData.list[0].point || 0;
+                    if (balance < betAmount) {
+                        showMessage('Недостаточно клюшек', 'У вас недостаточно клюшек для создания комнаты с такой ставкой');
+                        return;
+                    }
+                }
+                
                 const response = await fetch(ROOMS_API, {
                     method: 'POST',
                     headers: {
@@ -518,16 +596,21 @@
                     body: JSON.stringify({
                         id_creator: currentUser.id,
                         status: "Набор игроков",
-                        bet: betAmount
+                        bet: betAmount,
+                        last_active: new Date().toISOString()
                     })
                 });
                 
                 const data = await response.json();
                 currentRoom = data;
                 showRoomScreen(data);
+                
+                // Запускаем проверку статуса комнаты
+                startRoomChecking(data.Id);
+                
             } catch (error) {
                 console.error("Ошибка при создании комнаты:", error);
-                alert('Не удалось создать комнату');
+                showMessage('Ошибка', 'Не удалось создать комнату');
             }
         }
         
@@ -543,10 +626,34 @@
                 
                 const roomData = await roomResponse.json();
                 
+                // Проверяем, что комната еще доступна
+                if (!roomData || roomData.status !== "Набор игроков") {
+                    showMessage('Ошибка', 'Комната уже недоступна');
+                    loadRooms();
+                    return;
+                }
+                
                 // Проверяем, что в комнате есть свободное место
                 if (roomData.id_joining) {
-                    alert('В этой комнате уже есть игрок');
+                    showMessage('Ошибка', 'В этой комнате уже есть игрок');
+                    loadRooms();
                     return;
+                }
+                
+                // Проверяем баланс пользователя
+                const balanceResponse = await fetch(`${NOCODB_API}?where=(tg_user_id,eq,${currentUser.id})`, {
+                    headers: {
+                        "xc-token": NOCODB_KEY
+                    }
+                });
+                
+                const balanceData = await balanceResponse.json();
+                if (balanceData.list.length > 0) {
+                    const balance = balanceData.list[0].point || 0;
+                    if (balance < roomData.bet) {
+                        showMessage('Недостаточно клюшек', 'У вас недостаточно клюшек для входа в эту комнату');
+                        return;
+                    }
                 }
                 
                 // Обновляем комнату, добавляя второго игрока
@@ -557,16 +664,21 @@
                         "xc-token": NOCODB_KEY
                     },
                     body: JSON.stringify({
-                        id_joining: currentUser.id
+                        id_joining: currentUser.id,
+                        last_active: new Date().toISOString()
                     })
                 });
                 
                 const updatedRoom = await updateResponse.json();
                 currentRoom = updatedRoom;
                 showRoomScreen(updatedRoom);
+                
+                // Запускаем проверку статуса комнаты
+                startRoomChecking(updatedRoom.Id);
+                
             } catch (error) {
                 console.error("Ошибка при присоединении к комнате:", error);
-                alert('Не удалось присоединиться к комнате');
+                showMessage('Ошибка', 'Не удалось присоединиться к комнате');
             }
         }
         
@@ -579,42 +691,105 @@
                     }
                 });
                 
+                // Если запрос не удался, считаем что комнаты нет
+                if (!response.ok) {
+                    throw new Error('Комната не найдена');
+                }
+                
                 const roomData = await response.json();
                 
                 // Если комнаты больше нет, возвращаем в лобби
                 if (!roomData) {
+                    showMessage('Комната закрыта', 'Комната была удалена создателем');
                     leaveRoom();
                     return;
+                }
+                
+                // Обновляем время последней активности
+                await fetch(`${ROOMS_API}/${roomId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        "xc-token": NOCODB_KEY
+                    },
+                    body: JSON.stringify({
+                        last_active: new Date().toISOString()
+                    })
+                });
+                
+                // Проверяем, не покинул ли противник комнату
+                if (roomData.status === "Набор игроков" && roomData.id_joining && 
+                    (currentUser.id === roomData.id_creator || currentUser.id === roomData.id_joining)) {
+                    
+                    // Проверяем время последней активности противника
+                    const lastActive = new Date(roomData.last_active);
+                    const now = new Date();
+                    const diffMinutes = (now - lastActive) / (1000 * 60);
+                    
+                    if (diffMinutes > 1) { // Если противник не активен более 1 минуты
+                        showMessage('Противник покинул игру', 'Ваш противник вышел из комнаты');
+                        leaveRoom();
+                        return;
+                    }
                 }
                 
                 // Обновляем данные комнаты
                 updateRoomScreen(roomData);
                 
-                // Если комната перешла в статус игры, запускаем игру
-                if (roomData.status === "Игра") {
-                    startGame(roomData);
-                }
             } catch (error) {
                 console.error("Ошибка при проверке статуса комнаты:", error);
+                showMessage('Ошибка', 'Не удалось проверить статус комнаты');
+                leaveRoom();
             }
         }
         
         // Функция для выхода из комнаты
         async function leaveRoom() {
-            if (!currentRoom) return;
+            if (!currentRoom) {
+                showLobbyScreen();
+                return;
+            }
             
             try {
-                // Если пользователь создатель комнаты, удаляем комнату
+                // Сначала получаем актуальные данные комнаты
+                const roomResponse = await fetch(`${ROOMS_API}/${currentRoom.Id}`, {
+                    headers: {
+                        "xc-token": NOCODB_KEY
+                    }
+                });
+                
+                const roomData = await roomResponse.json();
+                
+                // Если пользователь создатель комнаты
                 if (currentRoom.id_creator === currentUser.id) {
-                    await fetch(`${ROOMS_API}/${currentRoom.Id}`, {
-                        method: 'DELETE',
-                        headers: {
-                            "xc-token": NOCODB_KEY
-                        }
-                    });
+                    // Если в комнате нет второго игрока - удаляем комнату
+                    if (!roomData.id_joining) {
+                        await fetch(`${ROOMS_API}/${currentRoom.Id}`, {
+                            method: 'DELETE',
+                            headers: {
+                                "xc-token": NOCODB_KEY
+                            }
+                        });
+                    } 
+                    // Если в комнате есть второй игрок - только выходим сам
+                    else {
+                        // Оповещаем второго игрока, что создатель вышел
+                        await fetch(`${ROOMS_API}/${currentRoom.Id}`, {
+                            method: 'PATCH',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                "xc-token": NOCODB_KEY
+                            },
+                            body: JSON.stringify({
+                                status: "Закрыта",
+                                id_creator: null
+                            })
+                        });
+                    }
                 } 
-                // Если пользователь присоединившийся, очищаем поле id_joining
+                // Если пользователь присоединившийся игрок
                 else if (currentRoom.id_joining === currentUser.id) {
+                    // Очищаем поле id_joining
                     await fetch(`${ROOMS_API}/${currentRoom.Id}`, {
                         method: 'PATCH',
                         headers: {
@@ -629,6 +804,7 @@
             } catch (error) {
                 console.error("Ошибка при выходе из комнаты:", error);
             } finally {
+                stopRoomChecking();
                 currentRoom = null;
                 showLobbyScreen();
             }
@@ -639,6 +815,20 @@
             if (!currentRoom) return;
             
             try {
+                // Проверяем, что в комнате есть оба игрока
+                const roomResponse = await fetch(`${ROOMS_API}/${currentRoom.Id}`, {
+                    headers: {
+                        "xc-token": NOCODB_KEY
+                    }
+                });
+                
+                const roomData = await roomResponse.json();
+                
+                if (!roomData.id_joining) {
+                    showMessage('Ошибка', 'В комнате должен быть второй игрок');
+                    return;
+                }
+                
                 // Обновляем статус комнаты на "Игра"
                 await fetch(`${ROOMS_API}/${currentRoom.Id}`, {
                     method: 'PATCH',
@@ -652,9 +842,11 @@
                 });
                 
                 // Здесь должна быть логика начала игры
-                alert('Игра начинается!');
+                showMessage('Игра начинается!', 'Скоро здесь будет игровой процесс');
+                
             } catch (error) {
                 console.error("Ошибка при начале игры:", error);
+                showMessage('Ошибка', 'Не удалось начать игру');
             }
         }
         
@@ -697,13 +889,46 @@
             } else {
                 startBtn.style.display = 'none';
             }
+            
+            // Блокируем кнопку выхода, если в комнате уже два игрока
+            const leaveBtn = document.getElementById('leave-room-btn');
+            if (roomData.id_joining && (roomData.id_creator === currentUser.id || roomData.id_joining === currentUser.id)) {
+                leaveBtn.disabled = true;
+                leaveBtn.textContent = "Выход заблокирован";
+            } else {
+                leaveBtn.disabled = false;
+                leaveBtn.textContent = "Покинуть комнату";
+            }
         }
         
         // Функция для показа экрана лобби
         function showLobbyScreen() {
+            stopRoomChecking();
             document.getElementById('lobby-screen').style.display = 'flex';
             document.getElementById('room-screen').style.display = 'none';
             loadRooms();
+        }
+        
+        // Функция для показа сообщения
+        function showMessage(title, text) {
+            document.getElementById('message-title').textContent = title;
+            document.getElementById('message-text').textContent = text;
+            document.getElementById('message-modal').style.display = 'flex';
+        }
+        
+        // Функция для запуска проверки статуса комнаты
+        function startRoomChecking(roomId) {
+            stopRoomChecking();
+            checkRoomStatus(roomId);
+            roomCheckInterval = setInterval(() => checkRoomStatus(roomId), 5000);
+        }
+        
+        // Функция для остановки проверки статуса комнаты
+        function stopRoomChecking() {
+            if (roomCheckInterval) {
+                clearInterval(roomCheckInterval);
+                roomCheckInterval = null;
+            }
         }
         
         // Обработчики событий
@@ -719,7 +944,7 @@
             const betAmount = parseInt(document.getElementById('bet-amount').value);
             
             if (isNaN(betAmount) || betAmount <= 0) {
-                alert('Введите корректную сумму ставки');
+                showMessage('Ошибка', 'Введите корректную сумму ставки');
                 return;
             }
             
@@ -733,13 +958,39 @@
         
         document.getElementById('refresh-btn').addEventListener('click', loadRooms);
         
+        document.getElementById('message-ok-btn').addEventListener('click', () => {
+            document.getElementById('message-modal').style.display = 'none';
+        });
+        
         // Обработчик закрытия страницы
-        window.addEventListener('beforeunload', () => {
+        window.addEventListener('beforeunload', async () => {
             if (currentRoom) {
-                // Пытаемся отправить запрос на выход из комнаты
-                navigator.sendBeacon(`${ROOMS_API}/${currentRoom.Id}`, JSON.stringify({
-                    id_joining: null
-                }));
+                try {
+                    // Если пользователь создатель комнаты и нет второго игрока - удаляем комнату
+                    if (currentRoom.id_creator === currentUser.id && !currentRoom.id_joining) {
+                        await fetch(`${ROOMS_API}/${currentRoom.Id}`, {
+                            method: 'DELETE',
+                            headers: {
+                                "xc-token": NOCODB_KEY
+                            }
+                        });
+                    }
+                    // Если пользователь присоединившийся игрок - очищаем поле id_joining
+                    else if (currentRoom.id_joining === currentUser.id) {
+                        await fetch(`${ROOMS_API}/${currentRoom.Id}`, {
+                            method: 'PATCH',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                "xc-token": NOCODB_KEY
+                            },
+                            body: JSON.stringify({
+                                id_joining: null
+                            })
+                        });
+                    }
+                } catch (error) {
+                    console.error("Ошибка при обработке закрытия страницы:", error);
+                }
             }
         });
     </script>
