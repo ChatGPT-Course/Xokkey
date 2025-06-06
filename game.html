@@ -447,12 +447,17 @@
                     options.body = JSON.stringify(data);
                 }
 
+                console.log(`Making ${method} request to: ${url}`, data);
+
                 try {
                     const response = await fetch(url, options);
                     if (!response.ok) {
+                        console.error(`HTTP error! status: ${response.status}, response:`, await response.text());
                         throw new Error(`HTTP error! status: ${response.status}`);
                     }
-                    return await response.json();
+                    const result = await response.json();
+                    console.log('API Response:', result);
+                    return result;
                 } catch (error) {
                     console.error('API Request failed:', error);
                     return this.handleOfflineRequest(endpoint, method, data);
@@ -491,18 +496,22 @@
 
                 if (method === 'GET') {
                     if (endpoint.includes('where=')) {
-                        const urlParams = new URL(`http://dummy.com?${endpoint.split('?')[1]}`);
-                        const whereClause = urlParams.searchParams.get('where');
+                        const whereClause = decodeURIComponent(endpoint.split('where=')[1]);
+                        console.log('Processing where clause:', whereClause);
                         
-                        if (whereClause && whereClause.includes('game_code,eq,')) {
+                        if (whereClause.includes('game_code,eq,')) {
                             const gameCode = whereClause.split('game_code,eq,')[1].replace(/[()]/g, '');
+                            console.log('Looking for game code:', gameCode);
                             const game = games.find(g => g.game_code === gameCode);
+                            console.log('Found game:', game);
                             return { list: game ? [game] : [] };
                         }
                         
-                        if (whereClause && whereClause.includes('Id,eq,')) {
+                        if (whereClause.includes('Id,eq,')) {
                             const gameId = whereClause.split('Id,eq,')[1].replace(/[()]/g, '');
+                            console.log('Looking for game ID:', gameId);
                             const game = games.find(g => g.Id === gameId);
+                            console.log('Found game:', game);
                             return { list: game ? [game] : [] };
                         }
                     }
@@ -537,9 +546,11 @@
 
             async findGameByCode(gameCode) {
                 try {
+                    console.log('Looking for game with code:', gameCode);
                     const response = await this.makeRequest(
                         `${API_CONFIG.gamesTable}/records?where=(game_code,eq,${gameCode})`
                     );
+                    console.log('Find game response:', response);
                     return response.list?.[0] || null;
                 } catch (error) {
                     console.error('Failed to find game by code:', error);
@@ -561,11 +572,14 @@
 
             async updateGame(gameId, updates) {
                 try {
-                    return await this.makeRequest(
+                    console.log('Updating game:', gameId, 'with data:', updates);
+                    const result = await this.makeRequest(
                         `${API_CONFIG.gamesTable}/records/${gameId}`,
                         'PATCH',
                         updates
                     );
+                    console.log('Update result:', result);
+                    return result;
                 } catch (error) {
                     console.error('Failed to update game:', error);
                     throw error;
@@ -644,8 +658,12 @@
                     return;
                 }
 
+                console.log('Attempting to join game with code:', gameCode);
+                console.log('Current user:', this.currentUser);
+
                 try {
                     const game = await api.findGameByCode(gameCode);
+                    console.log('Found game:', game);
                     
                     if (!game) {
                         this.showMessage('Игра с таким кодом не найдена', 'error');
@@ -657,8 +675,13 @@
                         return;
                     }
                     
-                    if (game.player1_id === this.currentUser.telegram_id) {
+                    if (game.player1_id == this.currentUser.telegram_id) {
                         this.showMessage('Вы не можете присоединиться к своей игре', 'error');
+                        return;
+                    }
+                    
+                    if (game.player2_id) {
+                        this.showMessage('К этой игре уже присоединился другой игрок', 'error');
                         return;
                     }
                     
@@ -672,13 +695,14 @@
                         status: 'playing'
                     };
                     
-                    console.log('Updating game with:', updates);
+                    console.log('Joining game - updates to send:', updates);
                     
                     // Обновляем игру в базе данных
-                    await api.updateGame(this.gameId, updates);
-                    this.currentGame = { ...game, ...updates };
+                    const updateResult = await api.updateGame(this.gameId, updates);
+                    console.log('Update result:', updateResult);
                     
-                    console.log('Game updated after joining:', this.currentGame);
+                    this.currentGame = { ...game, ...updates };
+                    console.log('Current game after join:', this.currentGame);
                     
                     // Скрываем форму присоединения
                     this.hideJoinForm();
@@ -690,7 +714,7 @@
                     this.showMessage('Успешно присоединились к игре!', 'success');
                 } catch (error) {
                     console.error('Failed to join game:', error);
-                    this.showMessage('Не удалось присоединиться к игре', 'error');
+                    this.showMessage('Не удалось присоединиться к игре: ' + error.message, 'error');
                 }
             }
 
