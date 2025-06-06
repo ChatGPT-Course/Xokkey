@@ -12,7 +12,7 @@
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body {
             font-family: 'Arial', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -22,141 +22,98 @@
             align-items: center;
             padding: 20px;
         }
-        
+
         .container {
             background: white;
-            padding: 40px;
+            padding: 60px 40px;
             border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             text-align: center;
-            min-width: 350px;
+            min-width: 300px;
             max-width: 400px;
             width: 100%;
         }
-        
+
         h1 {
             color: #333;
-            margin-bottom: 30px;
+            margin-bottom: 20px;
             font-size: 2.5em;
         }
-        
-        .button {
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 16px;
+        }
+
+        .play-button {
             display: block;
             width: 100%;
-            padding: 15px;
-            margin: 15px 0;
+            padding: 20px;
             background: linear-gradient(45deg, #667eea, #764ba2);
             color: white;
             border: none;
-            border-radius: 10px;
-            font-size: 18px;
+            border-radius: 15px;
+            font-size: 24px;
+            font-weight: bold;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: all 0.3s ease;
             text-decoration: none;
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
         }
-        
-        .button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+
+        .play-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(102, 126, 234, 0.4);
         }
-        
-        .button:active {
-            transform: translateY(0);
-        }
-        
-        .input-group {
-            margin: 20px 0;
-        }
-        
-        input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 16px;
-            margin: 10px 0;
-        }
-        
-        input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-        
-        .loading {
-            display: none;
-            color: #667eea;
-            margin: 10px 0;
-        }
-        
-        .error {
-            color: #e74c3c;
-            margin: 10px 0;
-            display: none;
-        }
-        
-        .success {
-            color: #27ae60;
-            margin: 10px 0;
-            display: none;
+
+        .play-button:active {
+            transform: translateY(-1px);
         }
 
         .user-info {
-            margin-bottom: 30px;
+            margin-top: 30px;
             padding: 15px;
             background: #f8f9fa;
             border-radius: 10px;
             font-size: 14px;
             color: #666;
         }
+
+        .loading {
+            display: none;
+            color: #667eea;
+            margin: 20px 0;
+        }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎮 Игровое меню</h1>
-        
+        <h1>🎮 Игра</h1>
+        <div class="subtitle">Добро пожаловать в увлекательную игру!</div>
+
+        <a href="game.html" class="play-button">
+            🚀 Играть
+        </a>
+
         <div class="user-info" id="userInfo">
             <div id="userData">
                 <strong>Игрок:</strong> <span id="userName">-</span><br>
                 <small>ID: <span id="userId">-</span></small>
             </div>
         </div>
-        
-        <div class="input-group">
-            <input type="text" id="roomName" placeholder="Введите название комнаты" maxlength="20">
-        </div>
-        
-        <button class="button" id="createRoomBtn">Создать комнату</button>
-        
-        <div class="input-group">
-            <input type="text" id="roomNameToJoin" placeholder="Название комнаты для присоединения">
-        </div>
-        
-        <button class="button" id="joinRoomBtn">Присоединиться к комнате</button>
-        
-        <div class="loading" id="loading">⏳ Загрузка...</div>
-        <div class="error" id="error"></div>
-        <div class="success" id="success"></div>
     </div>
 
     <script>
-        // Конфигурация NocoDB для комнат
-        const roomConfig = {
-            orgs: 'wf52x8bf',
-            projectName: 'pawgl0ouxic497w',
-            tableName: 'mn6po2sun2nxks5',
-            apiToken: '4lZnGEoWEQeBswBHzzp_lPPYDFFkNc7s2BlWClxb',
-            baseUrl: 'https://app.nocodb.com/api/v1/db/data'
-        };
-
-        // Конфигурация NocoDB для пользователей
-        const userConfig = {
+        // Конфигурация NocoDB 
+        const config = {
             orgs: 'wf52x8bf',
             projectName: 'pawgl0ouxic497w',
             tableName: 'mtfr4e3wywjtyua',
             apiToken: '4lZnGEoWEQeBswBHzzp_lPPYDFFkNc7s2BlWClxb',
             baseUrl: 'https://app.nocodb.com/api/v1/db/data'
         };
-        
+
         let tg = window.Telegram.WebApp;
         let userData = null;
         let isInitialized = false;
@@ -175,30 +132,6 @@
             if (parts.length === 2) return parts.pop().split(';').shift();
             return null;
         }
-        
-        function showLoading() {
-            document.getElementById('loading').style.display = 'block';
-            document.getElementById('error').style.display = 'none';
-            document.getElementById('success').style.display = 'none';
-        }
-        
-        function hideLoading() {
-            document.getElementById('loading').style.display = 'none';
-        }
-        
-        function showError(message) {
-            hideLoading();
-            const errorDiv = document.getElementById('error');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-        }
-        
-        function showSuccess(message) {
-            hideLoading();
-            const successDiv = document.getElementById('success');
-            successDiv.textContent = message;
-            successDiv.style.display = 'block';
-        }
 
         // Получить данные пользователя из Telegram WebApp
         function getTelegramUserData() {
@@ -210,7 +143,7 @@
                     console.log('Получены данные пользователя Telegram:', user);
 
                     return {
-                        telegram_id: user.id.toString(),
+                        id: user.id.toString(),
                         username: user.username || '',
                         first_name: user.first_name || '',
                         last_name: user.last_name || '',
@@ -222,7 +155,7 @@
                 // Fallback для тестирования
                 const fallbackId = Date.now().toString();
                 return {
-                    telegram_id: fallbackId,
+                    id: fallbackId,
                     username: 'test_user',
                     first_name: 'Тестовый',
                     last_name: 'Игрок',
@@ -233,7 +166,7 @@
                 console.log('Ошибка получения данных пользователя:', error);
                 const fallbackId = Date.now().toString();
                 return {
-                    telegram_id: fallbackId,
+                    id: fallbackId,
                     username: 'test_user',
                     first_name: 'Тестовый',
                     last_name: 'Игрок',
@@ -245,7 +178,7 @@
 
         // Сохранить данные пользователя в cookies
         function saveUserData(userData) {
-            setCookie('tg_user_id', userData.telegram_id);
+            setCookie('tg_user_id', userData.id);
             setCookie('tg_username', userData.username);
             setCookie('tg_name', userData.display_name);
             setCookie('tg_language', userData.language_code);
@@ -258,11 +191,11 @@
             console.log('Проверяем пользователя в базе данных:', userData);
 
             try {
-                // Получаем все записи из таблицы пользователей
-                const listResponse = await fetch(`${userConfig.baseUrl}/${userConfig.orgs}/${userConfig.projectName}/${userConfig.tableName}`, {
+                // Получаем все записи из таблицы
+                const listResponse = await fetch(`${config.baseUrl}/${config.orgs}/${config.projectName}/${config.tableName}`, {
                     method: 'GET',
                     headers: {
-                        'xc-token': userConfig.apiToken,
+                        'xc-token': config.apiToken,
                         'Content-Type': 'application/json'
                     }
                 });
@@ -276,7 +209,7 @@
 
                 // Ищем пользователя по user_id
                 const existingUser = data.list ? data.list.find(user => 
-                    user.user_id && user.user_id.toString() === userData.telegram_id.toString()
+                    user.user_id && user.user_id.toString() === userData.id.toString()
                 ) : null;
 
                 if (existingUser) {
@@ -288,7 +221,7 @@
 
                 // Создаем нового пользователя согласно структуре таблицы
                 const newUserData = {
-                    user_id: userData.telegram_id,
+                    user_id: userData.id,
                     user_name: userData.display_name,
                     user_username: userData.username,
                     money: 0
@@ -296,11 +229,11 @@
 
                 console.log('Данные для создания пользователя:', newUserData);
 
-                const createResponse = await fetch(`${userConfig.baseUrl}/${userConfig.orgs}/${userConfig.projectName}/${userConfig.tableName}`, {
+                const createResponse = await fetch(`${config.baseUrl}/${config.orgs}/${config.projectName}/${config.tableName}`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'xc-token': userConfig.apiToken
+                        'xc-token': config.apiToken
                     },
                     body: JSON.stringify(newUserData)
                 });
@@ -317,171 +250,6 @@
             } catch (error) {
                 console.log('Ошибка при работе с базой данных:', error);
                 return true; // Позволяем продолжить работу даже с ошибками
-            }
-        }
-        
-        async function createRoom() {
-            const roomName = document.getElementById('roomName').value.trim();
-            
-            if (!roomName) {
-                showError('Пожалуйста, введите название комнаты');
-                return;
-            }
-            
-            if (!userData) {
-                showError('Ошибка: данные пользователя не загружены');
-                return;
-            }
-            
-            showLoading();
-            
-            try {
-                const roomData = {
-                    room_name: roomName,
-                    player1: userData.telegram_id,
-                    player1_name: userData.display_name,
-                    player2: null,
-                    player2_name: null,
-                    status: 'Ожидание',
-                    current_turn: 'player1',
-                    player1_score: 0,
-                    player2_score: 0,
-                    game_state: '{}',
-                    winner: null
-                };
-                
-                const response = await fetch(`${roomConfig.baseUrl}/${roomConfig.orgs}/${roomConfig.projectName}/${roomConfig.tableName}`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'xc-token': roomConfig.apiToken
-                    },
-                    body: JSON.stringify(roomData)
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const responseData = await response.json();
-                
-                showSuccess(`Комната "${roomName}" создана!`);
-                
-                // Сохраняем данные в localStorage для передачи на страницу игры
-                localStorage.setItem('gameData', JSON.stringify({
-                    roomId: responseData.Id,
-                    roomName: roomName,
-                    playerId: userData.telegram_id,
-                    playerName: userData.display_name,
-                    isCreator: true
-                }));
-                
-                setTimeout(() => {
-                    window.location.href = 'game.html';
-                }, 2000);
-                
-            } catch (error) {
-                showError('Ошибка при создании комнаты. Попробуйте снова.');
-                console.error('Create room error:', error);
-            }
-        }
-        
-        async function joinRoom() {
-            const roomName = document.getElementById('roomNameToJoin').value.trim();
-            
-            if (!roomName) {
-                showError('Пожалуйста, введите название комнаты');
-                return;
-            }
-            
-            if (!userData) {
-                showError('Ошибка: данные пользователя не загружены');
-                return;
-            }
-            
-            showLoading();
-            
-            try {
-                // Поиск комнаты по названию
-                const response = await fetch(`${roomConfig.baseUrl}/${roomConfig.orgs}/${roomConfig.projectName}/${roomConfig.tableName}`, {
-                    method: 'GET',
-                    headers: {
-                        'xc-token': roomConfig.apiToken,
-                        'Content-Type': 'application/json'
-                    }
-                });
-                
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const data = await response.json();
-                
-                if (!data.list || data.list.length === 0) {
-                    showError('Комнат не найдено');
-                    return;
-                }
-                
-                const room = data.list.find(r => r.room_name === roomName);
-                
-                if (!room) {
-                    showError('Комната с таким названием не найдена');
-                    return;
-                }
-                
-                if (room.status !== 'Ожидание') {
-                    showError('Комната уже занята или игра началась');
-                    return;
-                }
-                
-                if (room.player2) {
-                    showError('В комнате уже есть второй игрок');
-                    return;
-                }
-                
-                if (room.player1 === userData.telegram_id) {
-                    showError('Вы не можете присоединиться к своей комнате');
-                    return;
-                }
-                
-                // Присоединение к комнате
-                const updateData = {
-                    player2: userData.telegram_id,
-                    player2_name: userData.display_name,
-                    status: 'Игра'
-                };
-                
-                const updateResponse = await fetch(`${roomConfig.baseUrl}/${roomConfig.orgs}/${roomConfig.projectName}/${roomConfig.tableName}/${room.Id}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'xc-token': roomConfig.apiToken
-                    },
-                    body: JSON.stringify(updateData)
-                });
-                
-                if (!updateResponse.ok) {
-                    throw new Error(`HTTP error! status: ${updateResponse.status}`);
-                }
-                
-                showSuccess('Успешно присоединились к комнате!');
-                
-                // Сохраняем данные в localStorage для передачи на страницу игры
-                localStorage.setItem('gameData', JSON.stringify({
-                    roomId: room.Id,
-                    roomName: roomName,
-                    playerId: userData.telegram_id,
-                    playerName: userData.display_name,
-                    isCreator: false
-                }));
-                
-                setTimeout(() => {
-                    window.location.href = 'game.html';
-                }, 2000);
-                
-            } catch (error) {
-                showError('Ошибка при присоединении к комнате. Попробуйте снова.');
-                console.error('Join room error:', error);
             }
         }
 
@@ -501,7 +269,7 @@
                     
                     // Отображаем данные пользователя
                     document.getElementById('userName').textContent = userData.display_name;
-                    document.getElementById('userId').textContent = userData.telegram_id;
+                    document.getElementById('userId').textContent = userData.id;
 
                     await checkUserInDatabase(userData);
                 }
@@ -515,25 +283,9 @@
                 
                 // Показываем тестовые данные при ошибке
                 document.getElementById('userName').textContent = userData?.display_name || 'Тестовый игрок';
-                document.getElementById('userId').textContent = userData?.telegram_id || 'test_id';
+                document.getElementById('userId').textContent = userData?.id || 'test_id';
             }
         }
-        
-        document.getElementById('createRoomBtn').addEventListener('click', createRoom);
-        document.getElementById('joinRoomBtn').addEventListener('click', joinRoom);
-        
-        // Обработка Enter в полях ввода
-        document.getElementById('roomName').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                createRoom();
-            }
-        });
-        
-        document.getElementById('roomNameToJoin').addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                joinRoom();
-            }
-        });
 
         // Запускаем инициализацию после загрузки DOM
         document.addEventListener('DOMContentLoaded', initApp);
