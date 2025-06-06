@@ -336,13 +336,24 @@
             try {
                 const telegramId = tgApp.getUserId();
                 const username = tgApp.getUsername();
+                const displayName = tgApp.getDisplayName();
                 
                 currentUser = await api.getOrCreateUser(telegramId, username);
                 console.log('Current user:', currentUser);
                 
+                // Сохраняем данные пользователя в localStorage
+                const userData = {
+                    telegram_id: telegramId,
+                    username: username,
+                    display_name: displayName,
+                    user_id: currentUser.Id
+                };
+                localStorage.setItem('hockeyGameCurrentUser', JSON.stringify(userData));
+                console.log('User data saved to localStorage:', userData);
+                
                 const usernameEl = document.getElementById('username');
                 if (usernameEl) {
-                    usernameEl.textContent = tgApp.getDisplayName();
+                    usernameEl.textContent = displayName;
                 }
             } catch (error) {
                 console.error('Failed to initialize user:', error);
