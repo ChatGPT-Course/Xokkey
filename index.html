@@ -101,8 +101,7 @@
         </a>
 
         <div class="user-info" id="userInfo">
-            <div class="loading" id="loading">Загрузка данных пользователя...</div>
-            <div id="userData" style="display: none;">
+            <div id="userData">
                 <strong>Игрок:</strong> <span id="userName">-</span><br>
                 <small>ID: <span id="userId">-</span></small>
             </div>
@@ -222,9 +221,9 @@
                 const data = await makeRequest(config.baseUrl);
                 console.log('Получены данные из базы:', data);
 
-                // Ищем пользователя по ID
+                // Ищем пользователя по tg_user_id
                 const existingUser = data.list ? data.list.find(user => 
-                    user.Id && user.Id.toString() === userData.telegram_id.toString()
+                    user.tg_user_id && user.tg_user_id.toString() === userData.telegram_id.toString()
                 ) : null;
 
                 if (existingUser) {
@@ -234,24 +233,12 @@
 
                 console.log('Пользователь не найден, создаем новую запись...');
 
-                // Получаем аватарку пользователя
-                let avatarUrl = '';
-                try {
-                    if (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.photo_url) {
-                        avatarUrl = tg.initDataUnsafe.user.photo_url;
-                    }
-                } catch (e) {
-                    console.log('Не удалось получить аватарку:', e);
-                }
-
-                // Создаем нового пользователя
+                // Создаем нового пользователя согласно структуре таблицы
                 const newUserData = {
-                    Id: userData.telegram_id,
-                    username: userData.username,
-                    display_name: userData.display_name,
+                    tg_user_id: userData.telegram_id,
                     point: 0,
                     card: '',
-                    avatar: avatarUrl
+                    avatar: ''
                 };
 
                 console.log('Данные для создания пользователя:', newUserData);
@@ -287,8 +274,6 @@
                     // Отображаем данные пользователя
                     document.getElementById('userName').textContent = userData.display_name;
                     document.getElementById('userId').textContent = userData.telegram_id;
-                    document.getElementById('loading').style.display = 'none';
-                    document.getElementById('userData').style.display = 'block';
 
                     await checkUserInDatabase(userData);
                 }
@@ -303,8 +288,6 @@
                 // Показываем тестовые данные при ошибке
                 document.getElementById('userName').textContent = userData?.display_name || 'Тестовый игрок';
                 document.getElementById('userId').textContent = userData?.telegram_id || 'test_id';
-                document.getElementById('loading').style.display = 'none';
-                document.getElementById('userData').style.display = 'block';
             }
 
             
