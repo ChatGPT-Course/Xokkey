@@ -1,9 +1,10 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Игровая комната</title>
+    <title>Игра - Хоккейная Битва</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * {
@@ -13,398 +14,1061 @@
         }
 
         body {
-            font-family: 'Arial', sans-serif;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
+            padding: 10px;
         }
 
         .container {
+            max-width: 400px;
+            margin: 0 auto;
             background: white;
-            padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
-            text-align: center;
-            min-width: 400px;
-            max-width: 500px;
-            width: 100%;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+            min-height: 90vh;
         }
 
-        h1 {
-            color: #333;
-            margin-bottom: 30px;
-            font-size: 2.5em;
-        }
-
-        .room-info {
-            background: #f8f9fa;
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
             padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
+            text-align: center;
+            position: relative;
         }
 
-        .room-name {
-            font-size: 24px;
-            font-weight: bold;
+        .header h2 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .btn-back {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .btn-back:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .game-container {
+            padding: 20px;
+        }
+
+        .menu-screen {
+            text-align: center;
+            padding: 30px 20px;
+        }
+
+        .menu-screen h3 {
             color: #667eea;
+            margin-bottom: 30px;
+            font-size: 1.4rem;
+        }
+
+        .btn {
+            padding: 15px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            width: 100%;
             margin: 10px 0;
         }
 
-        .status {
-            padding: 10px 20px;
-            border-radius: 20px;
-            font-weight: bold;
-            margin: 15px 0;
-            display: inline-block;
+        .btn.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
         }
 
-        .status.waiting {
-            background: #fff3cd;
-            color: #856404;
-        }
-
-        .status.playing {
-            background: #d4edda;
-            color: #155724;
-        }
-
-        .players {
-            display: flex;
-            justify-content: space-around;
-            margin: 30px 0;
-            gap: 20px;
-        }
-
-        .player {
+        .btn.secondary {
             background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            flex: 1;
-            border: 2px solid #e9ecef;
-        }
-
-        .player.current {
-            background: #e3f2fd;
+            color: #667eea;
             border: 2px solid #667eea;
         }
 
-        .player-title {
-            font-weight: bold;
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .input-group {
+            margin: 20px 0;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .game-code {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .game-code h4 {
+            color: #667eea;
             margin-bottom: 10px;
+        }
+
+        .code-display {
+            font-size: 2rem;
+            font-weight: bold;
             color: #333;
-            font-size: 14px;
+            letter-spacing: 3px;
+            font-family: monospace;
+        }
+
+        .score {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .score-item {
+            text-align: center;
         }
 
         .player-name {
-            font-size: 16px;
-            color: #667eea;
-            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 5px;
         }
 
         .player-score {
-            font-size: 18px;
+            font-size: 2rem;
             font-weight: bold;
-            color: #333;
-        }
-
-        .empty-player {
-            color: #999;
-            font-style: italic;
-        }
-
-        .button {
-            display: inline-block;
-            padding: 12px 24px;
-            margin: 10px;
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 16px;
-            cursor: pointer;
-            text-decoration: none;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        .button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
-        }
-
-        .button.secondary {
-            background: #6c757d;
-        }
-
-        .button.success {
-            background: linear-gradient(45deg, #28a745, #20c997);
-        }
-
-        .loading {
             color: #667eea;
-            margin: 20px 0;
-            display: none;
         }
 
-        .error {
-            color: #e74c3c;
-            margin: 20px 0;
-            padding: 15px;
-            background: #fdf2f2;
-            border-radius: 8px;
-            display: none;
-        }
-
-        .waiting-animation {
-            display: inline-block;
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
-        }
-
-        .turn-indicator {
-            margin: 20px 0;
-            padding: 15px;
-            border-radius: 10px;
+        .vs {
+            font-size: 1.2rem;
+            color: #666;
             font-weight: bold;
-            font-size: 16px;
         }
 
-        .turn-indicator.your-turn {
-            background: #d4edda;
-            color: #155724;
+        .role-info {
+            text-align: center;
+            padding: 15px;
+            margin: 15px 0;
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            color: #856404;
         }
 
-        .turn-indicator.opponent-turn {
-            background: #f8d7da;
-            color: #721c24;
+        .zones {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .zone {
+            aspect-ratio: 1;
+            border: 2px solid #2196f3;
+            border-radius: 10px;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .zone:hover {
+            background: #f0f8ff;
+            transform: scale(1.02);
+        }
+
+        .zone.selected {
+            background: #667eea;
+            color: white;
+            border-color: #5a67d8;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .waiting {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+
+        .game-end {
+            text-align: center;
+            padding: 30px 20px;
+        }
+
+        .final-stats {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .final-stats p {
+            margin: 5px 0;
+            font-size: 1.1rem;
+        }
+
+        .message {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 15px 20px;
+            border-radius: 10px;
+            z-index: 1000;
+            color: white;
+            font-weight: 600;
+        }
+
+        .message.success {
+            background: #2ed573;
+        }
+
+        .message.error {
+            background: #ff4757;
+        }
+
+        .message.info {
+            background: #667eea;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎮 Игровая комната</h1>
-
-        <div class="room-info">
-            <div>Комната:</div>
-            <div class="room-name" id="roomName">-</div>
-            <div class="status" id="gameStatus">Загрузка...</div>
+        <div class="header">
+            <button class="btn-back" onclick="goHome()">← Назад</button>
+            <h2>🏒 Хоккейная Битва</h2>
         </div>
 
-        <div class="players">
-            <div class="player" id="player1Info">
-                <div class="player-title">Игрок 1 (Создатель)</div>
-                <div class="player-name" id="player1Name">-</div>
-                <div class="player-score">Очки: <span id="player1Score">0</span></div>
-            </div>
-            <div class="player" id="player2Info">
-                <div class="player-title">Игрок 2</div>
-                <div class="player-name" id="player2Name">
-                    <span class="empty-player">Ожидание игрока...</span>
+        <!-- Главное меню игры -->
+        <div id="gameMenu" class="menu-screen">
+            <h3>Выберите режим игры</h3>
+
+            <button class="btn primary" onclick="createGame()">
+                🎮 Создать игру
+            </button>
+
+            <button class="btn secondary" onclick="showJoinForm()">
+                🚪 Присоединиться к игре
+            </button>
+
+            <div id="joinForm" class="hidden">
+                <div class="input-group">
+                    <label for="gameCodeInput">Введите код игры:</label>
+                    <input type="text" id="gameCodeInput" placeholder="ABC123" maxlength="6">
                 </div>
-                <div class="player-score">Очки: <span id="player2Score">0</span></div>
+                <button class="btn primary" onclick="joinGame()">
+                    Присоединиться
+                </button>
+                <button class="btn secondary" onclick="hideJoinForm()">
+                    Отмена
+                </button>
             </div>
         </div>
 
-        <div class="turn-indicator" id="turnIndicator" style="display: none;">
-            Ваш ход!
-        </div>
-
-        <div id="waitingMessage" style="display: none;">
-            <div class="waiting-animation">⏳ Ожидание второго игрока...</div>
-            <div style="margin-top: 15px; font-size: 14px; color: #666;">
-                Поделитесь названием комнаты с другим игроком
+        <!-- Ожидание в комнате -->
+        <div id="waitingRoom" class="waiting hidden">
+            <h3>Комната создана!</h3>
+            <div class="game-code">
+                <h4>Код для присоединения:</h4>
+                <div class="code-display" id="roomCode">------</div>
             </div>
+            <p>Ожидание второго игрока...</p>
+            <button class="btn secondary" onclick="cancelGame()">
+                Отменить игру
+            </button>
         </div>
 
-        <div id="gameStartMessage" style="display: none;">
-            <div style="color: #27ae60; font-size: 18px; margin: 20px 0;">
-                🎉 Игра может начаться!
+        <!-- Игровой процесс -->
+        <div id="gamePlay" class="game-container hidden">
+            <div class="score">
+                <div class="score-item">
+                    <div class="player-name" id="player1Name">Игрок 1</div>
+                    <div class="player-score" id="player1Score">0</div>
+                </div>
+                <div class="vs">VS</div>
+                <div class="score-item">
+                    <div class="player-name" id="player2Name">Игрок 2</div>
+                    <div class="player-score" id="player2Score">0</div>
+                </div>
             </div>
-            <button class="button success" id="startGameBtn">Начать игру</button>
+
+            <div class="role-info" id="roleInfo">
+                Ваша роль
+            </div>
+
+            <div class="zones">
+                <div class="zone" id="zone1" onclick="selectZone(1)">1</div>
+                <div class="zone" id="zone2" onclick="selectZone(2)">2</div>
+                <div class="zone" id="zone3" onclick="selectZone(3)">3</div>
+                <div class="zone" id="zone4" onclick="selectZone(4)">4</div>
+            </div>
+
+            <button id="submitMove" class="btn primary" onclick="submitMove()" disabled>
+                Подтвердить выбор
+            </button>
+
+            <p style="text-align: center; margin-top: 10px;">
+                Раунд <span id="roundNumber">1</span>
+            </p>
         </div>
 
-        <div id="error" class="error"></div>
-
-        <div style="margin-top: 30px;">
-            <a href="index.html" class="button secondary">← Вернуться в меню</a>
-            <button class="button secondary" id="refreshBtn">🔄 Обновить</button>
+        <!-- Окончание игры -->
+        <div id="gameEnd" class="game-end hidden">
+            <h3 id="finalResult">Игра окончена!</h3>
+            <div class="final-stats">
+                <p>Финальный счет:</p>
+                <p><span id="finalPlayer1"></span>: <span id="finalScore1"></span></p>
+                <p><span id="finalPlayer2"></span>: <span id="finalScore2"></span></p>
+            </div>
+            <button class="btn primary" onclick="playAgain()">Играть снова</button>
+            <button class="btn secondary" onclick="goHome()">В меню</button>
         </div>
     </div>
 
     <script>
-        // Конфигурация NocoDB для комнат
-        const roomConfig = {
+        // Telegram Web App integration
+        class TelegramApp {
+            constructor() {
+                this.tg = window.Telegram?.WebApp;
+                this.user = null;
+                this.init();
+            }
+
+            init() {
+                if (this.tg) {
+                    this.tg.ready();
+                    this.tg.expand();
+                    this.user = this.tg.initDataUnsafe?.user;
+
+                    if (!this.user) {
+                        this.user = {
+                            id: Date.now(),
+                            username: 'test_user',
+                            first_name: 'Test'
+                        };
+                    }
+                } else {
+                    this.user = {
+                        id: Date.now(),
+                        username: 'test_user',
+                        first_name: 'Test'
+                    };
+                }
+            }
+
+            getUserId() {
+                return this.user?.id || Date.now();
+            }
+
+            getUsername() {
+                return this.user?.username || 'unknown';
+            }
+
+            getDisplayName() {
+                return this.user?.first_name || this.user?.username || 'Игрок';
+            }
+        }
+
+        // NocoDB API конфигурация для новой таблицы rooms
+        const API_CONFIG = {
+            baseUrl: 'https://app.nocodb.com/api/v1/db/data',
             orgs: 'wf52x8bf',
             projectName: 'pawgl0ouxic497w',
             tableName: 'mn6po2sun2nxks5',
-            apiToken: '4lZnGEoWEQeBswBHzzp_lPPYDFFkNc7s2BlWClxb',
-            baseUrl: 'https://app.nocodb.com/api/v1/db/data'
+            token: '4lZnGEoWEQeBswBHzzp_lPPYDFFkNc7s2BlWClxb'
         };
 
-        let tg = window.Telegram.WebApp;
-        let gameData = null;
-        let refreshInterval = null;
-        let currentRoom = null;
-
-        // Инициализация Telegram WebApp
-        tg.ready();
-        tg.expand();
-
-        // Получить cookie
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-            return null;
-        }
-
-        function showError(message) {
-            const errorDiv = document.getElementById('error');
-            errorDiv.textContent = message;
-            errorDiv.style.display = 'block';
-        }
-
-        function hideError() {
-            document.getElementById('error').style.display = 'none';
-        }
-
-        async function loadRoomData() {
-            if (!gameData || !gameData.roomId) {
-                showError('Ошибка: Данные комнаты не найдены');
-                return;
+        class NocoDBAPI {
+            constructor() {
+                this.headers = {
+                    'Content-Type': 'application/json',
+                    'xc-token': API_CONFIG.token
+                };
+                this.isOnline = true;
             }
 
-            try {
-                const response = await fetch(`${roomConfig.baseUrl}/${roomConfig.orgs}/${roomConfig.projectName}/${roomConfig.tableName}/${gameData.roomId}`, {
-                    method: 'GET',
-                    headers: {
-                        'xc-token': roomConfig.apiToken,
-                        'Content-Type': 'application/json'
-                    }
-                });
+            async makeRequest(endpoint, method = 'GET', data = null) {
+                const url = `${API_CONFIG.baseUrl}/${API_CONFIG.orgs}/${API_CONFIG.projectName}/${API_CONFIG.tableName}${endpoint}`;
 
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                const options = {
+                    method,
+                    headers: this.headers
+                };
+
+                if (data && (method === 'POST' || method === 'PATCH')) {
+                    options.body = JSON.stringify(data);
                 }
 
-                currentRoom = await response.json();
-                updateRoomDisplay();
-                hideError();
-            } catch (error) {
-                showError('Ошибка при загрузке данных комнаты');
-                console.error('Load room error:', error);
+                console.log(`Making ${method} request to: ${url}`, data);
+
+                try {
+                    const response = await fetch(url, options);
+                    
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error(`HTTP error! status: ${response.status}, response:`, errorText);
+                        
+                        // Если ошибка API, переходим в оффлайн режим
+                        this.isOnline = false;
+                        return this.handleOfflineRequest(endpoint, method, data);
+                    }
+                    
+                    const result = await response.json();
+                    console.log('API Response:', result);
+                    this.isOnline = true;
+                    return result;
+                } catch (error) {
+                    console.error('API Request failed:', error);
+                    this.isOnline = false;
+                    return this.handleOfflineRequest(endpoint, method, data);
+                }
             }
-        }
 
-        function updateRoomDisplay() {
-            if (!currentRoom || !gameData) return;
+            handleOfflineRequest(endpoint, method, data) {
+                console.log('Handling offline request:', method, endpoint, data);
+                const storageKey = 'hockey_games';
+                let games = JSON.parse(localStorage.getItem(storageKey) || '[]');
 
-            // Обновляем название комнаты
-            document.getElementById('roomName').textContent = gameData.roomName;
+                if (method === 'POST' && endpoint.includes('records')) {
+                    const newGame = {
+                        Id: 'game_' + Date.now(),
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString(),
+                        ...data
+                    };
+                    games.push(newGame);
+                    localStorage.setItem(storageKey, JSON.stringify(games));
+                    console.log('Game created offline:', newGame);
+                    return newGame;
+                }
 
-            // Обновляем статус
-            const statusElement = document.getElementById('gameStatus');
-            statusElement.textContent = currentRoom.status;
-            statusElement.className = `status ${currentRoom.status === 'Ожидание' ? 'waiting' : 'playing'}`;
-
-            // Обновляем информацию об игроках
-            document.getElementById('player1Name').textContent = currentRoom.player1_name || '-';
-            document.getElementById('player1Score').textContent = currentRoom.player1_score || 0;
-
-            const player2Element = document.getElementById('player2Name');
-            if (currentRoom.player2_name) {
-                player2Element.textContent = currentRoom.player2_name;
-                player2Element.className = 'player-name';
-            } else {
-                player2Element.innerHTML = '<span class="empty-player">Ожидание игрока...</span>';
-            }
-            document.getElementById('player2Score').textContent = currentRoom.player2_score || 0;
-
-            // Выделяем текущего игрока
-            document.getElementById('player1Info').classList.toggle('current', 
-                gameData.playerId == currentRoom.player1);
-            document.getElementById('player2Info').classList.toggle('current', 
-                gameData.playerId == currentRoom.player2);
-
-            // Показываем соответствующие сообщения
-            const waitingMessage = document.getElementById('waitingMessage');
-            const gameStartMessage = document.getElementById('gameStartMessage');
-            const turnIndicator = document.getElementById('turnIndicator');
-
-            if (currentRoom.status === 'Ожидание') {
-                waitingMessage.style.display = 'block';
-                gameStartMessage.style.display = 'none';
-                turnIndicator.style.display = 'none';
-            } else if (currentRoom.status === 'Игра') {
-                waitingMessage.style.display = 'none';
-                gameStartMessage.style.display = 'block';
-
-                // Показываем индикатор хода
-                if (currentRoom.current_turn) {
-                    turnIndicator.style.display = 'block';
-                    const isMyTurn = (currentRoom.current_turn === 'player1' && gameData.playerId == currentRoom.player1) ||
-                                   (currentRoom.current_turn === 'player2' && gameData.playerId == currentRoom.player2);
-
-                    if (isMyTurn) {
-                        turnIndicator.textContent = 'Ваш ход!';
-                        turnIndicator.className = 'turn-indicator your-turn';
+                if (method === 'PATCH' && endpoint.includes('records')) {
+                    const gameId = endpoint.split('/').pop();
+                    console.log('Updating game offline - ID:', gameId, 'Data:', data);
+                    
+                    const gameIndex = games.findIndex(g => g.Id === gameId);
+                    if (gameIndex !== -1) {
+                        // Создаем полностью новый объект с обновленными данными
+                        games[gameIndex] = { 
+                            ...games[gameIndex], 
+                            ...data, 
+                            updated_at: new Date().toISOString() 
+                        };
+                        localStorage.setItem(storageKey, JSON.stringify(games));
+                        console.log('Game updated offline:', games[gameIndex]);
+                        return games[gameIndex];
                     } else {
-                        turnIndicator.textContent = 'Ход противника';
-                        turnIndicator.className = 'turn-indicator opponent-turn';
+                        console.error('Game not found for offline update:', gameId);
+                        return null;
                     }
+                }
+
+                if (method === 'GET') {
+                    if (endpoint.includes('where=')) {
+                        const whereClause = decodeURIComponent(endpoint.split('where=')[1]);
+                        console.log('Processing offline where clause:', whereClause);
+
+                        if (whereClause.includes('game_code,eq,')) {
+                            const gameCode = whereClause.split('game_code,eq,')[1].replace(/[()]/g, '');
+                            console.log('Looking for game code offline:', gameCode);
+                            const game = games.find(g => g.game_code === gameCode);
+                            console.log('Found game offline:', game);
+                            return { list: game ? [game] : [] };
+                        }
+
+                        if (whereClause.includes('Id,eq,')) {
+                            const gameId = whereClause.split('Id,eq,')[1].replace(/[()]/g, '');
+                            console.log('Looking for game ID offline:', gameId);
+                            const game = games.find(g => g.Id === gameId);
+                            console.log('Found game offline:', game);
+                            return { list: game ? [game] : [] };
+                        }
+                    }
+
+                    return { list: games };
+                }
+
+                console.error('Unhandled offline request:', method, endpoint);
+                return null;
+            }
+
+            generateGameCode() {
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+                let code = '';
+                for (let i = 0; i < 6; i++) {
+                    code += chars.charAt(Math.floor(Math.random() * chars.length));
+                }
+                return code;
+            }
+
+            async createGame(roomData) {
+                try {
+                    const result = await this.makeRequest(
+                        '',
+                        'POST',
+                        roomData
+                    );
+                    console.log('Room created:', result);
+                    return result;
+                } catch (error) {
+                    console.error('Failed to create room:', error);
+                    throw error;
+                }
+            }
+
+            async findRoomByName(roomName) {
+                try {
+                    console.log('Looking for room with name:', roomName);
+                    const response = await this.makeRequest('');
+                    console.log('Find room response:', response);
+                    
+                    if (response.list) {
+                        const room = response.list.find(r => r.room_name === roomName);
+                        return room || null;
+                    }
+                    return null;
+                } catch (error) {
+                    console.error('Failed to find room by name:', error);
+                    return null;
+                }
+            }
+
+            async getRoom(roomId) {
+                try {
+                    const response = await this.makeRequest(`/${roomId}`);
+                    return response || null;
+                } catch (error) {
+                    console.error('Failed to get room:', error);
+                    return null;
+                }
+            }
+
+            async updateRoom(roomId, updates) {
+                try {
+                    console.log('Updating room:', roomId, 'with data:', updates);
+                    const result = await this.makeRequest(
+                        `/${roomId}`,
+                        'PATCH',
+                        updates
+                    );
+                    console.log('Update result:', result);
+                    
+                    if (result) {
+                        // Синхронизируем локальные данные
+                        this.syncLocalData(roomId, updates);
+                        return result;
+                    }
+                    return null;
+                } catch (error) {
+                    console.error('Failed to update room:', error);
+                    throw error;
+                }
+            }
+
+            syncLocalData(gameId, updates) {
+                try {
+                    const storageKey = 'hockey_games';
+                    let games = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                    const gameIndex = games.findIndex(g => g.Id === gameId);
+                    
+                    if (gameIndex !== -1) {
+                        games[gameIndex] = { 
+                            ...games[gameIndex], 
+                            ...updates, 
+                            updated_at: new Date().toISOString() 
+                        };
+                        localStorage.setItem(storageKey, JSON.stringify(games));
+                        console.log('Local data synced for game:', gameId);
+                    }
+                } catch (error) {
+                    console.error('Failed to sync local data:', error);
                 }
             }
         }
 
-        function startAutoRefresh() {
-            refreshInterval = setInterval(loadRoomData, 3000); // Обновляем каждые 3 секунды
-        }
+        // Game Manager с улучшенной обработкой ошибок
+        class HockeyGameManager {
+            constructor() {
+                this.currentUser = null;
+                this.currentGame = null;
+                this.gameId = null;
+                this.isPlayer1 = false;
+                this.selectedZones = [];
+                this.gameUpdateInterval = null;
+                this.maxRetries = 3;
+                this.retryCount = 0;
+                this.init();
+            }
 
-        function stopAutoRefresh() {
-            if (refreshInterval) {
-                clearInterval(refreshInterval);
-                refreshInterval = null;
+            async init() {
+                try {
+                    // Получаем данные пользователя из localStorage (переданные с index.html)
+                    const gameData = JSON.parse(localStorage.getItem('gameData') || '{}');
+                    
+                    if (gameData.playerId) {
+                        this.currentUser = {
+                            telegram_id: gameData.playerId,
+                            display_name: gameData.playerName,
+                            username: gameData.playerName
+                        };
+                        
+                        // Если пришли из созданной комнаты
+                        if (gameData.isCreator && gameData.roomId) {
+                            this.gameId = gameData.roomId;
+                            this.isPlayer1 = true;
+                            this.currentGame = {
+                                Id: gameData.roomId,
+                                room_name: gameData.roomName,
+                                player1: gameData.playerId,
+                                status: 'Ожидание'
+                            };
+                            this.showWaitingRoom(gameData.roomName);
+                            this.startGameLoop();
+                        }
+                        // Если присоединились к комнате
+                        else if (!gameData.isCreator && gameData.roomId) {
+                            this.gameId = gameData.roomId;
+                            this.isPlayer1 = false;
+                            this.showGamePlay();
+                            this.startGameLoop();
+                        }
+                        else {
+                            this.showGameMenu();
+                        }
+                        
+                        console.log('Текущий пользователь:', this.currentUser);
+                    } else {
+                        // Fallback если данных нет
+                        const telegramId = tgApp.getUserId();
+                        this.currentUser = {
+                            telegram_id: telegramId.toString(),
+                            username: tgApp.getUsername(),
+                            display_name: tgApp.getDisplayName()
+                        };
+                        this.showGameMenu();
+                        console.log('Using fallback user data:', this.currentUser);
+                    }
+
+                } catch (error) {
+                    console.error('Failed to initialize game:', error);
+                    this.showMessage('Ошибка инициализации игры', 'error');
+                }
+            }
+
+            async createGame() {
+                // Этот метод больше не используется - комнаты создаются в index.html
+                this.showMessage('Создание игры происходит на главной странице', 'info');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 2000);
+            }
+
+            async joinGame() {
+                // Этот метод больше не используется - присоединение происходит в index.html
+                this.showMessage('Присоединение к игре происходит на главной странице', 'info');
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 2000);
+            }
+
+            async startGameLoop() {
+                if (this.gameUpdateInterval) {
+                    clearInterval(this.gameUpdateInterval);
+                }
+                
+                this.gameUpdateInterval = setInterval(async () => {
+                    await this.checkGameStatus();
+                }, 2000);
+            }
+
+            async checkGameStatus() {
+                try {
+                    if (!this.gameId) return;
+
+                    const updatedRoom = await api.getRoom(this.gameId);
+                    if (!updatedRoom) return;
+
+                    console.log('Checking room status:', updatedRoom);
+
+                    const wasWaiting = this.currentGame?.status === 'Ожидание' || 
+                                     !document.getElementById('waitingRoom').classList.contains('hidden');
+
+                    const previousStatus = this.currentGame?.status;
+                    this.currentGame = updatedRoom;
+
+                    // Если игра завершена
+                    if (this.currentGame.status === 'Завершена') {
+                        this.endGame();
+                        return;
+                    }
+
+                    // Если ожидали игрока и он присоединился (для создателя)
+                    if (this.currentGame.status === 'Игра' && 
+                        (previousStatus === 'Ожидание' || wasWaiting) &&
+                        this.currentGame.player2) {
+                        console.log('Second player joined, starting game!');
+                        this.showGamePlay();
+                        this.showMessage('Второй игрок присоединился! Игра началась!', 'success');
+                    }
+
+                    // Обновляем интерфейс если игра идет
+                    if (this.currentGame.status === 'Игра' && 
+                        !document.getElementById('gamePlay').classList.contains('hidden')) {
+                        this.updateGameDisplay();
+                    }
+                } catch (error) {
+                    console.error('Failed to check room status:', error);
+                    this.retryCount++;
+                    
+                    if (this.retryCount > 5) {
+                        this.showMessage('Проблемы с подключением к серверу', 'error');
+                        this.retryCount = 0;
+                    }
+                }
+            }
+
+            updateGameDisplay() {
+                if (!this.currentGame) return;
+
+                // Получаем имена игроков из localStorage или используем значения по умолчанию
+                const gameData = JSON.parse(localStorage.getItem('gameData') || '{}');
+                
+                document.getElementById('player1Name').textContent = gameData.isCreator ? gameData.playerName : 'Игрок 1';
+                document.getElementById('player2Name').textContent = !gameData.isCreator ? gameData.playerName : 'Игрок 2';
+                document.getElementById('player1Score').textContent = this.currentGame.player1_score || 0;
+                document.getElementById('player2Score').textContent = this.currentGame.player2_score || 0;
+                document.getElementById('roundNumber').textContent = 1; // Упрощенная версия
+
+                // Упрощенная логика - всегда показываем что игрок может выбрать зону
+                document.getElementById('roleInfo').textContent = '🎮 Выберите зону для игры';
+
+                const submitBtn = document.getElementById('submitMove');
+                submitBtn.textContent = 'Подтвердить выбор';
+                submitBtn.disabled = true;
+                this.enableZoneSelection();
+            }
+
+            selectZone(zoneNumber) {
+                const myMove = this.isPlayer1 ? this.currentGame.player1_move : this.currentGame.player2_move;
+                if (myMove) return;
+
+                const zone = document.getElementById(`zone${zoneNumber}`);
+                const isCurrentPlayerAttacker = this.currentGame.round_attacker === this.currentUser.telegram_id;
+                const maxSelections = isCurrentPlayerAttacker ? 1 : 2;
+
+                if (zone.classList.contains('selected')) {
+                    zone.classList.remove('selected');
+                    this.selectedZones = this.selectedZones.filter(z => z !== zoneNumber);
+                } else if (this.selectedZones.length < maxSelections) {
+                    zone.classList.add('selected');
+                    this.selectedZones.push(zoneNumber);
+                }
+
+                const submitBtn = document.getElementById('submitMove');
+                if (submitBtn) {
+                    submitBtn.disabled = this.selectedZones.length !== maxSelections;
+                }
+            }
+
+            async submitMove() {
+                if (this.selectedZones.length === 0) return;
+
+                try {
+                    const moveData = this.isPlayer1 ? 
+                        { player1_move: JSON.stringify(this.selectedZones) } :
+                        { player2_move: JSON.stringify(this.selectedZones) };
+
+                    await api.updateGame(this.gameId, moveData);
+
+                    this.selectedZones = [];
+                    document.querySelectorAll('.zone').forEach(zone => {
+                        zone.classList.remove('selected');
+                    });
+
+                    const submitBtn = document.getElementById('submitMove');
+                    submitBtn.textContent = 'Ожидание хода противника...';
+                    submitBtn.disabled = true;
+                    this.disableZoneSelection();
+
+                    this.showMessage('Ход отправлен!', 'info');
+                } catch (error) {
+                    console.error('Failed to submit move:', error);
+                    this.showMessage('Ошибка отправки хода', 'error');
+                }
+            }
+
+            async checkRoundResults() {
+                if (!this.currentGame.player1_move || !this.currentGame.player2_move) return;
+
+                try {
+                    const player1Move = JSON.parse(this.currentGame.player1_move);
+                    const player2Move = JSON.parse(this.currentGame.player2_move);
+
+                    const attackerMove = this.currentGame.round_attacker === this.currentGame.player1_id ? 
+                        player1Move[0] : player2Move[0];
+                    const defenderMoves = this.currentGame.round_attacker === this.currentGame.player1_id ? 
+                        player2Move : player1Move;
+
+                    const goalScored = !defenderMoves.includes(attackerMove);
+
+                    let newScore1 = this.currentGame.score1;
+                    let newScore2 = this.currentGame.score2;
+
+                    if (goalScored) {
+                        if (this.currentGame.round_attacker === this.currentGame.player1_id) {
+                            newScore1++;
+                        } else {
+                            newScore2++;
+                        }
+                    } else {
+                        if (this.currentGame.round_attacker === this.currentGame.player1_id) {
+                            newScore2++;
+                        } else {
+                            newScore1++;
+                        }
+                    }
+
+                    const isMyGoal = (this.isPlayer1 && newScore1 > this.currentGame.score1) ||
+                                    (!this.isPlayer1 && newScore2 > this.currentGame.score2);
+
+                    if (goalScored) {
+                        this.showMessage(isMyGoal ? '⚽ ГОЛ! Вы забили!' : '⚽ Противник забил гол!', 
+                                       isMyGoal ? 'success' : 'error');
+                    } else {
+                        this.showMessage(isMyGoal ? '🥅 Отличная защита!' : '🥅 Ваш бросок отбит!', 
+                                       isMyGoal ? 'success' : 'info');
+                    }
+
+                    const gameFinished = newScore1 >= 3 || newScore2 >= 3;
+                    const nextAttacker = this.currentGame.round_attacker === this.currentGame.player1_id ? 
+                        this.currentGame.player2_id : this.currentGame.player1_id;
+
+                    const updates = {
+                        score1: newScore1,
+                        score2: newScore2,
+                        current_round: this.currentGame.current_round + 1,
+                        player1_move: null,
+                        player2_move: null,
+                        round_attacker: nextAttacker,
+                        status: gameFinished ? 'finished' : 'playing'
+                    };
+
+                    await api.updateGame(this.gameId, updates);
+
+                    if (gameFinished) {
+                        setTimeout(() => this.endGame(), 3000);
+                    }
+                } catch (error) {
+                    console.error('Failed to process round results:', error);
+                }
+            }
+
+            enableZoneSelection() {
+                document.querySelectorAll('.zone').forEach(zone => {
+                    zone.style.pointerEvents = 'auto';
+                    zone.style.opacity = '1';
+                });
+            }
+
+            disableZoneSelection() {
+                document.querySelectorAll('.zone').forEach(zone => {
+                    zone.style.pointerEvents = 'none';
+                    zone.style.opacity = '0.6';
+                });
+            }
+
+            showGameMenu() {
+                this.hideAllScreens();
+                document.getElementById('gameMenu').classList.remove('hidden');
+            }
+
+            showWaitingRoom(roomName) {
+                this.hideAllScreens();
+                document.getElementById('waitingRoom').classList.remove('hidden');
+                document.getElementById('roomCode').textContent = roomName;
+                
+                // Обновляем текст для отображения названия комнаты
+                const roomCodeDiv = document.querySelector('.game-code h4');
+                if (roomCodeDiv) {
+                    roomCodeDiv.textContent = 'Название комнаты:';
+                }
+            }
+
+            showGamePlay() {
+                this.hideAllScreens();
+                document.getElementById('gamePlay').classList.remove('hidden');
+                this.updateGameDisplay();
+            }
+
+            endGame() {
+                if (this.gameUpdateInterval) {
+                    clearInterval(this.gameUpdateInterval);
+                    this.gameUpdateInterval = null;
+                }
+
+                this.hideAllScreens();
+                document.getElementById('gameEnd').classList.remove('hidden');
+
+                const myScore = this.isPlayer1 ? this.currentGame.score1 : this.currentGame.score2;
+                const opponentScore = this.isPlayer1 ? this.currentGame.score2 : this.currentGame.score1;
+                const won = myScore > opponentScore;
+
+                document.getElementById('finalResult').textContent = won ? '🎉 ПОБЕДА!' : '😔 ПОРАЖЕНИЕ';
+                document.getElementById('finalPlayer1').textContent = this.currentGame.player1_name;
+                document.getElementById('finalPlayer2').textContent = this.currentGame.player2_name;
+                document.getElementById('finalScore1').textContent = this.currentGame.score1;
+                document.getElementById('finalScore2').textContent = this.currentGame.score2;
+            }
+
+            hideAllScreens() {
+                document.getElementById('gameMenu').classList.add('hidden');
+                document.getElementById('waitingRoom').classList.add('hidden');
+                document.getElementById('gamePlay').classList.add('hidden');
+                document.getElementById('gameEnd').classList.add('hidden');
+            }
+
+            hideJoinForm() {
+                document.getElementById('joinForm').classList.add('hidden');
+                document.getElementById('gameCodeInput').value = '';
+            }
+
+            showMessage(message, type = 'info') {
+                const existingMessage = document.querySelector('.message');
+                if (existingMessage) {
+                    existingMessage.remove();
+                }
+
+                const messageDiv = document.createElement('div');
+                messageDiv.textContent = message;
+                messageDiv.className = `message ${type}`;
+
+                document.body.appendChild(messageDiv);
+                setTimeout(() => {
+                    if (document.body.contains(messageDiv)) {
+                        document.body.removeChild(messageDiv);
+                    }
+                }, 3000);
+            }
+
+            async cancelGame() {
+                if (this.gameUpdateInterval) {
+                    clearInterval(this.gameUpdateInterval);
+                    this.gameUpdateInterval = null;
+                }
+
+                if (this.gameId) {
+                    try {
+                        await api.updateGame(this.gameId, { status: 'cancelled' });
+                    } catch (error) {
+                        console.error('Failed to cancel game:', error);
+                    }
+                }
+
+                this.showGameMenu();
+                this.showMessage('Игра отменена', 'info');
             }
         }
 
-        function initializePage() {
-            // Получаем данные из localStorage
-            const savedData = localStorage.getItem('gameData');
-            if (!savedData) {
-                showError('Ошибка: Данные игры не найдены. Вернитесь в главное меню.');
-                return;
-            }
+        // Initialize
+        const tgApp = new TelegramApp();
+        const api = new NocoDBAPI();
 
-            try {
-                gameData = JSON.parse(savedData);
-                console.log('Загружены данные игры:', gameData);
-                loadRoomData();
-                startAutoRefresh();
-            } catch (error) {
-                showError('Ошибка при загрузке данных игры');
-                console.error('Parse game data error:', error);
+        // Global functions
+        function createGame() {
+            window.gameManager.createGame();
+        }
+
+        function showJoinForm() {
+            document.getElementById('joinForm').classList.remove('hidden');
+        }
+
+        function hideJoinForm() {
+            document.getElementById('joinForm').classList.add('hidden');
+            document.getElementById('gameCodeInput').value = '';
+        }
+
+        function joinGame() {
+            window.gameManager.joinGame();
+        }
+
+        function selectZone(zoneNumber) {
+            if (window.gameManager) {
+                window.gameManager.selectZone(zoneNumber);
             }
         }
 
-        // Обработчики событий
-        document.getElementById('refreshBtn').addEventListener('click', loadRoomData);
+        function submitMove() {
+            if (window.gameManager) {
+                window.gameManager.submitMove();
+            }
+        }
 
-        document.getElementById('startGameBtn').addEventListener('click', function() {
-            alert('🎮 Здесь будет логика начала игры! Добавьте игровые механики.');
+        function cancelGame() {
+            window.gameManager.cancelGame();
+        }
+
+        function playAgain() {
+            window.location.reload();
+        }
+
+        function goHome() {
+            window.location.href = 'index.html';
+        }
+
+        // Initialize game when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            window.gameManager = new HockeyGameManager();
         });
-
-        // Очистка интервала при закрытии страницы
-        window.addEventListener('beforeunload', stopAutoRefresh);
-
-        // Инициализация страницы
-        document.addEventListener('DOMContentLoaded', initializePage);
     </script>
 </body>
 </html>
