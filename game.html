@@ -288,19 +288,19 @@
             <button class="btn-back" onclick="goHome()">← Назад</button>
             <h2>🏒 Хоккейная Битва</h2>
         </div>
-        
+
         <!-- Главное меню игры -->
         <div id="gameMenu" class="menu-screen">
             <h3>Выберите режим игры</h3>
-            
+
             <button class="btn primary" onclick="createGame()">
                 🎮 Создать игру
             </button>
-            
+
             <button class="btn secondary" onclick="showJoinForm()">
                 🚪 Присоединиться к игре
             </button>
-            
+
             <div id="joinForm" class="hidden">
                 <div class="input-group">
                     <label for="gameCodeInput">Введите код игры:</label>
@@ -314,7 +314,7 @@
                 </button>
             </div>
         </div>
-        
+
         <!-- Ожидание в комнате -->
         <div id="waitingRoom" class="waiting hidden">
             <h3>Комната создана!</h3>
@@ -327,7 +327,7 @@
                 Отменить игру
             </button>
         </div>
-        
+
         <!-- Игровой процесс -->
         <div id="gamePlay" class="game-container hidden">
             <div class="score">
@@ -341,27 +341,27 @@
                     <div class="player-score" id="player2Score">0</div>
                 </div>
             </div>
-            
+
             <div class="role-info" id="roleInfo">
                 Ваша роль
             </div>
-            
+
             <div class="zones">
                 <div class="zone" id="zone1" onclick="selectZone(1)">1</div>
                 <div class="zone" id="zone2" onclick="selectZone(2)">2</div>
                 <div class="zone" id="zone3" onclick="selectZone(3)">3</div>
                 <div class="zone" id="zone4" onclick="selectZone(4)">4</div>
             </div>
-            
+
             <button id="submitMove" class="btn primary" onclick="submitMove()" disabled>
                 Подтвердить выбор
             </button>
-            
+
             <p style="text-align: center; margin-top: 10px;">
                 Раунд <span id="roundNumber">1</span>
             </p>
         </div>
-        
+
         <!-- Окончание игры -->
         <div id="gameEnd" class="game-end hidden">
             <h3 id="finalResult">Игра окончена!</h3>
@@ -374,7 +374,7 @@
             <button class="btn secondary" onclick="goHome()">В меню</button>
         </div>
     </div>
-    
+
     <script>
         // Telegram Web App integration
         class TelegramApp {
@@ -389,7 +389,7 @@
                     this.tg.ready();
                     this.tg.expand();
                     this.user = this.tg.initDataUnsafe?.user;
-                    
+
                     if (!this.user) {
                         this.user = {
                             id: Date.now(),
@@ -419,7 +419,7 @@
             }
         }
 
-        // NocoDB API
+        // NocoDB API с улучшенной обработкой ошибок
         const API_CONFIG = {
             baseUrl: 'https://app.nocodb.com/api/v2/tables',
             token: 'bocQfycJpJsTG_tbwEf8ma8E5rhoig0njMDXFWtJ',
@@ -433,11 +433,12 @@
                     'Content-Type': 'application/json',
                     'xc-token': API_CONFIG.token
                 };
+                this.isOnline = true;
             }
 
             async makeRequest(endpoint, method = 'GET', data = null) {
                 const url = `${API_CONFIG.baseUrl}/${endpoint}`;
-                
+
                 const options = {
                     method,
                     headers: this.headers
@@ -451,20 +452,29 @@
 
                 try {
                     const response = await fetch(url, options);
+                    
                     if (!response.ok) {
-                        console.error(`HTTP error! status: ${response.status}, response:`, await response.text());
-                        throw new Error(`HTTP error! status: ${response.status}`);
+                        const errorText = await response.text();
+                        console.error(`HTTP error! status: ${response.status}, response:`, errorText);
+                        
+                        // Если ошибка API, переходим в оффлайн режим
+                        this.isOnline = false;
+                        return this.handleOfflineRequest(endpoint, method, data);
                     }
+                    
                     const result = await response.json();
                     console.log('API Response:', result);
+                    this.isOnline = true;
                     return result;
                 } catch (error) {
                     console.error('API Request failed:', error);
+                    this.isOnline = false;
                     return this.handleOfflineRequest(endpoint, method, data);
                 }
             }
 
             handleOfflineRequest(endpoint, method, data) {
+                console.log('Handling offline request:', method, endpoint, data);
                 const storageKey = 'hockey_games';
                 let games = JSON.parse(localStorage.getItem(storageKey) || '[]');
 
@@ -477,48 +487,57 @@
                     };
                     games.push(newGame);
                     localStorage.setItem(storageKey, JSON.stringify(games));
+                    console.log('Game created offline:', newGame);
                     return newGame;
                 }
 
                 if (method === 'PATCH' && endpoint.includes('records')) {
                     const gameId = endpoint.split('/').pop();
-                    console.log('Updating game with ID:', gameId, 'Data:', data);
+                    console.log('Updating game offline - ID:', gameId, 'Data:', data);
+                    
                     const gameIndex = games.findIndex(g => g.Id === gameId);
                     if (gameIndex !== -1) {
-                        games[gameIndex] = { ...games[gameIndex], ...data, updated_at: new Date().toISOString() };
+                        // Создаем полностью новый объект с обновленными данными
+                        games[gameIndex] = { 
+                            ...games[gameIndex], 
+                            ...data, 
+                            updated_at: new Date().toISOString() 
+                        };
                         localStorage.setItem(storageKey, JSON.stringify(games));
-                        console.log('Game updated in storage:', games[gameIndex]);
+                        console.log('Game updated offline:', games[gameIndex]);
                         return games[gameIndex];
+                    } else {
+                        console.error('Game not found for offline update:', gameId);
+                        return null;
                     }
-                    console.log('Game not found for update');
-                    return null;
                 }
 
                 if (method === 'GET') {
                     if (endpoint.includes('where=')) {
                         const whereClause = decodeURIComponent(endpoint.split('where=')[1]);
-                        console.log('Processing where clause:', whereClause);
-                        
+                        console.log('Processing offline where clause:', whereClause);
+
                         if (whereClause.includes('game_code,eq,')) {
                             const gameCode = whereClause.split('game_code,eq,')[1].replace(/[()]/g, '');
-                            console.log('Looking for game code:', gameCode);
+                            console.log('Looking for game code offline:', gameCode);
                             const game = games.find(g => g.game_code === gameCode);
-                            console.log('Found game:', game);
+                            console.log('Found game offline:', game);
                             return { list: game ? [game] : [] };
                         }
-                        
+
                         if (whereClause.includes('Id,eq,')) {
                             const gameId = whereClause.split('Id,eq,')[1].replace(/[()]/g, '');
-                            console.log('Looking for game ID:', gameId);
+                            console.log('Looking for game ID offline:', gameId);
                             const game = games.find(g => g.Id === gameId);
-                            console.log('Found game:', game);
+                            console.log('Found game offline:', game);
                             return { list: game ? [game] : [] };
                         }
                     }
-                    
+
                     return { list: games };
                 }
 
+                console.error('Unhandled offline request:', method, endpoint);
                 return null;
             }
 
@@ -533,11 +552,13 @@
 
             async createGame(gameData) {
                 try {
-                    return await this.makeRequest(
+                    const result = await this.makeRequest(
                         `${API_CONFIG.gamesTable}/records`,
                         'POST',
                         gameData
                     );
+                    console.log('Game created:', result);
+                    return result;
                 } catch (error) {
                     console.error('Failed to create game:', error);
                     throw error;
@@ -579,15 +600,41 @@
                         updates
                     );
                     console.log('Update result:', result);
-                    return result;
+                    
+                    if (result) {
+                        // Синхронизируем локальные данные
+                        this.syncLocalData(gameId, updates);
+                        return result;
+                    }
+                    return null;
                 } catch (error) {
                     console.error('Failed to update game:', error);
                     throw error;
                 }
             }
+
+            syncLocalData(gameId, updates) {
+                try {
+                    const storageKey = 'hockey_games';
+                    let games = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                    const gameIndex = games.findIndex(g => g.Id === gameId);
+                    
+                    if (gameIndex !== -1) {
+                        games[gameIndex] = { 
+                            ...games[gameIndex], 
+                            ...updates, 
+                            updated_at: new Date().toISOString() 
+                        };
+                        localStorage.setItem(storageKey, JSON.stringify(games));
+                        console.log('Local data synced for game:', gameId);
+                    }
+                } catch (error) {
+                    console.error('Failed to sync local data:', error);
+                }
+            }
         }
 
-        // Game Manager
+        // Game Manager с улучшенной обработкой ошибок
         class HockeyGameManager {
             constructor() {
                 this.currentUser = null;
@@ -596,6 +643,8 @@
                 this.isPlayer1 = false;
                 this.selectedZones = [];
                 this.gameUpdateInterval = null;
+                this.maxRetries = 3;
+                this.retryCount = 0;
                 this.init();
             }
 
@@ -608,7 +657,7 @@
                         username: username,
                         display_name: tgApp.getDisplayName()
                     };
-                    
+
                     this.showGameMenu();
                 } catch (error) {
                     console.error('Failed to initialize game:', error);
@@ -634,14 +683,14 @@
                         player2_move: null,
                         round_attacker: this.currentUser.telegram_id
                     };
-                    
+
                     this.currentGame = await api.createGame(gameData);
                     this.gameId = this.currentGame.Id;
                     this.isPlayer1 = true;
-                    
+
                     this.showWaitingRoom(gameCode);
                     this.startGameLoop();
-                    
+
                     this.showMessage('Игра создана! Поделитесь кодом с другом', 'success');
                 } catch (error) {
                     console.error('Failed to create game:', error);
@@ -649,80 +698,107 @@
                 }
             }
 
-        async joinGame() {
-            const gameCodeInput = document.getElementById('gameCodeInput');
-            const gameCode = gameCodeInput.value.trim().toUpperCase();
-            
-            if (!gameCode) {
-                this.showMessage('Введите код игры', 'error');
-                return;
-            }
-        
-            try {
-                const game = await api.findGameByCode(gameCode);
-                if (!game) {
-                    this.showMessage('Игра с таким кодом не найдена', 'error');
+            async joinGame() {
+                const gameCodeInput = document.getElementById('gameCodeInput');
+                const gameCode = gameCodeInput.value.trim().toUpperCase();
+
+                if (!gameCode) {
+                    this.showMessage('Введите код игры', 'error');
                     return;
                 }
-                
-                if (game.status !== 'waiting') {
-                    this.showMessage('Эта игра уже началась', 'error');
-                    return;
+
+                try {
+                    this.showMessage('Поиск игры...', 'info');
+                    
+                    const game = await api.findGameByCode(gameCode);
+                    if (!game) {
+                        this.showMessage('Игра с таким кодом не найдена', 'error');
+                        return;
+                    }
+
+                    if (game.status !== 'waiting') {
+                        this.showMessage('Эта игра уже началась или завершена', 'error');
+                        return;
+                    }
+
+                    if (game.player2_id) {
+                        this.showMessage('В этой игре уже есть второй игрок', 'error');
+                        return;
+                    }
+
+                    // Присоединяемся к игре
+                    this.gameId = game.Id;
+                    this.isPlayer1 = false;
+
+                    const updates = {
+                        player2_id: this.currentUser.telegram_id,
+                        player2_name: this.currentUser.display_name,
+                        status: 'playing'
+                    };
+
+                    console.log('Joining game - updates to send:', updates);
+                    this.showMessage('Присоединение к игре...', 'info');
+
+                    // Попробуем несколько раз обновить игру
+                    let updateResult = null;
+                    for (let i = 0; i < this.maxRetries; i++) {
+                        try {
+                            updateResult = await api.updateGame(this.gameId, updates);
+                            if (updateResult) break;
+                        } catch (error) {
+                            console.log(`Update attempt ${i + 1} failed:`, error);
+                            if (i === this.maxRetries - 1) {
+                                throw error;
+                            }
+                            await new Promise(resolve => setTimeout(resolve, 1000));
+                        }
+                    }
+
+                    if (updateResult) {
+                        this.currentGame = { ...game, ...updates };
+                        this.startGameLoop();
+                        this.showGamePlay();
+                        this.showMessage('Успешно присоединились к игре!', 'success');
+                    } else {
+                        throw new Error('Не удалось обновить состояние игры');
+                    }
+                } catch (error) {
+                    console.error('Failed to join game:', error);
+                    this.showMessage('Не удалось присоединиться к игре: ' + error.message, 'error');
                 }
-        
-                // Присоединяемся к игре
-                this.gameId = game.Id;
-                this.isPlayer1 = false;
-                
-                const updates = {
-                    player2_id: this.currentUser.telegram_id,
-                    player2_name: this.currentUser.display_name,
-                    status: 'playing'
-                };
-        
-                console.log('Joining game - updates to send:', updates);
-                
-                const updateResult = await api.updateGame(this.gameId, updates);
-                if (updateResult) {
-                    this.currentGame = { ...game, ...updates };
-                    this.showGamePlay();
-                    this.showMessage('Успешно присоединились к игре!', 'success');
-                } else {
-                    this.showMessage('Не удалось обновить игру', 'error');
-                }
-            } catch (error) {
-                console.error('Failed to join game:', error);
-                this.showMessage('Не удалось присоединиться к игре: ' + error.message, 'error');
             }
-        }
 
             async startGameLoop() {
+                if (this.gameUpdateInterval) {
+                    clearInterval(this.gameUpdateInterval);
+                }
+                
                 this.gameUpdateInterval = setInterval(async () => {
                     await this.checkGameStatus();
-                }, 1000);
+                }, 2000);
             }
 
             async checkGameStatus() {
                 try {
                     if (!this.gameId) return;
-                    
+
                     const updatedGame = await api.getGame(this.gameId);
                     if (!updatedGame) return;
-                    
+
                     console.log('Checking game status:', updatedGame);
-                    
+
                     const wasWaiting = this.currentGame?.status === 'waiting' || 
                                      !document.getElementById('waitingRoom').classList.contains('hidden');
-                    
+
                     const previousStatus = this.currentGame?.status;
                     this.currentGame = updatedGame;
-                    
+
                     // Если игра завершена
                     if (this.currentGame.status === 'finished') {
                         this.endGame();
                         return;
                     }
-                    
+
                     // Если ожидали игрока и он присоединился (для создателя)
                     if (this.currentGame.status === 'playing' && 
                         (previousStatus === 'waiting' || wasWaiting) &&
@@ -731,7 +807,7 @@
                         this.showGamePlay();
                         this.showMessage('Второй игрок присоединился! Игра началась!', 'success');
                     }
-                    
+
                     // Обновляем интерфейс если игра идет
                     if (this.currentGame.status === 'playing' && 
                         !document.getElementById('gamePlay').classList.contains('hidden')) {
@@ -740,14 +816,20 @@
                     }
                 } catch (error) {
                     console.error('Failed to check game status:', error);
+                    this.retryCount++;
+                    
+                    if (this.retryCount > 5) {
+                        this.showMessage('Проблемы с подключением к серверу', 'error');
+                        this.retryCount = 0;
+                    }
                 }
             }
 
             updateGameDisplay() {
                 if (!this.currentGame) return;
 
-                document.getElementById('player1Name').textContent = this.currentGame.player1_name;
-                document.getElementById('player2Name').textContent = this.currentGame.player2_name;
+                document.getElementById('player1Name').textContent = this.currentGame.player1_name || 'Игрок 1';
+                document.getElementById('player2Name').textContent = this.currentGame.player2_name || 'Игрок 2';
                 document.getElementById('player1Score').textContent = this.currentGame.score1 || 0;
                 document.getElementById('player2Score').textContent = this.currentGame.score2 || 0;
                 document.getElementById('roundNumber').textContent = this.currentGame.current_round || 1;
@@ -762,7 +844,7 @@
                 // Проверить, сделал ли игрок ход
                 const myMove = this.isPlayer1 ? this.currentGame.player1_move : this.currentGame.player2_move;
                 const submitBtn = document.getElementById('submitMove');
-                
+
                 if (myMove) {
                     submitBtn.textContent = 'Ожидание хода противника...';
                     submitBtn.disabled = true;
@@ -856,7 +938,7 @@
 
                     const isMyGoal = (this.isPlayer1 && newScore1 > this.currentGame.score1) ||
                                     (!this.isPlayer1 && newScore2 > this.currentGame.score2);
-                    
+
                     if (goalScored) {
                         this.showMessage(isMyGoal ? '⚽ ГОЛ! Вы забили!' : '⚽ Противник забил гол!', 
                                        isMyGoal ? 'success' : 'error');
@@ -975,7 +1057,7 @@
                     clearInterval(this.gameUpdateInterval);
                     this.gameUpdateInterval = null;
                 }
-                
+
                 if (this.gameId) {
                     try {
                         await api.updateGame(this.gameId, { status: 'cancelled' });
@@ -983,7 +1065,7 @@
                         console.error('Failed to cancel game:', error);
                     }
                 }
-                
+
                 this.showGameMenu();
                 this.showMessage('Игра отменена', 'info');
             }
