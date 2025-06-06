@@ -111,8 +111,8 @@
     <script>
         // Конфигурация NocoDB 
         const config = {
-            apiToken: 'bocQfycJpJsTG_tbwEf8ma8E5rhoig0njMDXFWtJ',
-            baseUrl: 'https://app.nocodb.com/api/v2/tables/meefo7wdwoh5mtv/records'
+            apiToken: '4lZnGEoWEQeBswBHzzp_lPPYDFFkNc7s2BlWClxb',
+            baseUrl: 'https://app.nocodb.com/api/v2/tables/mtfr4e3wywjtyua/records'
         };
 
         let tg = window.Telegram.WebApp;
@@ -221,9 +221,9 @@
                 const data = await makeRequest(config.baseUrl);
                 console.log('Получены данные из базы:', data);
 
-                // Ищем пользователя по tg_user_id
+                // Ищем пользователя по user_id
                 const existingUser = data.list ? data.list.find(user => 
-                    user.tg_user_id && user.tg_user_id.toString() === userData.telegram_id.toString()
+                    user.user_id && user.user_id.toString() === userData.telegram_id.toString()
                 ) : null;
 
                 if (existingUser) {
@@ -235,10 +235,10 @@
 
                 // Создаем нового пользователя согласно структуре таблицы
                 const newUserData = {
-                    tg_user_id: userData.telegram_id,
-                    point: 0,
-                    card: '',
-                    avatar: ''
+                    user_id: userData.telegram_id,
+                    user_name: userData.display_name,
+                    user_username: userData.username,
+                    money: 0
                 };
 
                 console.log('Данные для создания пользователя:', newUserData);
