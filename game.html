@@ -697,13 +697,15 @@
                         room_name: roomCode,
                         player1: this.currentUser.telegram_id,
                         player2: null,
-                        current_turn: this.currentUser.telegram_id, // Создатель начинает подавать
+                        current_sender: this.currentUser.telegram_id, // Создатель начинает подавать
+                        current_protect: null, // Защитника пока нет
                         player1_score: 0,
                         player2_score: 0,
                         game_state: 'waiting',
                         winner: null,
                         attacker_move: null,
-                        defender_move: null
+                        defender_move: null,
+                        current_round: 1
                     };
 
                     console.log('Creating room with data:', roomData);
@@ -758,7 +760,7 @@
                     const updateData = {
                         player2: this.currentUser.telegram_id,
                         game_state: 'game',
-                        current_turn: room.player1 // Первый ход у создателя
+                        current_protect: this.currentUser.telegram_id // Присоединившийся становится защитником
                     };
 
                     console.log('Joining room with updates:', updateData);
@@ -859,67 +861,79 @@
                 document.getElementById('player2Score').textContent = this.currentGame.player2_score || 0;
                 document.getElementById('roundNumber').textContent = this.currentGame.current_round || 1;
 
-                // СТРОГАЯ ПРОВЕРКА: сравниваем ID текущего пользователя с current_turn из таблицы
-                const isMyTurn = this.currentGame.current_turn === this.currentUser.telegram_id;
+                // НОВАЯ ЛОГИКА: проверяем роли через current_sender и current_protect
+                const iAmSender = this.currentGame.current_sender === this.currentUser.telegram_id;
+                const iAmProtector = this.currentGame.current_protect === this.currentUser.telegram_id;
                 const attackerMoved = this.currentGame.attacker_move;
                 const defenderMoved = this.currentGame.defender_move;
                 
-                console.log('=== ПРОВЕРКА ХОДА ===');
+                console.log('=== ПРОВЕРКА РОЛЕЙ ===');
                 console.log('Мой ID:', this.currentUser.telegram_id);
-                console.log('Current turn из таблицы:', this.currentGame.current_turn);
-                console.log('Это мой ход:', isMyTurn);
+                console.log('Current sender:', this.currentGame.current_sender);
+                console.log('Current protect:', this.currentGame.current_protect);
+                console.log('Я подающий:', iAmSender);
+                console.log('Я защитник:', iAmProtector);
                 console.log('Ход подающего сделан:', !!attackerMoved);
                 console.log('Ход защитника сделан:', !!defenderMoved);
-                console.log('====================');
+                console.log('======================');
                 
-                if (isMyTurn) {
-                    // Это МОЙ ход - я подающий
-                    if (!attackerMoved) {
-                        // Я подающий и еще не сделал ход
-                        document.getElementById('roleInfo').textContent = '⚽ ВАШ ХОД - выберите 1 зону для броска';
-                        this.enableZoneSelection();
-                        this.maxZoneSelection = 1;
-                        const submitBtn = document.getElementById('submitMove');
-                        submitBtn.textContent = 'Сделать бросок';
-                        submitBtn.disabled = this.selectedZones.length !== 1;
-                    } else {
-                        // Я уже сделал ход подающего, жду защитника
-                        document.getElementById('roleInfo').textContent = '⏳ Ожидание хода защитника...';
-                        this.disableZoneSelection();
-                        const submitBtn = document.getElementById('submitMove');
-                        submitBtn.textContent = 'Ожидание...';
-                        submitBtn.disabled = true;
-                    }
+                if (iAmSender && !attackerMoved) {
+                    // Я подающий и еще не сделал ход
+                    document.getElementById('roleInfo').textContent = '⚽ ВАШ ХОД - выберите 1 зону для броска';
+                    this.enableZoneSelection();
+                    this.maxZoneSelection = 1;
+                    const submitBtn = document.getElementById('submitMove');
+                    submitBtn.textContent = 'Сделать бросок';
+                    submitBtn.disabled = this.selectedZones.length !== 1;
+                } else if (iAmProtector && attackerMoved && !defenderMoved) {
+                    // Я защитник, подающий сделал ход, моя очередь защищаться
+                    document.getElementById('roleInfo').textContent = '🛡️ ВАШ ХОД - выберите 2 зоны для защиты';
+                    this.enableZoneSelection();
+                    this.maxZoneSelection = 2;
+                    const submitBtn = document.getElementById('submitMove');
+                    submitBtn.textContent = 'Поставить защиту';
+                    submitBtn.disabled = this.selectedZones.length !== 2;
+                } else if (iAmSender && attackerMoved) {
+                    // Я подающий и уже сделал ход, жду защитника
+                    document.getElementById('roleInfo').textContent = '⏳ Ожидание хода защитника...';
+                    this.disableZoneSelection();
+                    const submitBtn = document.getElementById('submitMove');
+                    submitBtn.textContent = 'Ожидание...';
+                    submitBtn.disabled = true;
+                } else if (iAmProtector && !attackerMoved) {
+                    // Я защитник, но подающий еще не сделал ход
+                    document.getElementById('roleInfo').textContent = '⏳ Противник делает бросок...';
+                    this.disableZoneSelection();
+                    const submitBtn = document.getElementById('submitMove');
+                    submitBtn.textContent = 'Ожидание...';
+                    submitBtn.disabled = true;
+                } else if (!iAmSender && !iAmProtector) {
+                    // Я не в активных ролях - жду своей очереди
+                    document.getElementById('roleInfo').textContent = '⏳ Ожидание вашей очереди...';
+                    this.disableZoneSelection();
+                    const submitBtn = document.getElementById('submitMove');
+                    submitBtn.textContent = 'Ожидание...';
+                    submitBtn.disabled = true;
                 } else {
-                    // Это НЕ МОЙ ход - я защитник или жду своей очереди
-                    if (attackerMoved && !defenderMoved) {
-                        // Подающий сделал ход, теперь МОЯ очередь защищаться
-                        document.getElementById('roleInfo').textContent = '🛡️ ВАШ ХОД - выберите 2 зоны для защиты';
-                        this.enableZoneSelection();
-                        this.maxZoneSelection = 2;
-                        const submitBtn = document.getElementById('submitMove');
-                        submitBtn.textContent = 'Поставить защиту';
-                        submitBtn.disabled = this.selectedZones.length !== 2;
-                    } else if (!attackerMoved) {
-                        // Противник еще не сделал ход подающего
-                        document.getElementById('roleInfo').textContent = '⏳ Противник делает бросок...';
-                        this.disableZoneSelection();
-                        const submitBtn = document.getElementById('submitMove');
-                        submitBtn.textContent = 'Ожидание...';
-                        submitBtn.disabled = true;
-                    } else {
-                        // Оба хода сделаны, ожидаем результат
-                        document.getElementById('roleInfo').textContent = '⏳ Обработка результата...';
-                        this.disableZoneSelection();
-                        const submitBtn = document.getElementById('submitMove');
-                        submitBtn.textContent = 'Ожидание...';
-                        submitBtn.disabled = true;
-                    }
+                    // Оба хода сделаны, ожидаем результат
+                    document.getElementById('roleInfo').textContent = '⏳ Обработка результата...';
+                    this.disableZoneSelection();
+                    const submitBtn = document.getElementById('submitMove');
+                    submitBtn.textContent = 'Ожидание...';
+                    submitBtn.disabled = true;
                 }
             }
 
             selectZone(zoneNumber) {
-                if (this.currentGame.current_turn !== this.currentUser.telegram_id) return;
+                const iAmSender = this.currentGame.current_sender === this.currentUser.telegram_id;
+                const iAmProtector = this.currentGame.current_protect === this.currentUser.telegram_id;
+                const attackerMoved = this.currentGame.attacker_move;
+                const defenderMoved = this.currentGame.defender_move;
+                
+                // Разрешаем выбор только если это мой ход
+                if (!(iAmSender && !attackerMoved) && !(iAmProtector && attackerMoved && !defenderMoved)) {
+                    return;
+                }
 
                 const zone = document.getElementById(`zone${zoneNumber}`);
                 const maxSelections = this.maxZoneSelection || 1;
@@ -942,13 +956,14 @@
                 if (this.selectedZones.length === 0) return;
 
                 try {
-                    const isMyTurn = this.currentGame.current_turn === this.currentUser.telegram_id;
+                    const iAmSender = this.currentGame.current_sender === this.currentUser.telegram_id;
+                    const iAmProtector = this.currentGame.current_protect === this.currentUser.telegram_id;
                     const attackerMoved = this.currentGame.attacker_move;
                     const defenderMoved = this.currentGame.defender_move;
                     
                     let moveData = {};
                     
-                    if (isMyTurn && !attackerMoved) {
+                    if (iAmSender && !attackerMoved) {
                         // Я подающий - делаю бросок (1 зона)
                         if (this.selectedZones.length !== 1) {
                             this.showMessage('Выберите ровно 1 зону для броска!', 'error');
@@ -958,7 +973,7 @@
                             attacker_move: JSON.stringify(this.selectedZones)
                         };
                         this.showMessage('Бросок сделан!', 'success');
-                    } else if (!isMyTurn && attackerMoved && !defenderMoved) {
+                    } else if (iAmProtector && attackerMoved && !defenderMoved) {
                         // Я защитник - ставлю защиту (2 зоны)
                         if (this.selectedZones.length !== 2) {
                             this.showMessage('Выберите ровно 2 зоны для защиты!', 'error');
@@ -1005,22 +1020,22 @@
                     // Начисляем очки
                     if (goalScored) {
                         // Гол - очко подающему
-                        if (this.currentGame.current_turn === this.currentGame.player1) {
+                        if (this.currentGame.current_sender === this.currentGame.player1) {
                             newPlayer1Score++;
                         } else {
                             newPlayer2Score++;
                         }
                     } else {
                         // Отбил - очко защитнику
-                        if (this.currentGame.current_turn === this.currentGame.player1) {
-                            newPlayer2Score++;
-                        } else {
+                        if (this.currentGame.current_protect === this.currentGame.player1) {
                             newPlayer1Score++;
+                        } else {
+                            newPlayer2Score++;
                         }
                     }
 
                     // Показываем результат
-                    const amIAttacker = this.currentGame.current_turn === this.currentUser.telegram_id;
+                    const amIAttacker = this.currentGame.current_sender === this.currentUser.telegram_id;
                     const didIScore = (goalScored && amIAttacker) || (!goalScored && !amIAttacker);
 
                     if (goalScored) {
@@ -1034,28 +1049,32 @@
                     // Проверяем окончание игры
                     const gameFinished = newPlayer1Score >= 3 || newPlayer2Score >= 3;
                     
-                    // ВАЖНО: Защитник становится следующим подающим
-                    const currentAttacker = this.currentGame.current_turn;
-                    const currentDefender = currentAttacker === this.currentGame.player1 ? 
-                        this.currentGame.player2 : this.currentGame.player1;
+                    // ВАЖНО: Меняем роли - защитник становится подающим, подающий становится защитником
+                    const currentSender = this.currentGame.current_sender;
+                    const currentProtector = this.currentGame.current_protect;
                     
-                    console.log('=== СМЕНА ХОДА ===');
-                    console.log('Текущий подающий:', currentAttacker);
-                    console.log('Текущий защитник:', currentDefender);
-                    console.log('Следующий подающий:', currentDefender);
-                    console.log('=================');
+                    console.log('=== СМЕНА РОЛЕЙ ===');
+                    console.log('Текущий подающий:', currentSender);
+                    console.log('Текущий защитник:', currentProtector);
+                    console.log('Новый подающий:', currentProtector);
+                    console.log('Новый защитник:', currentSender);
+                    console.log('==================');
 
                     const updates = {
                         player1_score: newPlayer1Score,
                         player2_score: newPlayer2Score,
                         attacker_move: null,
                         defender_move: null,
-                        current_turn: currentDefender, // Защитник становится подающим
+                        current_sender: currentProtector, // Защитник становится подающим
+                        current_protect: currentSender,  // Подающий становится защитником
+                        current_round: (this.currentGame.current_round || 1) + 1,
                         game_state: gameFinished ? 'finished' : 'game'
                     };
 
                     if (gameFinished) {
                         updates.winner = newPlayer1Score > newPlayer2Score ? this.currentGame.player1 : this.currentGame.player2;
+                        updates.current_sender = null; // Очищаем роли при окончании игры
+                        updates.current_protect = null;
                     }
 
                     console.log('Обновляем игру с данными:', updates);
