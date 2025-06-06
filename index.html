@@ -212,26 +212,26 @@
             document.cookie = `tg_username=test_user; path=/; max-age=604800`;
         }
         
-        // Загружаем баланс пользователя
-        loadUserBalance(currentUser.id);
+        // Инициализация
+        init();
+
+        async function init() {
+            await checkAndCreateUser();
+            await loadUserBalance();
+        }
         
         // Функция для проверки и создания/обновления пользователя
         async function checkAndCreateUser() {
             try {
-                // Проверяем существование пользователя
                 const response = await fetch(`${NOCODB_API}?where=(tg_user_id,eq,${currentUser.id})`, {
-                    headers: {
-                        "xc-token": NOCODB_KEY
-                    }
+                    headers: { "xc-token": NOCODB_KEY }
                 });
                 
                 const data = await response.json();
-                
                 const fullName = `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim();
                 const avatarUrl = currentUser.photo_url || '';
                 
                 if (data.list.length === 0) {
-                    // Создаем нового пользователя
                     await fetch(NOCODB_API, {
                         method: 'POST',
                         headers: {
@@ -243,11 +243,10 @@
                             name: fullName,
                             username: currentUser.username || '',
                             avatar: avatarUrl,
-                            point: 0
+                            point: 10
                         })
                     });
                 } else {
-                    // Обновляем существующего пользователя
                     const userRecord = data.list[0];
                     await fetch(`${NOCODB_API}/${userRecord.Id}`, {
                         method: 'PATCH',
@@ -268,12 +267,10 @@
         }
         
         // Функция для загрузки баланса пользователя
-        async function loadUserBalance(userId) {
+        async function loadUserBalance() {
             try {
-                const response = await fetch(`${NOCODB_API}?where=(tg_user_id,eq,${userId})`, {
-                    headers: {
-                        "xc-token": NOCODB_KEY
-                    }
+                const response = await fetch(`${NOCODB_API}?where=(tg_user_id,eq,${currentUser.id})`, {
+                    headers: { "xc-token": NOCODB_KEY }
                 });
                 
                 const data = await response.json();
