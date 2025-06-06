@@ -650,13 +650,22 @@
 
             async init() {
                 try {
-                    const telegramId = tgApp.getUserId();
-                    const username = tgApp.getUsername();
-                    this.currentUser = {
-                        telegram_id: telegramId,
-                        username: username,
-                        display_name: tgApp.getDisplayName()
-                    };
+                    // Загружаем данные пользователя из localStorage
+                    const savedUserData = localStorage.getItem('hockeyGameCurrentUser');
+                    if (savedUserData) {
+                        this.currentUser = JSON.parse(savedUserData);
+                        console.log('User data loaded from localStorage:', this.currentUser);
+                    } else {
+                        // Fallback если данных нет
+                        const telegramId = tgApp.getUserId();
+                        const username = tgApp.getUsername();
+                        this.currentUser = {
+                            telegram_id: telegramId,
+                            username: username,
+                            display_name: tgApp.getDisplayName()
+                        };
+                        console.log('Using fallback user data:', this.currentUser);
+                    }
 
                     this.showGameMenu();
                 } catch (error) {
@@ -667,11 +676,16 @@
 
             async createGame() {
                 try {
+                    if (!this.currentUser || !this.currentUser.telegram_id) {
+                        this.showMessage('Ошибка: данные пользователя не найдены', 'error');
+                        return;
+                    }
+
                     const gameCode = api.generateGameCode();
                     const gameData = {
                         game_code: gameCode,
                         player1_id: this.currentUser.telegram_id,
-                        player1_name: this.currentUser.display_name,
+                        player1_name: this.currentUser.display_name || this.currentUser.username,
                         player2_id: null,
                         player2_name: null,
                         status: 'waiting',
@@ -684,6 +698,7 @@
                         round_attacker: this.currentUser.telegram_id
                     };
 
+                    console.log('Creating game with data:', gameData);
                     this.currentGame = await api.createGame(gameData);
                     this.gameId = this.currentGame.Id;
                     this.isPlayer1 = true;
@@ -707,6 +722,11 @@
                     return;
                 }
 
+                if (!this.currentUser || !this.currentUser.telegram_id) {
+                    this.showMessage('Ошибка: данные пользователя не найдены', 'error');
+                    return;
+                }
+
                 try {
                     this.showMessage('Поиск игры...', 'info');
                     
@@ -726,17 +746,24 @@
                         return;
                     }
 
+                    if (game.player1_id === this.currentUser.telegram_id) {
+                        this.showMessage('Вы не можете присоединиться к своей же игре', 'error');
+                        return;
+                    }
+
                     // Присоединяемся к игре
                     this.gameId = game.Id;
                     this.isPlayer1 = false;
 
                     const updates = {
                         player2_id: this.currentUser.telegram_id,
-                        player2_name: this.currentUser.display_name,
+                        player2_name: this.currentUser.display_name || this.currentUser.username,
                         status: 'playing'
                     };
 
-                    console.log('Joining game - updates to send:', updates);
+                    console.log('Joining game - Game ID:', this.gameId);
+                    console.log('Joining game - Current user:', this.currentUser);
+                    console.log('Joining game - Updates to send:', updates);
                     this.showMessage('Присоединение к игре...', 'info');
 
                     // Попробуем несколько раз обновить игру
