@@ -3,12 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Игра</title>
+    <title>Тест NocoDB API</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             display: flex;
-            flex-direction: column;
             justify-content: center;
             align-items: center;
             height: 100vh;
@@ -18,184 +17,88 @@
         .container {
             text-align: center;
         }
-        .btn {
-            padding: 12px 25px;
-            font-size: 16px;
-            margin: 10px;
+        .test-btn {
+            padding: 15px 30px;
+            font-size: 18px;
+            background-color: #2196F3;
+            color: white;
             border: none;
             border-radius: 5px;
             cursor: pointer;
         }
-        .menu-btn {
-            background-color: #f44336;
-            color: white;
-        }
-        .create-btn {
-            background-color: #2196F3;
-            color: white;
-        }
-        .join-btn {
-            background-color: #4CAF50;
-            color: white;
-        }
-        .room-code {
-            font-size: 24px;
-            margin: 20px;
-            padding: 10px;
+        #result {
+            margin-top: 20px;
+            padding: 15px;
             border: 1px solid #ddd;
             border-radius: 5px;
             background-color: white;
-        }
-        .join-section {
-            display: none;
-            margin-top: 20px;
-        }
-        .code-input {
-            padding: 10px;
-            font-size: 16px;
-            margin-right: 10px;
+            max-width: 80%;
+            word-break: break-all;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <button class="btn menu-btn" id="menuBtn">В меню</button>
-        <button class="btn create-btn" id="createBtn">Создать комнату</button>
-        <button class="btn join-btn" id="showJoinBtn">Присоединиться</button>
-        
-        <div id="roomCodeDisplay" class="room-code" style="display: none;"></div>
-        
-        <div id="joinSection" class="join-section">
-            <input type="text" id="roomCodeInput" class="code-input" placeholder="Код комнаты" maxlength="3">
-            <button class="btn join-btn" id="joinBtn">Присоединиться</button>
-        </div>
+        <button class="test-btn" id="testBtn">Создать запись в NocoDB</button>
+        <div id="result">Здесь будет результат...</div>
     </div>
 
     <script>
-        // Получаем ID пользователя из cookie
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-        }
-        
-        const userId = getCookie('tg_id');
-        
-        if (!userId) {
-            alert('Ошибка: ID пользователя не найден');
-            window.location.href = 'index.html';
-        }
-        
-        // Обработчики кнопок
-        document.getElementById('menuBtn').addEventListener('click', () => {
-            window.location.href = 'index.html';
-        });
-        
-        document.getElementById('showJoinBtn').addEventListener('click', () => {
-            document.getElementById('joinSection').style.display = 'block';
-            document.getElementById('showJoinBtn').style.display = 'none';
-        });
-        
-        document.getElementById('createBtn').addEventListener('click', async () => {
+        document.getElementById('testBtn').addEventListener('click', async () => {
+            const resultDiv = document.getElementById('result');
+            resultDiv.textContent = "Отправка запроса...";
+            
             try {
-                // Генерируем 3-значный код
+                // Генерируем 3-значный код комнаты
                 const roomCode = Math.floor(100 + Math.random() * 900).toString();
                 
-                // Отправляем данные в базу
+                // Получаем текущую дату
+                const currentDate = new Date().toISOString();
+                
+                // Формируем тело запроса
+                const requestBody = {
+                    room_id: roomCode,
+                    player1: currentDate, // Используем дату вместо player1
+                    status: 'Ожидание',
+                    player2: null
+                };
+                
+                // Отправляем запрос к NocoDB API
                 const response = await fetch('https://app.nocodb.com/api/v2/tables/moziqqm4pwfy04n/records', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'xc-auth': 'YOUR_NOCODB_API_TOKEN' // Замените на ваш API токен
+                        'xc-auth': 'PYcOrnVaN8u2Ab5-Jk-IDiyAxWERltZbL1dS8Otc' // Ваш API токен
                     },
-                    body: JSON.stringify({
-                        room_id: roomCode,
-                        player1: userId,
-                        status: 'Ожидание',
-                        player2: null // Явно указываем player2 как null
-                    })
+                    body: JSON.stringify(requestBody)
                 });
                 
                 if (!response.ok) {
-                    const errorData = await response.json();
-                    console.error('Ошибка API:', errorData);
-                    throw new Error('Ошибка при создании комнаты');
+                    const errorText = await response.text();
+                    throw new Error(`Ошибка HTTP: ${response.status} - ${errorText}`);
                 }
                 
                 const data = await response.json();
-                console.log('Комната создана:', data);
                 
-                // Показываем код комнаты
-                document.getElementById('roomCodeDisplay').textContent = `Код комнаты: ${roomCode}`;
-                document.getElementById('roomCodeDisplay').style.display = 'block';
-                document.getElementById('createBtn').disabled = true;
+                // Выводим результат
+                resultDiv.innerHTML = `
+                    <strong>Запись успешно создана!</strong><br><br>
+                    <strong>Код комнаты:</strong> ${roomCode}<br>
+                    <strong>Дата:</strong> ${currentDate}<br>
+                    <strong>Статус:</strong> Ожидание<br><br>
+                    <strong>Полный ответ API:</strong><br>
+                    ${JSON.stringify(data, null, 2)}
+                `;
                 
-            } catch (error) {
-                console.error('Ошибка при создании комнаты:', error);
-                alert('Не удалось создать комнату: ' + error.message);
-            }
-        });
-        
-        document.getElementById('joinBtn').addEventListener('click', async () => {
-            const roomCode = document.getElementById('roomCodeInput').value.trim();
-            
-            if (!roomCode || roomCode.length !== 3) {
-                alert('Введите корректный 3-значный код комнаты');
-                return;
-            }
-            
-            try {
-                // Проверяем существование комнаты
-                const checkResponse = await fetch(`https://app.nocodb.com/api/v2/tables/moziqqm4pwfy04n/records?where=(room_id,eq,${roomCode})`, {
-                    headers: {
-                        'xc-auth': 'YOUR_NOCODB_API_TOKEN' // Замените на ваш API токен
-                    }
-                });
-                
-                if (!checkResponse.ok) {
-                    throw new Error('Ошибка при проверке комнаты');
-                }
-                
-                const checkData = await checkResponse.json();
-                
-                if (!checkData.list || checkData.list.length === 0) {
-                    alert('Комната не найдена');
-                    return;
-                }
-                
-                const room = checkData.list[0];
-                
-                if (room.status !== 'Ожидание') {
-                    alert('Комната уже занята');
-                    return;
-                }
-                
-                // Обновляем комнату, добавляя второго игрока
-                const updateResponse = await fetch(`https://app.nocodb.com/api/v2/tables/moziqqm4pwfy04n/records/${room.Id}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'xc-auth': 'bocQfycJpJsTG_tbwEf8ma8E5rhoig0njMDXFWtJ' // Замените на ваш API токен
-                    },
-                    body: JSON.stringify({
-                        player2: userId,
-                        status: 'Игра'
-                    })
-                });
-                
-                if (!updateResponse.ok) {
-                    throw new Error('Ошибка при обновлении комнаты');
-                }
-                
-                const updateData = await updateResponse.json();
-                console.log('Комната обновлена:', updateData);
-                
-                alert('Вы успешно присоединились к комнате!');
-                // Здесь можно перейти на экран игры
+                console.log('Успешный ответ:', data);
                 
             } catch (error) {
-                console.error('Ошибка при присоединении к комнате:', error);
-                alert('Не удалось присоединиться к комнате: ' + error.message);
+                console.error('Ошибка:', error);
+                resultDiv.innerHTML = `
+                    <strong style="color: red;">Ошибка при создании записи!</strong><br><br>
+                    ${error.message}<br><br>
+                    Проверьте консоль для подробностей.
+                `;
             }
         });
     </script>
