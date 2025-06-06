@@ -86,54 +86,11 @@
             margin: 20px 0;
         }
 
-        .loading-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: #ffffff;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 1000;
-            opacity: 1;
-            transition: opacity 0.5s ease;
-        }
-
-        .loading-overlay.hide {
-            opacity: 0;
-            pointer-events: none;
-        }
-
-        .loader {
-            width: 50px;
-            height: 50px;
-            border: 4px solid #f3f3f3;
-            border-top: 4px solid #667eea;
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
-            margin-bottom: 1rem;
-        }
-
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-
-        .loading-text {
-            color: #6c757d;
-            font-size: 1.1rem;
-        }
+        
     </style>
 </head>
 <body>
-    <!-- Загрузочная анимация -->
-    <div class="loading-overlay" id="loadingOverlay">
-        <div class="loader"></div>
-        <div class="loading-text">Инициализация...</div>
-    </div>
+    
 
     <div class="container">
         <h1>🎮 Игра</h1>
@@ -153,10 +110,10 @@
     </div>
 
     <script>
-        // Конфигурация NocoDB (используем те же параметры, что и в примере)
+        // Конфигурация NocoDB 
         const config = {
             apiToken: 'PYcOrnVaN8u2Ab5-Jk-IDiyAxWERltZbL1dS8Otc',
-            baseUrl: 'https://app.nocodb.com/api/v2/tables/moziqqm4pwfy04n/records'
+            baseUrl: 'https://app.nocodb.com/api/v2/tables/meefo7wdwoh5mtv/records'
         };
 
         let tg = window.Telegram.WebApp;
@@ -265,9 +222,9 @@
                 const data = await makeRequest(config.baseUrl);
                 console.log('Получены данные из базы:', data);
 
-                // Ищем пользователя по telegram_id
+                // Ищем пользователя по ID
                 const existingUser = data.list ? data.list.find(user => 
-                    user.telegram_id && user.telegram_id.toString() === userData.telegram_id.toString()
+                    user.Id && user.Id.toString() === userData.telegram_id.toString()
                 ) : null;
 
                 if (existingUser) {
@@ -277,14 +234,24 @@
 
                 console.log('Пользователь не найден, создаем новую запись...');
 
+                // Получаем аватарку пользователя
+                let avatarUrl = '';
+                try {
+                    if (tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.photo_url) {
+                        avatarUrl = tg.initDataUnsafe.user.photo_url;
+                    }
+                } catch (e) {
+                    console.log('Не удалось получить аватарку:', e);
+                }
+
                 // Создаем нового пользователя
                 const newUserData = {
-                    telegram_id: userData.telegram_id,
+                    Id: userData.telegram_id,
                     username: userData.username,
                     display_name: userData.display_name,
-                    games_played: 0,
-                    games_won: 0,
-                    created_at: new Date().toISOString()
+                    point: 0,
+                    card: '',
+                    avatar: avatarUrl
                 };
 
                 console.log('Данные для создания пользователя:', newUserData);
@@ -340,13 +307,7 @@
                 document.getElementById('userData').style.display = 'block';
             }
 
-            // Скрываем загрузочный экран
-            setTimeout(() => {
-                document.getElementById('loadingOverlay').classList.add('hide');
-                setTimeout(() => {
-                    document.getElementById('loadingOverlay').style.display = 'none';
-                }, 500);
-            }, 1500);
+            
         }
 
         // Запускаем инициализацию после загрузки DOM
