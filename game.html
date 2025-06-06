@@ -1,10 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Hockey Shootouts - Игра</title>
+    <title>Hockey Shootouts - Лобби</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         :root {
@@ -12,16 +11,19 @@
             --secondary: #2d3e50;
             --accent: #e74c3c;
             --accent-light: #ff6b5b;
+            --success: #27ae60;
+            --warning: #f39c12;
             --text: #ffffff;
             --text-secondary: #bdc3c7;
             --card-bg: rgba(255, 255, 255, 0.1);
+            --gradient: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
         }
 
         body {
             font-family: 'Arial', sans-serif;
             margin: 0;
             padding: 0;
-            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+            background: var(--gradient);
             color: var(--text);
             display: flex;
             flex-direction: column;
@@ -35,18 +37,20 @@
             justify-content: space-between;
             align-items: center;
             box-sizing: border-box;
-            background-color: rgba(0, 0, 0, 0.2);
+            background: rgba(0, 0, 0, 0.3);
             padding: 0 20px;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(15px);
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 2px 20px rgba(0, 0, 0, 0.3);
         }
 
         .app-title {
             font-size: 24px;
             font-weight: bold;
-            background: linear-gradient(to right, #fff, #e74c3c);
+            background: linear-gradient(45deg, #fff, var(--accent-light));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.3);
         }
 
         .balance {
@@ -54,77 +58,162 @@
             align-items: center;
             gap: 8px;
             font-weight: bold;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 8px 15px;
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.4);
+            padding: 10px 18px;
+            border-radius: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .balance:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
         }
 
         .main-content {
             flex-grow: 1;
             display: flex;
             flex-direction: column;
-            padding: 20px;
-            gap: 20px;
+            padding: 25px;
+            gap: 25px;
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+            box-sizing: border-box;
         }
 
         .section-title {
-            font-size: 20px;
-            margin-bottom: 10px;
-            color: var(--accent-light);
+            font-size: 28px;
+            font-weight: bold;
             text-align: center;
+            background: linear-gradient(45deg, var(--accent-light), #fff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            text-shadow: 0 0 20px rgba(231, 76, 60, 0.3);
+        }
+
+        .section-subtitle {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 16px;
+            margin-bottom: 20px;
+        }
+
+        .create-room-section {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .create-room-form {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            align-items: center;
+        }
+
+        .bet-input-group {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .bet-input-group label {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--text);
+        }
+
+        .bet-input {
+            padding: 15px 20px;
+            font-size: 18px;
+            border-radius: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            background: rgba(0, 0, 0, 0.3);
+            color: var(--text);
+            text-align: center;
+            width: 120px;
+            transition: all 0.3s ease;
+        }
+
+        .bet-input:focus {
+            outline: none;
+            border-color: var(--accent-light);
+            box-shadow: 0 0 20px rgba(231, 76, 60, 0.3);
         }
 
         .btn {
-            padding: 15px;
+            padding: 15px 30px;
             font-size: 18px;
             font-weight: bold;
             border: none;
-            border-radius: 12px;
+            border-radius: 15px;
             cursor: pointer;
             transition: all 0.3s ease;
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
         }
 
         .btn:disabled {
-            opacity: 0.5;
+            opacity: 0.6;
             cursor: not-allowed;
             transform: none !important;
         }
 
         .btn-primary {
-            background: linear-gradient(to right, var(--accent), var(--accent-light));
+            background: linear-gradient(45deg, var(--accent), var(--accent-light));
             color: white;
-            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
+            box-shadow: 0 6px 20px rgba(231, 76, 60, 0.4);
         }
 
         .btn-primary:hover:not(:disabled) {
             transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(231, 76, 60, 0.6);
+            box-shadow: 0 10px 30px rgba(231, 76, 60, 0.6);
         }
 
         .btn-secondary {
             background: rgba(255, 255, 255, 0.1);
             color: white;
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 2px solid rgba(255, 255, 255, 0.2);
         }
 
         .btn-secondary:hover:not(:disabled) {
             background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
         }
 
-        .create-room-container {
-            display: flex;
-            justify-content: center;
-            margin-bottom: 20px;
-        }
-
-        .create-room-btn {
-            width: 100%;
-            max-width: 300px;
+        .rooms-section {
+            background: var(--card-bg);
+            border-radius: 20px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
         }
 
         .rooms-list {
@@ -134,108 +223,197 @@
         }
 
         .room-card {
-            background: var(--card-bg);
-            border-radius: 12px;
-            padding: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
         }
 
-        .room-info {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        .room-creator {
-            font-weight: bold;
-        }
-
-        .room-bet {
-            color: var(--accent-light);
-            font-size: 14px;
-        }
-
-        .room-status {
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-
-        .modal {
-            display: none;
-            position: fixed;
+        .room-card::before {
+            content: '';
+            position: absolute;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            z-index: 100;
-            justify-content: center;
+            background: linear-gradient(45deg, transparent, rgba(231, 76, 60, 0.1), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.6s;
+        }
+
+        .room-card:hover::before {
+            transform: translateX(100%);
+        }
+
+        .room-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--accent-light);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        .room-header {
+            display: flex;
+            justify-content: space-between;
             align-items: center;
+            margin-bottom: 15px;
         }
 
-        .modal-content {
-            background: var(--secondary);
-            padding: 20px;
-            border-radius: 12px;
-            width: 90%;
-            max-width: 400px;
+        .room-creator {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .creator-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            border: 2px solid var(--accent);
+            overflow: hidden;
+        }
+
+        .creator-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .creator-info {
             display: flex;
             flex-direction: column;
-            gap: 20px;
         }
 
-        .modal-title {
-            font-size: 20px;
-            color: var(--accent-light);
-            text-align: center;
-        }
-
-        .input-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-        }
-
-        .input-group label {
-            font-size: 14px;
-            color: var(--text-secondary);
-        }
-
-        .input-group input {
-            padding: 12px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            background: rgba(0, 0, 0, 0.3);
-            color: white;
+        .creator-name {
+            font-weight: bold;
             font-size: 16px;
         }
 
-        .modal-buttons {
+        .creator-status {
+            font-size: 12px;
+            color: var(--success);
+        }
+
+        .room-bet {
+            background: linear-gradient(45deg, var(--warning), #f1c40f);
+            color: #2c3e50;
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-weight: bold;
+            font-size: 14px;
+            box-shadow: 0 3px 10px rgba(243, 156, 18, 0.3);
+        }
+
+        .room-actions {
             display: flex;
-            gap: 10px;
+            justify-content: flex-end;
         }
 
-        .modal-buttons .btn {
-            flex: 1;
+        .join-btn {
+            padding: 12px 25px;
+            font-size: 16px;
         }
 
-        .room-view {
+        .empty-message {
+            text-align: center;
+            color: var(--text-secondary);
+            padding: 40px 20px;
+            font-size: 18px;
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            border: 2px dashed rgba(255, 255, 255, 0.2);
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: var(--accent);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 15px;
+            z-index: 1000;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
             display: none;
-            flex-direction: column;
-            gap: 20px;
-            padding: 20px;
-            background: var(--card-bg);
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            font-weight: bold;
+            backdrop-filter: blur(10px);
         }
 
-        .room-players {
+        .back-to-menu-btn {
+            position: fixed;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.4);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 55px;
+            height: 55px;
             display: flex;
-            justify-content: space-around;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 24px;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .back-to-menu-btn:hover {
+            background: rgba(0, 0, 0, 0.6);
+            transform: scale(1.1);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .room-waiting {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
             gap: 20px;
+            padding: 30px;
+            background: var(--card-bg);
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        .waiting-title {
+            font-size: 24px;
+            font-weight: bold;
+            text-align: center;
+            color: var(--accent-light);
+        }
+
+        .players-display {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            gap: 20px;
+            align-items: center;
+            width: 100%;
+            max-width: 400px;
         }
 
         .player-card {
@@ -243,10 +421,10 @@
             flex-direction: column;
             align-items: center;
             gap: 10px;
-            padding: 15px;
+            padding: 20px;
             background: rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
-            flex: 1;
+            border-radius: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
         }
 
         .player-avatar {
@@ -258,8 +436,8 @@
             align-items: center;
             justify-content: center;
             font-size: 24px;
+            border: 3px solid var(--accent);
             overflow: hidden;
-            border: 2px solid var(--accent);
         }
 
         .player-avatar img {
@@ -278,295 +456,53 @@
             color: var(--text-secondary);
         }
 
-        .room-bet-display {
-            text-align: center;
-            font-size: 18px;
-            color: var(--accent-light);
-        }
-
-        .room-actions {
-            display: flex;
-            gap: 10px;
-        }
-
-        .room-actions .btn {
-            flex: 1;
-        }
-
-        .footer {
-            padding: 20px;
-            text-align: center;
-            color: var(--text-secondary);
-            font-size: 14px;
-        }
-
-        .empty-message {
-            text-align: center;
-            color: var(--text-secondary);
-            padding: 20px;
-        }
-
-        .notification {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: var(--accent);
-            color: white;
-            padding: 15px 20px;
-            border-radius: 10px;
-            z-index: 1000;
-            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
-            display: none;
-        }
-
-        .back-to-menu-btn {
-            position: fixed;
-            top: 20px;
-            left: 20px;
-            background: rgba(0, 0, 0, 0.3);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            width: 50px;
-            height: 50px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            font-size: 20px;
-            transition: all 0.3s ease;
-            backdrop-filter: blur(10px);
-        }
-
-        .back-to-menu-btn:hover {
-            background: rgba(0, 0, 0, 0.5);
-        }
-
-        .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-radius: 50%;
-            border-top-color: #fff;
-            animation: spin 1s ease-in-out infinite;
-        }
-
-        @keyframes spin {
-            to { transform: rotate(360deg); }
-        }
-
-        /* Игровые стили */
-        .game-view {
-            display: none;
-            flex-direction: column;
-            gap: 20px;
-            padding: 20px;
-            background: var(--card-bg);
-            border-radius: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .game-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 15px;
-            border-radius: 10px;
-        }
-
-        .game-score {
-            display: flex;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .player-score {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .score-number {
+        .vs-text {
             font-size: 32px;
             font-weight: bold;
             color: var(--accent-light);
         }
 
-        .score-name {
-            font-size: 14px;
-            color: var(--text-secondary);
-        }
-
-        .timer {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 5px;
-        }
-
-        .timer-number {
-            font-size: 36px;
-            font-weight: bold;
-            color: #FFD700;
-        }
-
-        .timer-label {
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-
-        .game-info {
+        .room-bet-display {
             text-align: center;
+            font-size: 20px;
+            color: var(--warning);
+            font-weight: bold;
+            background: rgba(243, 156, 18, 0.1);
             padding: 15px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
-        }
-
-        .game-field {
-            background: rgba(0, 0, 0, 0.5);
             border-radius: 15px;
-            padding: 20px;
-            margin: 20px 0;
+            border: 2px solid rgba(243, 156, 18, 0.3);
         }
 
-        .goal-areas {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            grid-template-rows: 1fr 1fr;
+        .room-controls {
+            display: flex;
             gap: 15px;
-            max-width: 300px;
-            margin: 0 auto;
-        }
-
-        .goal-area {
-            width: 120px;
-            height: 100px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-radius: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 16px;
-            font-weight: bold;
-            text-align: center;
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .goal-area:hover {
-            border-color: var(--accent-light);
-            background: rgba(231, 76, 60, 0.2);
-            transform: scale(1.05);
-        }
-
-        .goal-area.selected {
-            background: #FF8C00;
-            border-color: #FF8C00;
-            color: white;
-        }
-
-        .goal-area.goal {
-            background: rgba(76, 175, 80, 0.8);
-            border-color: #4CAF50;
-            color: white;
-        }
-
-        .goal-area.save {
-            background: rgba(231, 76, 60, 0.8);
-            border-color: var(--accent);
-            color: white;
-        }
-
-        .defense-areas {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            grid-template-rows: 1fr 1fr;
-            gap: 15px;
-            max-width: 300px;
-            margin: 0 auto;
-        }
-
-        .defense-area {
-            width: 120px;
-            height: 100px;
-            border: 3px solid rgba(255, 255, 255, 0.3);
-            border-radius: 15px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 16px;
-            font-weight: bold;
-            text-align: center;
-            background: rgba(255, 255, 255, 0.1);
-        }
-
-        .defense-area:hover {
-            border-color: var(--accent-light);
-            background: rgba(231, 76, 60, 0.2);
-            transform: scale(1.05);
-        }
-
-        .defense-area.selected {
-            background: #FF8C00;
-            border-color: #FF8C00;
-            color: white;
-        }
-
-        .game-actions {
-            display: flex;
-            justify-content: center;
-            margin-top: 20px;
-        }
-
-        .result-modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
             width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.8);
-            z-index: 1000;
-            justify-content: center;
-            align-items: center;
-        }
-
-        .result-content {
-            background: var(--secondary);
-            padding: 30px;
-            border-radius: 15px;
-            text-align: center;
             max-width: 300px;
-            width: 90%;
         }
 
-        .result-icon {
-            font-size: 80px;
-            margin-bottom: 20px;
+        .room-controls .btn {
+            flex: 1;
         }
 
-        .result-text {
-            font-size: 24px;
-            font-weight: bold;
-            margin-bottom: 15px;
-        }
+        @media (max-width: 600px) {
+            .main-content {
+                padding: 15px;
+            }
 
-        .result-description {
-            font-size: 16px;
-            color: var(--text-secondary);
-            margin-bottom: 20px;
-        }
+            .players-display {
+                grid-template-columns: 1fr;
+                gap: 15px;
+            }
 
-        .waiting-turn {
-            opacity: 0.6;
-            pointer-events: none;
+            .vs-text {
+                display: none;
+            }
+
+            .room-header {
+                flex-direction: column;
+                gap: 15px;
+                align-items: flex-start;
+            }
         }
     </style>
 </head>
@@ -583,170 +519,87 @@
     </div>
 
     <div class="main-content">
-        <!-- Основной экран с комнатами -->
-        <div id="rooms-screen">
-            <div class="section-title">Доступные комнаты</div>
+        <!-- Экран списка комнат -->
+        <div id="lobby-screen">
+            <div class="section-title">Игровое лобби</div>
+            <div class="section-subtitle">Создайте комнату или присоединитесь к существующей</div>
 
-            <div class="create-room-container">
-                <button class="btn btn-primary create-room-btn" id="create-room-btn">
-                    <span>Создать комнату</span>
-                </button>
+            <div class="create-room-section">
+                <h3 style="text-align: center; margin-bottom: 20px; color: var(--accent-light);">Создать новую комнату</h3>
+                <div class="create-room-form">
+                    <div class="bet-input-group">
+                        <label for="room-bet">Ставка</label>
+                        <input type="number" id="room-bet" class="bet-input" min="1" value="1" max="999">
+                        <small style="color: var(--text-secondary);">клюшек за игру</small>
+                    </div>
+                    <button class="btn btn-primary" id="create-room-btn">
+                        <span>🏒</span>
+                        <span>Создать комнату</span>
+                    </button>
+                </div>
             </div>
 
-            <div class="rooms-list" id="rooms-list">
-                <div class="empty-message"><div class="loading"></div> Загрузка комнат...</div>
+            <div class="rooms-section">
+                <h3 style="text-align: center; margin-bottom: 20px; color: var(--accent-light);">Доступные комнаты</h3>
+                <div class="rooms-list" id="rooms-list">
+                    <div class="empty-message">
+                        <div class="loading"></div>
+                        <br>Загрузка комнат...
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Экран просмотра комнаты -->
-        <div class="room-view" id="room-view">
-            <div class="room-bet-display" id="room-bet-display">Ставка: 1 клюшка</div>
+        <!-- Экран ожидания в комнате -->
+        <div class="room-waiting" id="room-waiting" style="display: none;">
+            <div class="waiting-title">Комната создана!</div>
 
-            <div class="room-players">
+            <div class="room-bet-display" id="room-bet-display">
+                Ставка: 1 клюшка
+            </div>
+
+            <div class="players-display">
                 <div class="player-card">
                     <div class="player-avatar" id="creator-avatar">👤</div>
                     <div class="player-name" id="creator-name">Игрок 1</div>
                     <div class="player-status">Создатель</div>
                 </div>
 
+                <div class="vs-text">VS</div>
+
                 <div class="player-card">
-                    <div class="player-avatar" id="joiner-avatar">👤</div>
-                    <div class="player-name" id="joiner-name">Ожидание игрока...</div>
-                    <div class="player-status" id="joiner-status">Свободно</div>
+                    <div class="player-avatar" id="joiner-avatar">❓</div>
+                    <div class="player-name" id="joiner-name">Ожидание...</div>
+                    <div class="player-status" id="joiner-status">Поиск игрока</div>
                 </div>
             </div>
 
-            <div class="room-actions">
-                <button class="btn btn-secondary" id="leave-room-btn">Покинуть комнату</button>
-                <button class="btn btn-primary" id="start-game-btn" style="display: none;">Начать игру</button>
-            </div>
-        </div>
-
-        <!-- Экран игры -->
-        <div class="game-view" id="game-view">
-            <div class="game-header">
-                <div class="game-score">
-                    <div class="player-score">
-                        <div class="score-number" id="creator-score">0</div>
-                        <div class="score-name" id="creator-score-name">Создатель</div>
-                    </div>
-                    <div style="font-size: 24px;">:</div>
-                    <div class="player-score">
-                        <div class="score-number" id="joiner-score">0</div>
-                        <div class="score-name" id="joiner-score-name">Присоединившийся</div>
-                    </div>
-                </div>
-                
-                <div class="timer">
-                    <div class="timer-number" id="timer-display">10</div>
-                    <div class="timer-label">секунд</div>
-                </div>
-            </div>
-
-            <div class="game-info">
-                <div id="game-status">Ожидание начала игры...</div>
-                <div id="current-turn"></div>
-            </div>
-
-            <div class="game-field" id="game-field">
-                <div id="shoot-phase" style="display: none;">
-                    <div style="text-align: center; margin-bottom: 20px;">
-                        <h3>Выберите область для удара:</h3>
-                    </div>
-                    <div class="goal-areas" id="goal-areas">
-                        <div class="goal-area" data-area="1">Верх<br>лево</div>
-                        <div class="goal-area" data-area="2">Верх<br>право</div>
-                        <div class="goal-area" data-area="3">Низ<br>лево</div>
-                        <div class="goal-area" data-area="4">Низ<br>право</div>
-                    </div>
-                </div>
-
-                <div id="defend-phase" style="display: none;">
-                    <div style="text-align: center; margin-bottom: 20px;">
-                        <h3>Выберите 2 области для защиты:</h3>
-                        <div style="font-size: 14px; color: var(--text-secondary);">
-                            Выбрано: <span id="selected-count">0</span>/2
-                        </div>
-                    </div>
-                    <div class="defense-areas" id="defense-areas">
-                        <div class="defense-area" data-area="1">Верх<br>лево</div>
-                        <div class="defense-area" data-area="2">Верх<br>право</div>
-                        <div class="defense-area" data-area="3">Низ<br>лево</div>
-                        <div class="defense-area" data-area="4">Низ<br>право</div>
-                    </div>
-                </div>
-            </div>
-
-            <div class="game-actions">
-                <button class="btn btn-primary" id="confirm-action-btn" style="display: none;">Подтвердить</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Модальное окно создания комнаты -->
-    <div class="modal" id="create-room-modal">
-        <div class="modal-content">
-            <div class="modal-title">Создать комнату</div>
-
-            <div class="input-group">
-                <label for="room-bet">Ставка (клюшек)</label>
-                <input type="number" id="room-bet" min="1" value="1">
-            </div>
-
-            <div class="modal-buttons">
-                <button class="btn btn-secondary" id="cancel-create-btn">Отмена</button>
-                <button class="btn btn-primary" id="confirm-create-btn">
-                    <span class="btn-text">Создать</span>
+            <div class="room-controls">
+                <button class="btn btn-secondary" id="leave-room-btn">Покинуть</button>
+                <button class="btn btn-primary" id="start-game-btn" style="display: none;">
+                    <span>🎮</span>
+                    <span>Начать игру</span>
                 </button>
             </div>
         </div>
     </div>
 
-    <!-- Модальное окно результата -->
-    <div class="result-modal" id="result-modal">
-        <div class="result-content">
-            <div class="result-icon" id="result-icon">⚽</div>
-            <div class="result-text" id="result-text">Результат</div>
-            <div class="result-description" id="result-description">Описание</div>
-            <button class="btn btn-primary" id="result-ok-btn">Продолжить</button>
-        </div>
-    </div>
-
-    <div class="footer">
-        Hockey Shootouts © 2023
-    </div>
-
     <script>
-        // Конфигурация Nocodb
+        // Конфигурация API
         const NOCODB_API = "https://app.nocodb.com/api/v1/db/data/weamcfo6/p27jdsmk69wuimh/meefo7wdwoh5mtv";
         const ROOMS_API = "https://app.nocodb.com/api/v1/db/data/weamcfo6/p27jdsmk69wuimh/mznem6p3jztsgsl";
         const NOCODB_KEY = "bocQfycJpJsTG_tbwEf8ma8E5rhoig0njMDXFWtJ";
 
-        // Инициализация Telegram WebApp
+        // Глобальные переменные
         const tg = window.Telegram.WebApp;
         let currentUser = null;
         let currentRoom = null;
         let roomsRefreshInterval = null;
         let roomRefreshInterval = null;
-        let gameRefreshInterval = null;
-        let timerInterval = null;
         let userBalance = 0;
-        let isLeaving = false;
         let isCreatingRoom = false;
 
-        // Игровые переменные
-        let gameState = {
-            isCreatorTurn: true, // создатель всегда начинает
-            phase: 'shoot', // 'shoot' или 'defend'
-            selectedShootArea: null,
-            selectedDefenseAreas: [],
-            timeLeft: 10,
-            isMyTurn: false,
-            gameStarted: false,
-            waitingForResult: false
-        };
-
-        // Проверяем, запущено ли в Telegram WebApp
+        // Инициализация пользователя
         if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
             currentUser = tg.initDataUnsafe.user;
         } else {
@@ -758,53 +611,32 @@
             };
         }
 
-        // Инициализация
+        // Запуск приложения
         init();
 
         async function init() {
-            userBalance = await loadUserBalance(currentUser.id);
+            await loadUserBalance(currentUser.id);
             await cleanupUserRooms();
             await checkActiveRoom();
-            await loadRooms();
 
             if (!currentRoom) {
+                await loadRooms();
                 roomsRefreshInterval = setInterval(loadRooms, 3000);
             }
         }
 
-        // Обработчики кнопок
-        document.getElementById('create-room-btn').addEventListener('click', showCreateRoomModal);
-        document.getElementById('cancel-create-btn').addEventListener('click', hideCreateRoomModal);
-        document.getElementById('confirm-create-btn').addEventListener('click', createRoom);
-        document.getElementById('leave-room-btn').addEventListener('click', leaveRoom);
-        document.getElementById('start-game-btn').addEventListener('click', startGame);
-        document.getElementById('confirm-action-btn').addEventListener('click', confirmAction);
-        document.getElementById('result-ok-btn').addEventListener('click', hideResultModal);
-
-        // Обработчики игровых областей
-        document.addEventListener('click', function(e) {
-            if (e.target.classList.contains('goal-area')) {
-                selectGoalArea(e.target);
-            }
-            if (e.target.classList.contains('defense-area')) {
-                selectDefenseArea(e.target);
-            }
-        });
-
-        // Функция для загрузки баланса пользователя
+        // Загрузка баланса пользователя
         async function loadUserBalance(userId) {
             try {
                 const response = await fetch(`${NOCODB_API}?where=(tg_user_id,eq,${userId})`, {
-                    headers: {
-                        "xc-token": NOCODB_KEY
-                    }
+                    headers: { "xc-token": NOCODB_KEY }
                 });
 
                 const data = await response.json();
                 if (data.list.length > 0) {
                     const balance = data.list[0].point || 0;
                     document.getElementById('balance').textContent = `Клюшек: ${balance} 🏒`;
-                    userBalance = balance; // Обновляем глобальную переменную
+                    userBalance = balance;
                     return balance;
                 }
                 document.getElementById('balance').textContent = `Клюшек: 0 🏒`;
@@ -812,75 +644,110 @@
                 return 0;
             } catch (error) {
                 console.error("Ошибка при загрузке баланса:", error);
-                document.getElementById('balance').textContent = `Клюшек: 0 🏒`;
                 userBalance = 0;
                 return 0;
             }
         }
 
-        // Функция для очистки старых комнат пользователя
+        // Очистка старых комнат пользователя
         async function cleanupUserRooms() {
             try {
+                // Удаляем комнаты, где пользователь создатель
                 const creatorRooms = await fetch(`${ROOMS_API}?where=(id_creator,eq,${currentUser.id})`, {
-                    headers: {
-                        "xc-token": NOCODB_KEY
-                    }
+                    headers: { "xc-token": NOCODB_KEY }
                 });
-
                 const creatorData = await creatorRooms.json();
                 for (let room of creatorData.list) {
-                    await fetch(`${ROOMS_API}/${room.Id}`, {
-                        method: 'DELETE',
-                        headers: {
-                            "xc-token": NOCODB_KEY
-                        }
-                    });
+                    if (room.status !== 'playing') {
+                        await fetch(`${ROOMS_API}/${room.Id}`, {
+                            method: 'DELETE',
+                            headers: { "xc-token": NOCODB_KEY }
+                        });
+                    }
                 }
 
+                // Убираем пользователя из комнат, где он присоединился
                 const joinerRooms = await fetch(`${ROOMS_API}?where=(id_joining,eq,${currentUser.id})`, {
-                    headers: {
-                        "xc-token": NOCODB_KEY
-                    }
+                    headers: { "xc-token": NOCODB_KEY }
                 });
-
                 const joinerData = await joinerRooms.json();
                 for (let room of joinerData.list) {
-                    await fetch(`${ROOMS_API}/${room.Id}`, {
-                        method: 'PATCH',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            "xc-token": NOCODB_KEY
-                        },
-                        body: JSON.stringify({
-                            id_joining: null,
-                            name_joining: null,
-                            avatar_joining: null,
-                            status: "open"
-                        })
-                    });
+                    if (room.status !== 'playing') {
+                        await fetch(`${ROOMS_API}/${room.Id}`, {
+                            method: 'PATCH',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                "xc-token": NOCODB_KEY
+                            },
+                            body: JSON.stringify({
+                                id_joining: null,
+                                name_joining: null,
+                                avatar_joining: null,
+                                status: "open"
+                            })
+                        });
+                    }
                 }
             } catch (error) {
                 console.error("Ошибка при очистке комнат:", error);
             }
         }
 
-        // Функция для загрузки списка комнат
+        // Проверка активной комнаты
+        async function checkActiveRoom() {
+            try {
+                // Проверяем, есть ли активная игра
+                const creatorResponse = await fetch(`${ROOMS_API}?where=(id_creator,eq,${currentUser.id})`, {
+                    headers: { "xc-token": NOCODB_KEY }
+                });
+                const creatorData = await creatorResponse.json();
+
+                if (creatorData.list.length > 0) {
+                    const room = creatorData.list[0];
+                    if (room.status === 'playing') {
+                        // Переходим в игру
+                        window.location.href = `game_game.html?room=${room.Id}`;
+                        return;
+                    } else {
+                        showRoomWaiting(room);
+                        return;
+                    }
+                }
+
+                const joinerResponse = await fetch(`${ROOMS_API}?where=(id_joining,eq,${currentUser.id})`, {
+                    headers: { "xc-token": NOCODB_KEY }
+                });
+                const joinerData = await joinerResponse.json();
+
+                if (joinerData.list.length > 0) {
+                    const room = joinerData.list[0];
+                    if (room.status === 'playing') {
+                        // Переходим в игру
+                        window.location.href = `game_game.html?room=${room.Id}`;
+                        return;
+                    } else {
+                        showRoomWaiting(room);
+                    }
+                }
+            } catch (error) {
+                console.error("Ошибка при проверке активной комнаты:", error);
+            }
+        }
+
+        // Загрузка списка комнат
         async function loadRooms() {
             try {
-                // Обновляем баланс перед загрузкой комнат
                 await loadUserBalance(currentUser.id);
 
                 const response = await fetch(`${ROOMS_API}?where=(status,eq,open)`, {
-                    headers: {
-                        "xc-token": NOCODB_KEY
-                    }
+                    headers: { "xc-token": NOCODB_KEY }
                 });
 
                 const data = await response.json();
                 const roomsList = document.getElementById('rooms-list');
 
                 if (data.list.length === 0) {
-                    roomsList.innerHTML = '<div class="empty-message">Нет доступных комнат</div>';
+                    roomsList.innerHTML = '<div class="empty-message">🏒 Нет доступных комнат<br><small>Создайте первую!</small></div>';
                     return;
                 }
 
@@ -891,100 +758,69 @@
 
                     const roomCard = document.createElement('div');
                     roomCard.className = 'room-card';
+
+                    const canJoin = userBalance >= room.bet;
+
                     roomCard.innerHTML = `
-                        <div class="room-info">
-                            <div class="room-creator">${room.name_creator || 'Игрок'}</div>
-                            <div class="room-bet">Ставка: ${room.bet} клюшек</div>
-                            <div class="room-status">Ожидание игрока...</div>
+                        <div class="room-header">
+                            <div class="room-creator">
+                                <div class="creator-avatar">${getAvatarDisplay(room.avatar_creator)}</div>
+                                <div class="creator-info">
+                                    <div class="creator-name">${room.name_creator || 'Игрок'}</div>
+                                    <div class="creator-status">• В сети</div>
+                                </div>
+                            </div>
+                            <div class="room-bet">🏒 ${room.bet}</div>
                         </div>
-                        <button class="btn btn-primary join-room-btn" data-room-id="${room.Id}" ${userBalance < room.bet ? 'disabled' : ''}>
-                            ${userBalance < room.bet ? 'Не хватает клюшек' : 'Присоединиться'}
-                        </button>
+                        <div class="room-actions">
+                            <button class="btn btn-primary join-btn" data-room-id="${room.Id}" ${!canJoin ? 'disabled' : ''}>
+                                ${canJoin ? '🎮 Присоединиться' : '❌ Недостаточно клюшек'}
+                            </button>
+                        </div>
                     `;
 
                     roomsList.appendChild(roomCard);
                 });
 
-                document.querySelectorAll('.join-room-btn').forEach(btn => {
+                // Добавляем обработчики
+                document.querySelectorAll('.join-btn').forEach(btn => {
                     btn.addEventListener('click', joinRoom);
                 });
 
             } catch (error) {
                 console.error("Ошибка при загрузке комнат:", error);
-                document.getElementById('rooms-list').innerHTML = '<div class="empty-message">Ошибка загрузки комнат</div>';
+                document.getElementById('rooms-list').innerHTML = '<div class="empty-message">❌ Ошибка загрузки комнат</div>';
             }
         }
 
-        // Функция для проверки активной комнаты пользователя
-        async function checkActiveRoom() {
-            try {
-                const creatorResponse = await fetch(`${ROOMS_API}?where=(id_creator,eq,${currentUser.id})`, {
-                    headers: {
-                        "xc-token": NOCODB_KEY
-                    }
-                });
-
-                const creatorData = await creatorResponse.json();
-
-                if (creatorData.list.length > 0) {
-                    showRoom(creatorData.list[0]);
-                    return;
-                }
-
-                const joinerResponse = await fetch(`${ROOMS_API}?where=(id_joining,eq,${currentUser.id})`, {
-                    headers: {
-                        "xc-token": NOCODB_KEY
-                    }
-                });
-
-                const joinerData = await joinerResponse.json();
-
-                if (joinerData.list.length > 0) {
-                    showRoom(joinerData.list[0]);
-                }
-
-            } catch (error) {
-                console.error("Ошибка при проверке активной комнаты:", error);
+        // Получение аватара для отображения
+        function getAvatarDisplay(avatarUrl) {
+            if (avatarUrl) {
+                return `<img src="${avatarUrl}" alt="Аватар" onerror="this.parentElement.innerHTML='👤'">`;
             }
+            return '👤';
         }
 
-        // Функция для показа модального окна создания комнаты
-        function showCreateRoomModal() {
-            document.getElementById('create-room-modal').style.display = 'flex';
-        }
-
-        // Функция для скрытия модального окна создания комнаты
-        function hideCreateRoomModal() {
-            if (isCreatingRoom) return;
-            document.getElementById('create-room-modal').style.display = 'none';
-        }
-
-        // Функция для создания комнаты
+        // Создание комнаты
         async function createRoom() {
             if (isCreatingRoom) return;
 
             const bet = parseInt(document.getElementById('room-bet').value);
-
             if (isNaN(bet) || bet <= 0) {
-                showNotification('Введите корректную ставку');
+                showNotification('❌ Введите корректную ставку');
                 return;
             }
 
-            // Получаем актуальный баланс перед проверкой
             const currentBalance = await loadUserBalance(currentUser.id);
-
             if (currentBalance < bet) {
-                showNotification('Недостаточно клюшек для создания комнаты');
+                showNotification('❌ Недостаточно клюшек для создания комнаты');
                 return;
             }
 
             isCreatingRoom = true;
-            const confirmBtn = document.getElementById('confirm-create-btn');
-            const cancelBtn = document.getElementById('cancel-create-btn');
-            
-            confirmBtn.innerHTML = '<div class="loading"></div> Создание...';
-            confirmBtn.disabled = true;
-            cancelBtn.disabled = true;
+            const createBtn = document.getElementById('create-room-btn');
+            createBtn.innerHTML = '<div class="loading"></div> Создание...';
+            createBtn.disabled = true;
 
             try {
                 const fullName = `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim();
@@ -1010,67 +846,54 @@
                     })
                 });
 
-                const data = await response.json();
-                showRoom(data);
-                hideCreateRoomModal();
-                showNotification('Комната создана! Ожидание второго игрока...');
+                const room = await response.json();
+                showRoomWaiting(room);
+                showNotification('✅ Комната создана! Ожидание игрока...');
 
             } catch (error) {
                 console.error("Ошибка при создании комнаты:", error);
-                showNotification('Ошибка при создании комнаты');
+                showNotification('❌ Ошибка при создании комнаты');
             } finally {
                 isCreatingRoom = false;
-                confirmBtn.innerHTML = '<span class="btn-text">Создать</span>';
-                confirmBtn.disabled = false;
-                cancelBtn.disabled = false;
+                createBtn.innerHTML = '<span>🏒</span><span>Создать комнату</span>';
+                createBtn.disabled = false;
             }
         }
 
-        // Функция для получения аватара пользователя
+        // Получение аватара пользователя
         async function getUserAvatar(userId) {
             try {
                 const response = await fetch(`${NOCODB_API}?where=(tg_user_id,eq,${userId})`, {
-                    headers: {
-                        "xc-token": NOCODB_KEY
-                    }
+                    headers: { "xc-token": NOCODB_KEY }
                 });
-
                 const data = await response.json();
-                if (data.list.length > 0) {
-                    return data.list[0].avatar || '';
-                }
-                return '';
+                return data.list.length > 0 ? (data.list[0].avatar || '') : '';
             } catch (error) {
                 console.error("Ошибка при получении аватара:", error);
                 return '';
             }
         }
 
-        // Функция для присоединения к комнате
+        // Присоединение к комнате
         async function joinRoom(event) {
             const roomId = event.target.getAttribute('data-room-id');
 
             try {
                 const roomResponse = await fetch(`${ROOMS_API}/${roomId}`, {
-                    headers: {
-                        "xc-token": NOCODB_KEY
-                    }
+                    headers: { "xc-token": NOCODB_KEY }
                 });
-
                 const room = await roomResponse.json();
 
-                // Получаем актуальный баланс перед проверкой
                 const currentBalance = await loadUserBalance(currentUser.id);
-
-                if (currentBalance < room.bet) {
-                    showNotification('Недостаточно клюшек для присоединения');
+                if (currentBalance < room.bet){
+                    showNotification('❌ Недостаточно клюшек для присоединения');
                     return;
                 }
 
                 const fullName = `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim();
                 const userAvatar = await getUserAvatar(currentUser.id);
 
-                const updateResponse = await fetch(`${ROOMS_API}/${roomId}`, {
+                await fetch(`${ROOMS_API}/${roomId}`, {
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1084,41 +907,134 @@
                     })
                 });
 
-                const updatedRoom = await updateResponse.json();
-                showRoom(updatedRoom);
-                showNotification('Вы присоединились к комнате!');
+                const updatedRoom = await fetch(`${ROOMS_API}/${roomId}`, {
+                    headers: { "xc-token": NOCODB_KEY }
+                });
+                const roomData = await updatedRoom.json();
+
+                showRoomWaiting(roomData);
+                showNotification('✅ Вы присоединились к комнате!');
 
             } catch (error) {
                 console.error("Ошибка при присоединении к комнате:", error);
-                showNotification('Ошибка при присоединении к комнате');
+                showNotification('❌ Ошибка при присоединении к комнате');
             }
         }
 
-        // Функция для выхода из комнаты
+        // Показ экрана ожидания в комнате
+        function showRoomWaiting(room) {
+            currentRoom = room;
+
+            if (roomsRefreshInterval) {
+                clearInterval(roomsRefreshInterval);
+                roomsRefreshInterval = null;
+            }
+
+            if (roomRefreshInterval) clearInterval(roomRefreshInterval);
+            roomRefreshInterval = setInterval(() => refreshRoom(room.Id), 2000);
+
+            document.getElementById('lobby-screen').style.display = 'none';
+            document.getElementById('room-waiting').style.display = 'flex';
+
+            // Обновляем информацию о комнате
+            document.getElementById('room-bet-display').textContent = `Ставка: ${room.bet} клюшек`;
+            document.getElementById('creator-name').textContent = room.name_creator || 'Игрок';
+            document.getElementById('creator-avatar').innerHTML = getAvatarDisplay(room.avatar_creator);
+
+            if (room.id_joining) {
+                document.getElementById('joiner-name').textContent = room.name_joining || 'Игрок';
+                document.getElementById('joiner-status').textContent = 'Готов к игре';
+                document.getElementById('joiner-avatar').innerHTML = getAvatarDisplay(room.avatar_joining);
+
+                const leaveBtn = document.getElementById('leave-room-btn');
+                leaveBtn.disabled = true;
+                leaveBtn.textContent = 'Заблокировано';
+
+                if (room.id_creator == currentUser.id) {
+                    document.getElementById('start-game-btn').style.display = 'flex';
+                }
+            } else {
+                document.getElementById('joiner-name').textContent = 'Ожидание...';
+                document.getElementById('joiner-status').textContent = 'Поиск игрока';
+                document.getElementById('joiner-avatar').innerHTML = '❓';
+
+                const leaveBtn = document.getElementById('leave-room-btn');
+                leaveBtn.disabled = false;
+                leaveBtn.textContent = 'Покинуть';
+
+                document.getElementById('start-game-btn').style.display = 'none';
+            }
+        }
+
+        // Обновление состояния комнаты
+        async function refreshRoom(roomId) {
+            try {
+                const response = await fetch(`${ROOMS_API}/${roomId}`, {
+                    headers: { "xc-token": NOCODB_KEY }
+                });
+
+                if (!response.ok) {
+                    showNotification('🚪 Комната закрыта');
+                    hideLobby();
+                    return;
+                }
+
+                const room = await response.json();
+                if (!room || !room.Id) {
+                    showNotification('🚪 Комната закрыта');
+                    hideLobby();
+                    return;
+                }
+
+                if (room.status === 'playing') {
+                    // Переходим к игре
+                    window.location.href = `game_game.html?room=${room.Id}`;
+                    return;
+                }
+
+                currentRoom = room;
+
+                // Обновляем интерфейс
+                if (room.id_joining) {
+                    document.getElementById('joiner-name').textContent = room.name_joining || 'Игрок';
+                    document.getElementById('joiner-status').textContent = 'Готов к игре';
+                    document.getElementById('joiner-avatar').innerHTML = getAvatarDisplay(room.avatar_joining);
+
+                    const leaveBtn = document.getElementById('leave-room-btn');
+                    leaveBtn.disabled = true;
+                    leaveBtn.textContent = 'Заблокировано';
+
+                    if (room.id_creator == currentUser.id) {
+                        document.getElementById('start-game-btn').style.display = 'flex';
+                    }
+                } else {
+                    document.getElementById('joiner-name').textContent = 'Ожидание...';
+                    document.getElementById('joiner-status').textContent = 'Поиск игрока';
+                    document.getElementById('joiner-avatar').innerHTML = '❓';
+
+                    const leaveBtn = document.getElementById('leave-room-btn');
+                    leaveBtn.disabled = false;
+                    leaveBtn.textContent = 'Покинуть';
+
+                    document.getElementById('start-game-btn').style.display = 'none';
+                }
+
+            } catch (error) {
+                console.error("Ошибка при обновлении комнаты:", error);
+                showNotification('❌ Ошибка соединения');
+                hideLobby();
+            }
+        }
+
+        // Покидание комнаты
         async function leaveRoom() {
             if (!currentRoom) return;
-
-            if (currentRoom.status === 'playing') {
-                if (confirm('Вы уверены, что хотите покинуть игру? Ставка будет возвращена сопернику.')) {
-                    await endGameDueToLeave();
-                }
-                return;
-            }
-
-            if (currentRoom.id_joining && currentRoom.id_creator && currentRoom.status === 'waiting') {
-                showNotification('Нельзя покинуть комнату когда присоединился второй игрок!');
-                return;
-            }
-
-            isLeaving = true;
 
             try {
                 if (currentRoom.id_creator == currentUser.id) {
                     await fetch(`${ROOMS_API}/${currentRoom.Id}`, {
                         method: 'DELETE',
-                        headers: {
-                            "xc-token": NOCODB_KEY
-                        }
+                        headers: { "xc-token": NOCODB_KEY }
                     });
                 } else {
                     await fetch(`${ROOMS_API}/${currentRoom.Id}`, {
@@ -1136,185 +1052,27 @@
                     });
                 }
 
-                hideRoom();
-                showNotification('Вы покинули комнату');
+                hideLobby();
+                showNotification('🚪 Вы покинули комнату');
 
             } catch (error) {
                 console.error("Ошибка при выходе из комнаты:", error);
-                showNotification('Ошибка при выходе из комнаты');
-            }
-
-            isLeaving = false;
-        }
-
-        // Функция для показа экрана комнаты
-        function showRoom(room) {
-            currentRoom = room;
-
-            if (roomsRefreshInterval) {
-                clearInterval(roomsRefreshInterval);
-                roomsRefreshInterval = null;
-            }
-
-            if (room.status === 'playing') {
-                initializeGame(room);
-                return;
-            }
-
-            if (roomRefreshInterval) clearInterval(roomRefreshInterval);
-            roomRefreshInterval = setInterval(() => refreshRoom(room.Id), 2000);
-
-            document.getElementById('rooms-screen').style.display = 'none';
-            document.getElementById('room-view').style.display = 'flex';
-            document.getElementById('game-view').style.display = 'none';
-
-            document.getElementById('room-bet-display').textContent = `Ставка: ${room.bet} клюшек`;
-            document.getElementById('creator-name').textContent = room.name_creator || 'Игрок';
-
-            setPlayerAvatar('creator-avatar', room.avatar_creator);
-
-            if (room.id_joining) {
-                document.getElementById('joiner-name').textContent = room.name_joining || 'Игрок';
-                document.getElementById('joiner-status').textContent = 'Присоединился';
-
-                setPlayerAvatar('joiner-avatar', room.avatar_joining);
-
-                const leaveBtn = document.getElementById('leave-room-btn');
-                leaveBtn.disabled = true;
-                leaveBtn.textContent = 'Выход заблокирован';
-
-                if (room.id_creator == currentUser.id) {
-                    document.getElementById('start-game-btn').style.display = 'flex';
-                }
-            } else {
-                document.getElementById('joiner-name').textContent = 'Ожидание игрока...';
-                document.getElementById('joiner-status').textContent = 'Свободно';
-                document.getElementById('joiner-avatar').innerHTML = '👤';
-                
-                const leaveBtn = document.getElementById('leave-room-btn');
-                leaveBtn.disabled = false;
-                leaveBtn.textContent = 'Покинуть комнату';
-                
-                document.getElementById('start-game-btn').style.display = 'none';
+                showNotification('❌ Ошибка при выходе из комнаты');
             }
         }
 
-        // Функция для установки аватара игрока
-        function setPlayerAvatar(elementId, avatarUrl) {
-            const avatarElement = document.getElementById(elementId);
-            if (avatarUrl) {
-                avatarElement.innerHTML = `<img src="${avatarUrl}" alt="Аватар" onerror="this.parentElement.innerHTML='👤'">`;
-            } else {
-                avatarElement.innerHTML = '👤';
-            }
-        }
-
-        // Функция для скрытия экрана комнаты
-        function hideRoom() {
-            currentRoom = null;
-            if (roomRefreshInterval) {
-                clearInterval(roomRefreshInterval);
-                roomRefreshInterval = null;
-            }
-            if (gameRefreshInterval) {
-                clearInterval(gameRefreshInterval);
-                gameRefreshInterval = null;
-            }
-            if (timerInterval) {
-                clearInterval(timerInterval);
-                timerInterval = null;
-            }
-
-            roomsRefreshInterval = setInterval(loadRooms, 3000);
-
-            document.getElementById('rooms-screen').style.display = 'flex';
-            document.getElementById('room-view').style.display = 'none';
-            document.getElementById('game-view').style.display = 'none';
-
-            loadRooms();
-        }
-
-        // Функция для обновления состояния комнаты
-        async function refreshRoom(roomId) {
-            try {
-                const response = await fetch(`${ROOMS_API}/${roomId}`, {
-                    headers: {
-                        "xc-token": NOCODB_KEY
-                    }
-                });
-
-                if (!response.ok) {
-                    showNotification('Соперник покинул игру. Комната закрыта.');
-                    hideRoom();
-                    return;
-                }
-
-                const room = await response.json();
-
-                if (!room || !room.Id) {
-                    showNotification('Соперник покинул игру. Комната закрыта.');
-                    hideRoom();
-                    return;
-                }
-
-                if (room.status === 'playing') {
-                    initializeGame(room);
-                    return;
-                }
-
-                const wasOpponentInRoom = currentRoom.id_joining;
-                const isOpponentInRoom = room.id_joining;
-
-                if (wasOpponentInRoom && !isOpponentInRoom && !isLeaving) {
-                    showNotification('Соперник покинул игру!');
-                }
-
-                currentRoom = room;
-
-                if (room.id_joining) {
-                    document.getElementById('joiner-name').textContent = room.name_joining || 'Игрок';
-                    document.getElementById('joiner-status').textContent = 'Присоединился';
-
-                    setPlayerAvatar('joiner-avatar', room.avatar_joining);
-
-                    const leaveBtn = document.getElementById('leave-room-btn');
-                    leaveBtn.disabled = true;
-                    leaveBtn.textContent = 'Выход заблокирован';
-
-                    if (room.id_creator == currentUser.id) {
-                        document.getElementById('start-game-btn').style.display = 'flex';
-                    }
-                } else {
-                    document.getElementById('joiner-name').textContent = 'Ожидание игрока...';
-                    document.getElementById('joiner-status').textContent = 'Свободно';
-                    document.getElementById('joiner-avatar').innerHTML = '👤';
-                    
-                    const leaveBtn = document.getElementById('leave-room-btn');
-                    leaveBtn.disabled = false;
-                    leaveBtn.textContent = 'Покинуть комнату';
-                    
-                    document.getElementById('start-game-btn').style.display = 'none';
-                }
-
-            } catch (error) {
-                console.error("Ошибка при обновлении комнаты:", error);
-                showNotification('Ошибка соединения. Возвращение к списку комнат...');
-                hideRoom();
-            }
-        }
-
-        // Функция для начала игры
+        // Начало игры
         async function startGame() {
             if (!currentRoom || !currentRoom.id_joining) {
-                showNotification('Нужно дождаться второго игрока');
+                showNotification('❌ Нужно дождаться второго игрока');
                 return;
             }
 
             try {
-                // Снимаем ставки с игроков
+                // Снимаем ставки
                 await deductBets();
 
-                // Обновляем статус комнаты и начинаем игру
+                // Обновляем статус комнаты
                 await fetch(`${ROOMS_API}/${currentRoom.Id}`, {
                     method: 'PATCH',
                     headers: {
@@ -1331,30 +1089,22 @@
                     })
                 });
 
-                const updatedRoom = await fetch(`${ROOMS_API}/${currentRoom.Id}`, {
-                    headers: {
-                        "xc-token": NOCODB_KEY
-                    }
-                });
-
-                const roomData = await updatedRoom.json();
-                initializeGame(roomData);
+                // Переходим к игре
+                window.location.href = `game_game.html?room=${currentRoom.Id}`;
 
             } catch (error) {
                 console.error("Ошибка при начале игры:", error);
-                showNotification('Ошибка при начале игры');
+                showNotification('❌ Ошибка при начале игры');
             }
         }
 
-        // Функция для снятия ставок
+        // Снятие ставок
         async function deductBets() {
             const bet = currentRoom.bet;
 
-            // Снимаем ставку с создателя
+            // Создатель
             const creatorResponse = await fetch(`${NOCODB_API}?where=(tg_user_id,eq,${currentRoom.id_creator})`, {
-                headers: {
-                    "xc-token": NOCODB_KEY
-                }
+                headers: { "xc-token": NOCODB_KEY }
             });
             const creatorData = await creatorResponse.json();
             if (creatorData.list.length > 0) {
@@ -1370,11 +1120,9 @@
                 });
             }
 
-            // Снимаем ставку с присоединившегося
+            // Присоединившийся
             const joinerResponse = await fetch(`${NOCODB_API}?where=(tg_user_id,eq,${currentRoom.id_joining})`, {
-                headers: {
-                    "xc-token": NOCODB_KEY
-                }
+                headers: { "xc-token": NOCODB_KEY }
             });
             const joinerData = await joinerResponse.json();
             if (joinerData.list.length > 0) {
@@ -1390,529 +1138,27 @@
                 });
             }
 
-            // Обновляем баланс текущего пользователя
             userBalance = await loadUserBalance(currentUser.id);
         }
 
-        // Функция для инициализации игры
-        function initializeGame(room) {
-            currentRoom = room;
-            
+        // Скрытие лобби
+        function hideLobby() {
+            currentRoom = null;
+
             if (roomRefreshInterval) {
                 clearInterval(roomRefreshInterval);
                 roomRefreshInterval = null;
             }
 
-            if (gameRefreshInterval) clearInterval(gameRefreshInterval);
-            gameRefreshInterval = setInterval(() => refreshGame(room.Id), 1000);
+            roomsRefreshInterval = setInterval(loadRooms, 3000);
 
-            document.getElementById('rooms-screen').style.display = 'none';
-            document.getElementById('room-view').style.display = 'none';
-            document.getElementById('game-view').style.display = 'flex';
+            document.getElementById('lobby-screen').style.display = 'block';
+            document.getElementById('room-waiting').style.display = 'none';
 
-            // Определяем, чей ход и что делать
-            const isCreator = currentRoom.id_creator == currentUser.id;
-            const isCreatorTurn = (currentRoom.send === null); // если send пустой, значит ход создателя (подача)
-            
-            gameState.isCreatorTurn = isCreatorTurn;
-            gameState.phase = isCreatorTurn ? 'shoot' : 'defend';
-            gameState.isMyTurn = (isCreator && isCreatorTurn) || (!isCreator && !isCreatorTurn);
-            gameState.timeLeft = currentRoom.sec || 10;
-
-            updateGameUI();
-            startTimer();
+            loadRooms();
         }
 
-        // Функция для обновления UI игры
-        function updateGameUI() {
-            document.getElementById('creator-score').textContent = currentRoom.xp_cr || 0;
-            document.getElementById('joiner-score').textContent = currentRoom.xp_joi || 0;
-            document.getElementById('creator-score-name').textContent = currentRoom.name_creator || 'Создатель';
-            document.getElementById('joiner-score-name').textContent = currentRoom.name_joining || 'Присоединившийся';
-            document.getElementById('timer-display').textContent = gameState.timeLeft;
-
-            const isCreator = currentRoom.id_creator == currentUser.id;
-
-            if (gameState.isMyTurn) {
-                if (gameState.phase === 'shoot') {
-                    document.getElementById('game-status').textContent = 'Ваш ход - выберите область для удара';
-                    document.getElementById('current-turn').textContent = '';
-                    document.getElementById('shoot-phase').style.display = 'block';
-                    document.getElementById('defend-phase').style.display = 'none';
-                } else {
-                    document.getElementById('game-status').textContent = 'Ваш ход - выберите области для защиты';
-                    document.getElementById('current-turn').textContent = '';
-                    document.getElementById('shoot-phase').style.display = 'none';
-                    document.getElementById('defend-phase').style.display = 'block';
-                }
-                document.getElementById('game-field').classList.remove('waiting-turn');
-            } else {
-                if (gameState.phase === 'shoot') {
-                    document.getElementById('game-status').textContent = 'Ход соперника';
-                    document.getElementById('current-turn').textContent = 'Соперник выбирает область для удара...';
-                } else {
-                    document.getElementById('game-status').textContent = 'Ход соперника';
-                    document.getElementById('current-turn').textContent = 'Соперник выбирает области для защиты...';
-                }
-                document.getElementById('shoot-phase').style.display = 'none';
-                document.getElementById('defend-phase').style.display = 'none';
-                document.getElementById('game-field').classList.add('waiting-turn');
-            }
-
-            // Очищаем выбранные области
-            clearSelections();
-        }
-
-        // Функция для запуска таймера
-        function startTimer() {
-            if (timerInterval) clearInterval(timerInterval);
-            
-            timerInterval = setInterval(async () => {
-                if (gameState.timeLeft > 0) {
-                    gameState.timeLeft--;
-                    document.getElementById('timer-display').textContent = gameState.timeLeft;
-
-                    // Обновляем таймер в базе (только создатель отправляет обновления таймера)
-                    if (currentRoom.id_creator == currentUser.id) {
-                        await updateTimer();
-                    }
-                } else {
-                    // Время вышло
-                    clearInterval(timerInterval);
-                    await handleTimeOut();
-                }
-            }, 1000);
-        }
-
-        // Функция для обновления таймера в базе
-        async function updateTimer() {
-            try {
-                await fetch(`${ROOMS_API}/${currentRoom.Id}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        "xc-token": NOCODB_KEY
-                    },
-                    body: JSON.stringify({
-                        sec: gameState.timeLeft
-                    })
-                });
-            } catch (error) {
-                console.error("Ошибка при обновлении таймера:", error);
-            }
-        }
-
-        // Функция для обработки истечения времени
-        async function handleTimeOut() {
-            if (!gameState.isMyTurn) return;
-
-            if (gameState.phase === 'shoot') {
-                // Автовыбор для удара
-                const randomArea = Math.floor(Math.random() * 4) + 1;
-                gameState.selectedShootArea = randomArea;
-                await submitShootAction();
-            } else {
-                // Автовыбор для защиты
-                const areas = [1, 2, 3, 4];
-                const selectedAreas = [];
-                for (let i = 0; i < 2; i++) {
-                    const randomIndex = Math.floor(Math.random() * areas.length);
-                    selectedAreas.push(areas[randomIndex]);
-                    areas.splice(randomIndex, 1);
-                }
-                gameState.selectedDefenseAreas = selectedAreas;
-                await submitDefendAction();
-            }
-        }
-
-        // Функция для выбора области удара
-        function selectGoalArea(element) {
-            if (!gameState.isMyTurn || gameState.phase !== 'shoot') return;
-            
-            clearSelections();
-            element.classList.add('selected');
-            gameState.selectedShootArea = parseInt(element.getAttribute('data-area'));
-            document.getElementById('confirm-action-btn').style.display = 'block';
-        }
-
-        // Функция для выбора области защиты
-        function selectDefenseArea(element) {
-            if (!gameState.isMyTurn || gameState.phase !== 'defend') return;
-            
-            const area = parseInt(element.getAttribute('data-area'));
-            
-            if (element.classList.contains('selected')) {
-                element.classList.remove('selected');
-                gameState.selectedDefenseAreas = gameState.selectedDefenseAreas.filter(a => a !== area);
-            } else {
-                if (gameState.selectedDefenseAreas.length < 2) {
-                    element.classList.add('selected');
-                    gameState.selectedDefenseAreas.push(area);
-                }
-            }
-
-            document.getElementById('selected-count').textContent = gameState.selectedDefenseAreas.length;
-            
-            if (gameState.selectedDefenseAreas.length === 2) {
-                document.getElementById('confirm-action-btn').style.display = 'block';
-            } else {
-                document.getElementById('confirm-action-btn').style.display = 'none';
-            }
-        }
-
-        // Функция для очистки выбранных областей
-        function clearSelections() {
-            document.querySelectorAll('.goal-area.selected, .defense-area.selected').forEach(el => {
-                el.classList.remove('selected');
-            });
-            document.querySelectorAll('.goal-area').forEach(el => {
-                el.classList.remove('goal', 'save');
-            });
-            gameState.selectedShootArea = null;
-            gameState.selectedDefenseAreas = [];
-            document.getElementById('selected-count').textContent = '0';
-            document.getElementById('confirm-action-btn').style.display = 'none';
-        }
-
-        // Функция для подтверждения действия
-        async function confirmAction() {
-            if (gameState.phase === 'shoot' && gameState.selectedShootArea) {
-                await submitShootAction();
-            } else if (gameState.phase === 'defend' && gameState.selectedDefenseAreas.length === 2) {
-                await submitDefendAction();
-            }
-        }
-
-        // Функция для отправки действия удара
-        async function submitShootAction() {
-            try {
-                clearInterval(timerInterval);
-                
-                await fetch(`${ROOMS_API}/${currentRoom.Id}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        "xc-token": NOCODB_KEY
-                    },
-                    body: JSON.stringify({
-                        send: gameState.selectedShootArea,
-                        sec: 10
-                    })
-                });
-
-                document.getElementById('confirm-action-btn').style.display = 'none';
-                document.getElementById('shoot-phase').style.display = 'none';
-                document.getElementById('game-status').textContent = 'Ожидание защиты соперника...';
-                gameState.isMyTurn = false;
-                gameState.timeLeft = 10;
-
-            } catch (error) {
-                console.error("Ошибка при отправке удара:", error);
-            }
-        }
-
-        // Функция для отправки действия защиты
-        async function submitDefendAction() {
-            try {
-                clearInterval(timerInterval);
-                
-                // Формируем двузначное число для блока
-                const blockValue = parseInt(gameState.selectedDefenseAreas.sort().join(''));
-                
-                await fetch(`${ROOMS_API}/${currentRoom.Id}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        "xc-token": NOCODB_KEY
-                    },
-                    body: JSON.stringify({
-                        block: blockValue
-                    })
-                });
-
-                // Теперь вычисляем результат
-                await calculateRoundResult();
-
-            } catch (error) {
-                console.error("Ошибка при отправке защиты:", error);
-            }
-        }
-
-        // Функция для вычисления результата раунда
-        async function calculateRoundResult() {
-            if (!currentRoom.send || !currentRoom.block) return;
-
-            const shootArea = currentRoom.send;
-            const blockAreas = currentRoom.block.toString().split('').map(n => parseInt(n));
-            
-            const isGoal = !blockAreas.includes(shootArea);
-            
-            let newCreatorScore = currentRoom.xp_cr || 0;
-            let newJoinerScore = currentRoom.xp_joi || 0;
-
-            if (isGoal) {
-                // Очко получает тот, кто подавал (создатель)
-                newCreatorScore++;
-            } else {
-                // Очко получает защитник (присоединившийся)
-                newJoinerScore++;
-            }
-
-            // Показываем результат раунда
-            showRoundResult(isGoal, shootArea, blockAreas);
-
-            // Проверяем завершение игры
-            if (newCreatorScore >= 3 || newJoinerScore >= 3) {
-                await endGame(newCreatorScore >= 3 ? 'creator' : 'joiner', newCreatorScore, newJoinerScore);
-                return;
-            }
-
-            // Обновляем счет и подготавливаем следующий раунд
-            await fetch(`${ROOMS_API}/${currentRoom.Id}`, {
-                method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                    "xc-token": NOCODB_KEY
-                },
-                body: JSON.stringify({
-                    xp_cr: newCreatorScore,
-                    xp_joi: newJoinerScore,
-                    send: null,
-                    block: null,
-                    sec: 10
-                })
-            });
-
-            // Меняем роли: теперь присоединившийся подает, создатель защищается
-            setTimeout(() => {
-                gameState.isCreatorTurn = false; // теперь ход присоединившегося
-                gameState.phase = 'shoot';
-                const isCreator = currentRoom.id_creator == currentUser.id;
-                gameState.isMyTurn = !isCreator; // если я создатель, то не мой ход
-                gameState.timeLeft = 10;
-                
-                currentRoom.xp_cr = newCreatorScore;
-                currentRoom.xp_joi = newJoinerScore;
-                updateGameUI();
-                startTimer();
-            }, 3000);
-        }
-
-        // Функция для показа результата раунда
-        function showRoundResult(isGoal, shootArea, blockAreas) {
-            // Показываем визуально результат на поле
-            const goalAreas = document.querySelectorAll('.goal-area');
-            const defenseAreas = document.querySelectorAll('.defense-area');
-            
-            goalAreas.forEach((area, index) => {
-                const areaNumber = index + 1;
-                if (areaNumber === shootArea) {
-                    area.classList.add(isGoal ? 'goal' : 'save');
-                }
-            });
-
-            defenseAreas.forEach((area, index) => {
-                const areaNumber = index + 1;
-                if (blockAreas.includes(areaNumber)) {
-                    area.classList.add('selected');
-                }
-            });
-
-            // Показываем модальное окно с результатом
-            const resultModal = document.getElementById('result-modal');
-            const resultIcon = document.getElementById('result-icon');
-            const resultText = document.getElementById('result-text');
-            const resultDescription = document.getElementById('result-description');
-
-            if (isGoal) {
-                resultIcon.textContent = '⚽';
-                resultIcon.style.color = '#4CAF50';
-                resultText.textContent = 'ГОЛ!';
-                resultText.style.color = '#4CAF50';
-                resultDescription.textContent = 'Удар прошел мимо защиты';
-            } else {
-                resultIcon.textContent = '🛡️';
-                resultIcon.style.color = '#f44336';
-                resultText.textContent = 'СЕЙВ!';
-                resultText.style.color = '#f44336';
-                resultDescription.textContent = 'Защитник блокировал удар';
-            }
-
-            resultModal.style.display = 'flex';
-        }
-
-        // Функция для скрытия модального окна результата
-        function hideResultModal() {
-            document.getElementById('result-modal').style.display = 'none';
-        }
-
-        // Функция для завершения игры
-        async function endGame(winner, creatorScore, joinerScore) {
-            const winnerId = winner === 'creator' ? currentRoom.id_creator : currentRoom.id_joining;
-            const winnerName = winner === 'creator' ? currentRoom.name_creator : currentRoom.name_joining;
-            const prize = currentRoom.bet * 2;
-
-            // Начисляем выигрыш
-            const winnerResponse = await fetch(`${NOCODB_API}?where=(tg_user_id,eq,${winnerId})`, {
-                headers: {
-                    "xc-token": NOCODB_KEY
-                }
-            });
-            const winnerData = await winnerResponse.json();
-            if (winnerData.list.length > 0) {
-                await fetch(`${NOCODB_API}/${winnerData.list[0].Id}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        "xc-token": NOCODB_KEY
-                    },
-                    body: JSON.stringify({
-                        point: (winnerData.list[0].point || 0) + prize
-                    })
-                });
-            }
-
-            // Удаляем комнату
-            await fetch(`${ROOMS_API}/${currentRoom.Id}`, {
-                method: 'DELETE',
-                headers: {
-                    "xc-token": NOCODB_KEY
-                }
-            });
-
-            // Показываем результат
-            const isWinner = winnerId == currentUser.id;
-            const resultMessage = isWinner ? 
-                `Поздравляем! Вы выиграли ${prize} клюшек! Финальный счет: ${creatorScore}:${joinerScore}` : 
-                `Вы проиграли. Победитель: ${winnerName}. Финальный счет: ${creatorScore}:${joinerScore}`;
-
-            showNotification(resultMessage);
-
-            // Обновляем баланс
-            userBalance = await loadUserBalance(currentUser.id);
-
-            // Возвращаемся к списку комнат
-            setTimeout(() => {
-                hideRoom();
-            }, 5000);
-        }
-
-        // Функция для завершения игры при выходе игрока
-        async function endGameDueToLeave() {
-            if (!currentRoom) return;
-
-            const opponentId = currentRoom.id_creator == currentUser.id ? currentRoom.id_joining : currentRoom.id_creator;
-            const refund = currentRoom.bet * 2;
-
-            // Возвращаем ставку сопернику
-            const opponentResponse = await fetch(`${NOCODB_API}?where=(tg_user_id,eq,${opponentId})`, {
-                headers: {
-                    "xc-token": NOCODB_KEY
-                }
-            });
-            const opponentData = await opponentResponse.json();
-            if (opponentData.list.length > 0) {
-                await fetch(`${NOCODB_API}/${opponentData.list[0].Id}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        "xc-token": NOCODB_KEY
-                    },
-                    body: JSON.stringify({
-                        point: (opponentData.list[0].point || 0) + refund
-                    })
-                });
-            }
-
-            // Удаляем комнату
-            await fetch(`${ROOMS_API}/${currentRoom.Id}`, {
-                method: 'DELETE',
-                headers: {
-                    "xc-token": NOCODB_KEY
-                }
-            });
-
-            hideRoom();
-        }
-
-        // Функция для обновления игры
-        async function refreshGame(roomId) {
-            try {
-                const response = await fetch(`${ROOMS_API}/${roomId}`, {
-                    headers: {
-                        "xc-token": NOCODB_KEY
-                    }
-                });
-
-                if (!response.ok) {
-                    showNotification('Соперник вышел, ставка возвращена');
-                    hideRoom();
-                    return;
-                }
-
-                const room = await response.json();
-
-                if (!room || !room.Id) {
-                    showNotification('Соперник вышел, ставка возвращена');
-                    hideRoom();
-                    return;
-                }
-
-                currentRoom = room;
-
-                // Обновляем таймер если мы не на своем ходу
-                if (!gameState.isMyTurn && room.sec !== gameState.timeLeft) {
-                    gameState.timeLeft = room.sec || 0;
-                    document.getElementById('timer-display').textContent = gameState.timeLeft;
-                }
-
-                // Проверяем смену фаз игры
-                const isCreator = currentRoom.id_creator == currentUser.id;
-                
-                if (room.send && !room.block) {
-                    // Подача была сделана, теперь защита
-                    if (!isCreator && gameState.phase === 'shoot') {
-                        gameState.phase = 'defend';
-                        gameState.isMyTurn = true;
-                        gameState.timeLeft = room.sec || 10;
-                        updateGameUI();
-                        startTimer();
-                    }
-                } else if (room.send && room.block) {
-                    // Оба действия выполнены, вычисляем результат
-                    if (currentRoom.id_creator == currentUser.id) {
-                        await calculateRoundResult();
-                    }
-                } else if (!room.send && !room.block) {
-                    // Новый раунд начался
-                    const newCreatorTurn = (room.xp_cr + room.xp_joi) % 2 === 0; // четные раунды - создатель, нечетные - присоединившийся
-                    
-                    if (gameState.isCreatorTurn !== newCreatorTurn) {
-                        gameState.isCreatorTurn = newCreatorTurn;
-                        gameState.phase = 'shoot';
-                        gameState.isMyTurn = (isCreator && newCreatorTurn) || (!isCreator && !newCreatorTurn);
-                        gameState.timeLeft = room.sec || 10;
-                        updateGameUI();
-                        startTimer();
-                    }
-                }
-
-                // Обновляем счет
-                if (room.xp_cr !== undefined) {
-                    document.getElementById('creator-score').textContent = room.xp_cr;
-                }
-                if (room.xp_joi !== undefined) {
-                    document.getElementById('joiner-score').textContent = room.xp_joi;
-                }
-
-            } catch (error) {
-                console.error("Ошибка при обновлении игры:", error);
-                showNotification('Соперник вышел, ставка возвращена');
-                hideRoom();
-            }
-        }
-
-        // Функция для показа уведомлений
+        // Показ уведомлений
         function showNotification(message) {
             const notification = document.getElementById('notification');
             notification.textContent = message;
@@ -1920,28 +1166,18 @@
 
             setTimeout(() => {
                 notification.style.display = 'none';
-            }, 5000);
+            }, 4000);
         }
 
-        // Обработчик закрытия страницы
-        window.addEventListener('beforeunload', async function(e) {
-            if (currentRoom && !isLeaving) {
-                if (currentRoom.status === 'playing') {
-                    await endGameDueToLeave();
-                } else {
-                    await leaveRoom();
-                }
-            }
-        });
+        // Обработчики событий
+        document.getElementById('create-room-btn').addEventListener('click', createRoom);
+        document.getElementById('leave-room-btn').addEventListener('click', leaveRoom);
+        document.getElementById('start-game-btn').addEventListener('click', startGame);
 
-        // Обработчик изменения видимости страницы
-        document.addEventListener('visibilitychange', function() {
-            if (document.hidden && currentRoom && !isLeaving) {
-                if (currentRoom.status === 'playing') {
-                    endGameDueToLeave();
-                } else {
-                    leaveRoom();
-                }
+        // Обработка закрытия страницы
+        window.addEventListener('beforeunload', () => {
+            if (currentRoom) {
+                leaveRoom();
             }
         });
     </script>
