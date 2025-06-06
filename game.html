@@ -703,7 +703,7 @@
                     
                     // Если ожидали игрока и он присоединился
                     if (this.currentGame.status === 'playing' && 
-                        document.getElementById('waitingRoom').style.display !== 'none') {
+                        !document.getElementById('waitingRoom').classList.contains('hidden')) {
                         this.showGamePlay();
                         this.showMessage('Второй игрок присоединился! Игра началась!', 'success');
                     }
