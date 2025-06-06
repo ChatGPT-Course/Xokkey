@@ -1,1 +1,96 @@
 
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Игра - Хоккейная Битва</title>
+    <link href="style.css" rel="stylesheet">
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <button class="btn-back" onclick="goHome()">← Назад</button>
+            <h2>🏒 Хоккейная Битва</h2>
+        </div>
+        
+        <div id="gameSearch" class="game-search">
+            <h3>Поиск игры...</h3>
+            <div class="loader"></div>
+            <button class="btn secondary" onclick="cancelSearch()">Отменить</button>
+        </div>
+        
+        <div id="gameArea" class="game-area hidden">
+            <div class="game-info">
+                <div class="players">
+                    <div class="player">
+                        <span id="player1Name">Игрок 1</span>
+                        <span id="player1Score" class="score">0</span>
+                    </div>
+                    <div class="vs">VS</div>
+                    <div class="player">
+                        <span id="player2Name">Игрок 2</span>
+                        <span id="player2Score" class="score">0</span>
+                    </div>
+                </div>
+                
+                <div class="round-info">
+                    <p id="roleText">Вы нападающий</p>
+                    <p id="roundText">Раунд 1</p>
+                </div>
+            </div>
+            
+            <div class="hockey-field">
+                <div class="field-title">
+                    <h4 id="actionTitle">Выберите зону для броска:</h4>
+                </div>
+                
+                <div class="goal-zones">
+                    <div class="zone" data-zone="1" onclick="selectZone(1)">
+                        <span>1</span>
+                    </div>
+                    <div class="zone" data-zone="2" onclick="selectZone(2)">
+                        <span>2</span>
+                    </div>
+                    <div class="zone" data-zone="3" onclick="selectZone(3)">
+                        <span>3</span>
+                    </div>
+                    <div class="zone" data-zone="4" onclick="selectZone(4)">
+                        <span>4</span>
+                    </div>
+                </div>
+                
+                <button id="confirmBtn" class="btn primary hidden" onclick="confirmAction()">
+                    Подтвердить выбор
+                </button>
+            </div>
+            
+            <div id="waitingArea" class="waiting hidden">
+                <h4>Ожидание хода соперника...</h4>
+                <div class="loader"></div>
+            </div>
+            
+            <div id="resultArea" class="result hidden">
+                <h4 id="resultText">Результат раунда</h4>
+                <button class="btn primary" onclick="nextRound()">Следующий раунд</button>
+            </div>
+        </div>
+        
+        <div id="gameEnd" class="game-end hidden">
+            <h3 id="finalResult">Игра окончена!</h3>
+            <div class="final-stats">
+                <p>Финальный счет:</p>
+                <p><span id="finalPlayer1"></span>: <span id="finalScore1"></span></p>
+                <p><span id="finalPlayer2"></span>: <span id="finalScore2"></span></p>
+            </div>
+            <button class="btn primary" onclick="playAgain()">Играть снова</button>
+            <button class="btn secondary" onclick="goHome()">В меню</button>
+        </div>
+    </div>
+    
+    <script src="telegram.js"></script>
+    <script src="api.js"></script>
+    <script src="game.js"></script>
+</body>
+</html>
