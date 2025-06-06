@@ -659,6 +659,7 @@
                 this.gameId = null;
                 this.isPlayer1 = false;
                 this.selectedZones = [];
+                this.maxZoneSelection = 1;
                 this.gameUpdateInterval = null;
                 this.maxRetries = 3;
                 this.retryCount = 0;
@@ -696,11 +697,13 @@
                         room_name: roomCode,
                         player1: this.currentUser.telegram_id,
                         player2: null,
-                        current_turn: null,
+                        current_turn: this.currentUser.telegram_id, // Создатель начинает подавать
                         player1_score: 0,
                         player2_score: 0,
                         game_state: 'waiting',
-                        winner: null
+                        winner: null,
+                        attacker_move: null,
+                        defender_move: null
                     };
 
                     console.log('Creating room with data:', roomData);
@@ -802,6 +805,7 @@
                                      !document.getElementById('waitingRoom').classList.contains('hidden');
 
                     const previousStatus = this.currentGame?.game_state;
+                    const previousGame = { ...this.currentGame };
                     this.currentGame = updatedRoom;
 
                     // Если игра завершена
@@ -817,6 +821,16 @@
                         console.log('Second player joined, starting game!');
                         this.showGamePlay();
                         this.showMessage('Второй игрок присоединился! Игра началась!', 'success');
+                        return;
+                    }
+
+                    // Проверяем, нужно ли обработать результат раунда
+                    if (this.currentGame.game_state === 'game' && 
+                        this.currentGame.attacker_move && 
+                        this.currentGame.defender_move &&
+                        (!previousGame.attacker_move || !previousGame.defender_move)) {
+                        // Оба игрока сделали ходы, обрабатываем результат
+                        await this.processRoundResult();
                     }
 
                     // Обновляем интерфейс если игра идет
@@ -842,19 +856,48 @@
                 document.getElementById('player2Name').textContent = 'Игрок 2';
                 document.getElementById('player1Score').textContent = this.currentGame.player1_score || 0;
                 document.getElementById('player2Score').textContent = this.currentGame.player2_score || 0;
-                document.getElementById('roundNumber').textContent = 1; // Упрощенная версия
+                document.getElementById('roundNumber').textContent = this.currentGame.current_round || 1;
 
-                // Определяем чей ход
+                // Определяем роли и чей ход
                 const isMyTurn = this.currentGame.current_turn === this.currentUser.telegram_id;
+                const amIAttacker = this.currentGame.current_turn === this.currentUser.telegram_id;
+                
+                // Проверяем, есть ли уже ход подающего
+                const attackerMoved = this.currentGame.attacker_move;
+                const defenderMoved = this.currentGame.defender_move;
                 
                 if (isMyTurn) {
-                    document.getElementById('roleInfo').textContent = '🎮 Ваш ход - выберите зону';
-                    this.enableZoneSelection();
-                    const submitBtn = document.getElementById('submitMove');
-                    submitBtn.textContent = 'Подтвердить выбор';
-                    submitBtn.disabled = true;
+                    if (amIAttacker && !attackerMoved) {
+                        // Я подающий и еще не сделал ход
+                        document.getElementById('roleInfo').textContent = '⚽ Вы подаете - выберите 1 зону для броска';
+                        this.enableZoneSelection();
+                        this.maxZoneSelection = 1;
+                        const submitBtn = document.getElementById('submitMove');
+                        submitBtn.textContent = 'Сделать бросок';
+                        submitBtn.disabled = true;
+                    } else if (!amIAttacker && attackerMoved && !defenderMoved) {
+                        // Я защитник, подающий уже сделал ход, мне нужно защищаться
+                        document.getElementById('roleInfo').textContent = '🛡️ Вы защищаетесь - выберите 2 зоны для блока';
+                        this.enableZoneSelection();
+                        this.maxZoneSelection = 2;
+                        const submitBtn = document.getElementById('submitMove');
+                        submitBtn.textContent = 'Поставить защиту';
+                        submitBtn.disabled = true;
+                    } else {
+                        document.getElementById('roleInfo').textContent = '⏳ Ожидание результата...';
+                        this.disableZoneSelection();
+                        const submitBtn = document.getElementById('submitMove');
+                        submitBtn.textContent = 'Ожидание...';
+                        submitBtn.disabled = true;
+                    }
                 } else {
-                    document.getElementById('roleInfo').textContent = '⏳ Ход противника...';
+                    if (!attackerMoved) {
+                        document.getElementById('roleInfo').textContent = '⏳ Противник делает бросок...';
+                    } else if (!defenderMoved) {
+                        document.getElementById('roleInfo').textContent = '⏳ Противник ставит защиту...';
+                    } else {
+                        document.getElementById('roleInfo').textContent = '⏳ Обработка результата...';
+                    }
                     this.disableZoneSelection();
                     const submitBtn = document.getElementById('submitMove');
                     submitBtn.textContent = 'Ожидание...';
@@ -863,12 +906,10 @@
             }
 
             selectZone(zoneNumber) {
-                const myMove = this.isPlayer1 ? this.currentGame.player1_move : this.currentGame.player2_move;
-                if (myMove) return;
+                if (this.currentGame.current_turn !== this.currentUser.telegram_id) return;
 
                 const zone = document.getElementById(`zone${zoneNumber}`);
-                const isCurrentPlayerAttacker = this.currentGame.round_attacker === this.currentUser.telegram_id;
-                const maxSelections = isCurrentPlayerAttacker ? 1 : 2;
+                const maxSelections = this.maxZoneSelection || 1;
 
                 if (zone.classList.contains('selected')) {
                     zone.classList.remove('selected');
@@ -888,11 +929,26 @@
                 if (this.selectedZones.length === 0) return;
 
                 try {
-                    const moveData = this.isPlayer1 ? 
-                        { player1_move: JSON.stringify(this.selectedZones) } :
-                        { player2_move: JSON.stringify(this.selectedZones) };
+                    const isAttacker = this.currentGame.current_turn === this.currentUser.telegram_id;
+                    const attackerMoved = this.currentGame.attacker_move;
+                    
+                    let moveData = {};
+                    
+                    if (isAttacker && !attackerMoved) {
+                        // Подающий делает бросок
+                        moveData = {
+                            attacker_move: JSON.stringify(this.selectedZones)
+                        };
+                        this.showMessage('Бросок сделан!', 'info');
+                    } else if (!isAttacker && attackerMoved) {
+                        // Защитник ставит защиту
+                        moveData = {
+                            defender_move: JSON.stringify(this.selectedZones)
+                        };
+                        this.showMessage('Защита поставлена!', 'info');
+                    }
 
-                    await api.updateGame(this.gameId, moveData);
+                    await api.updateRoom(this.gameId, moveData);
 
                     this.selectedZones = [];
                     document.querySelectorAll('.zone').forEach(zone => {
@@ -900,80 +956,83 @@
                     });
 
                     const submitBtn = document.getElementById('submitMove');
-                    submitBtn.textContent = 'Ожидание хода противника...';
+                    submitBtn.textContent = 'Ожидание...';
                     submitBtn.disabled = true;
                     this.disableZoneSelection();
 
-                    this.showMessage('Ход отправлен!', 'info');
                 } catch (error) {
                     console.error('Failed to submit move:', error);
                     this.showMessage('Ошибка отправки хода', 'error');
                 }
             }
 
-            async checkRoundResults() {
-                if (!this.currentGame.player1_move || !this.currentGame.player2_move) return;
-
+            async processRoundResult() {
                 try {
-                    const player1Move = JSON.parse(this.currentGame.player1_move);
-                    const player2Move = JSON.parse(this.currentGame.player2_move);
-
-                    const attackerMove = this.currentGame.round_attacker === this.currentGame.player1_id ? 
-                        player1Move[0] : player2Move[0];
-                    const defenderMoves = this.currentGame.round_attacker === this.currentGame.player1_id ? 
-                        player2Move : player1Move;
+                    const attackerMove = JSON.parse(this.currentGame.attacker_move)[0]; // Подающий выбирает 1 зону
+                    const defenderMoves = JSON.parse(this.currentGame.defender_move); // Защитник выбирает 2 зоны
 
                     const goalScored = !defenderMoves.includes(attackerMove);
+                    
+                    let newPlayer1Score = this.currentGame.player1_score || 0;
+                    let newPlayer2Score = this.currentGame.player2_score || 0;
 
-                    let newScore1 = this.currentGame.score1;
-                    let newScore2 = this.currentGame.score2;
-
+                    // Начисляем очки
                     if (goalScored) {
-                        if (this.currentGame.round_attacker === this.currentGame.player1_id) {
-                            newScore1++;
+                        // Гол - очко подающему
+                        if (this.currentGame.current_turn === this.currentGame.player1) {
+                            newPlayer1Score++;
                         } else {
-                            newScore2++;
+                            newPlayer2Score++;
                         }
                     } else {
-                        if (this.currentGame.round_attacker === this.currentGame.player1_id) {
-                            newScore2++;
+                        // Отбил - очко защитнику
+                        if (this.currentGame.current_turn === this.currentGame.player1) {
+                            newPlayer2Score++;
                         } else {
-                            newScore1++;
+                            newPlayer1Score++;
                         }
                     }
 
-                    const isMyGoal = (this.isPlayer1 && newScore1 > this.currentGame.score1) ||
-                                    (!this.isPlayer1 && newScore2 > this.currentGame.score2);
+                    // Показываем результат
+                    const amIAttacker = this.currentGame.current_turn === this.currentUser.telegram_id;
+                    const didIScore = (goalScored && amIAttacker) || (!goalScored && !amIAttacker);
 
                     if (goalScored) {
-                        this.showMessage(isMyGoal ? '⚽ ГОЛ! Вы забили!' : '⚽ Противник забил гол!', 
-                                       isMyGoal ? 'success' : 'error');
+                        this.showMessage(amIAttacker ? '⚽ ГОЛ! Отличный бросок!' : '⚽ Противник забил гол!', 
+                                       didIScore ? 'success' : 'error');
                     } else {
-                        this.showMessage(isMyGoal ? '🥅 Отличная защита!' : '🥅 Ваш бросок отбит!', 
-                                       isMyGoal ? 'success' : 'info');
+                        this.showMessage(amIAttacker ? '🛡️ Бросок отбит!' : '🛡️ Отличная защита!', 
+                                       didIScore ? 'success' : 'info');
                     }
 
-                    const gameFinished = newScore1 >= 3 || newScore2 >= 3;
-                    const nextAttacker = this.currentGame.round_attacker === this.currentGame.player1_id ? 
-                        this.currentGame.player2_id : this.currentGame.player1_id;
+                    // Проверяем окончание игры
+                    const gameFinished = newPlayer1Score >= 3 || newPlayer2Score >= 3;
+                    
+                    // Определяем следующего подающего (роли меняются)
+                    const nextTurn = this.currentGame.current_turn === this.currentGame.player1 ? 
+                        this.currentGame.player2 : this.currentGame.player1;
 
                     const updates = {
-                        score1: newScore1,
-                        score2: newScore2,
-                        current_round: this.currentGame.current_round + 1,
-                        player1_move: null,
-                        player2_move: null,
-                        round_attacker: nextAttacker,
-                        status: gameFinished ? 'finished' : 'playing'
+                        player1_score: newPlayer1Score,
+                        player2_score: newPlayer2Score,
+                        attacker_move: null,
+                        defender_move: null,
+                        current_turn: nextTurn,
+                        game_state: gameFinished ? 'finished' : 'game'
                     };
 
-                    await api.updateGame(this.gameId, updates);
+                    if (gameFinished) {
+                        updates.winner = newPlayer1Score > newPlayer2Score ? this.currentGame.player1 : this.currentGame.player2;
+                    }
+
+                    await api.updateRoom(this.gameId, updates);
 
                     if (gameFinished) {
                         setTimeout(() => this.endGame(), 3000);
                     }
                 } catch (error) {
                     console.error('Failed to process round results:', error);
+                    this.showMessage('Ошибка обработки результата', 'error');
                 }
             }
 
