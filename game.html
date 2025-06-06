@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Игровая комната</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * {
             margin: 0;
@@ -19,6 +20,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            padding: 20px;
         }
         
         .container {
@@ -27,35 +29,71 @@
             border-radius: 20px;
             box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             text-align: center;
-            min-width: 400px;
+            min-width: 350px;
+            max-width: 500px;
+            width: 100%;
         }
         
         h1 {
             color: #333;
             margin-bottom: 30px;
-            font-size: 2.5em;
+            font-size: 2.2em;
         }
         
-        .room-info {
-            background: #f8f9fa;
-            padding: 20px;
+        .button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin: 15px 0;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+            border: none;
             border-radius: 10px;
-            margin: 20px 0;
+            font-size: 18px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-decoration: none;
         }
         
-        .room-code {
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        }
+        
+        .button.secondary {
+            background: #6c757d;
+        }
+        
+        .button.success {
+            background: linear-gradient(45deg, #28a745, #20c997);
+        }
+        
+        .game-room {
+            background: #f8f9fa;
+            padding: 30px;
+            border-radius: 15px;
+            margin: 30px 0;
+            display: none;
+        }
+        
+        .room-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .room-name {
             font-size: 24px;
             font-weight: bold;
             color: #667eea;
-            margin: 10px 0;
         }
         
         .status {
-            padding: 10px 20px;
+            padding: 8px 16px;
             border-radius: 20px;
             font-weight: bold;
-            margin: 15px 0;
-            display: inline-block;
+            font-size: 14px;
         }
         
         .status.waiting {
@@ -70,31 +108,33 @@
         
         .players {
             display: flex;
-            justify-content: space-around;
-            margin: 30px 0;
+            justify-content: space-between;
+            gap: 20px;
+            margin: 20px 0;
         }
         
         .player {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
             flex: 1;
-            margin: 0 10px;
+            background: white;
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid #e9ecef;
         }
         
         .player.current {
+            border-color: #667eea;
             background: #e3f2fd;
-            border: 2px solid #667eea;
         }
         
         .player-title {
             font-weight: bold;
-            margin-bottom: 10px;
+            margin-bottom: 8px;
             color: #333;
+            font-size: 14px;
         }
         
-        .player-id {
-            font-size: 18px;
+        .player-name {
+            font-size: 16px;
             color: #667eea;
         }
         
@@ -103,51 +143,82 @@
             font-style: italic;
         }
         
-        .button {
-            display: inline-block;
-            padding: 12px 24px;
-            margin: 10px;
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
-            border: none;
+        /* Попап стили */
+        .popup-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .popup {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            min-width: 300px;
+            max-width: 400px;
+            width: 90%;
+        }
+        
+        .popup h3 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 20px;
+        }
+        
+        .popup input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
             border-radius: 8px;
             font-size: 16px;
-            cursor: pointer;
-            text-decoration: none;
-            transition: transform 0.2s, box-shadow 0.2s;
+            margin: 10px 0;
         }
         
-        .button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        .popup input:focus {
+            outline: none;
+            border-color: #667eea;
         }
         
-        .button.secondary {
-            background: #6c757d;
+        .popup-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
         }
         
-        .loading {
-            color: #667eea;
-            margin: 20px 0;
+        .popup .button {
+            margin: 0;
         }
         
         .error {
             color: #e74c3c;
-            margin: 20px 0;
-            padding: 15px;
+            margin: 15px 0;
+            padding: 10px;
             background: #fdf2f2;
             border-radius: 8px;
+            display: none;
         }
         
-        .waiting-animation {
-            display: inline-block;
-            animation: pulse 2s infinite;
+        .success {
+            color: #27ae60;
+            margin: 15px 0;
+            padding: 10px;
+            background: #eafaf1;
+            border-radius: 8px;
+            display: none;
         }
         
-        @keyframes pulse {
-            0% { opacity: 1; }
-            50% { opacity: 0.5; }
-            100% { opacity: 1; }
+        .loading {
+            display: none;
+            color: #667eea;
+            margin: 15px 0;
         }
     </style>
 </head>
@@ -155,44 +226,79 @@
     <div class="container">
         <h1>🎮 Игровая комната</h1>
         
-        <div class="room-info">
-            <div>Код комнаты:</div>
-            <div class="room-code" id="roomCode">-</div>
-            <div class="status" id="gameStatus">Загрузка...</div>
+        <div id="menuSection">
+            <button class="button" id="createRoomBtn">
+                ➕ Создать комнату
+            </button>
+            
+            <button class="button" id="joinRoomBtn">
+                🚪 Присоединиться к комнате
+            </button>
+            
+            <a href="index.html" class="button secondary">
+                ← Назад в меню
+            </a>
         </div>
         
-        <div class="players">
-            <div class="player" id="player1Info">
-                <div class="player-title">Игрок 1 (Создатель)</div>
-                <div class="player-id" id="player1Id">-</div>
+        <div class="game-room" id="gameRoom">
+            <div class="room-header">
+                <div class="room-name" id="roomName">Комната</div>
+                <div class="status waiting" id="gameStatus">Ожидание</div>
             </div>
-            <div class="player" id="player2Info">
-                <div class="player-title">Игрок 2</div>
-                <div class="player-id" id="player2Id">
-                    <span class="empty-player">Ожидание игрока...</span>
+            
+            <div class="players">
+                <div class="player" id="player1">
+                    <div class="player-title">Игрок 1</div>
+                    <div class="player-name" id="player1Name">-</div>
+                </div>
+                <div class="player" id="player2">
+                    <div class="player-title">Игрок 2</div>
+                    <div class="player-name" id="player2Name">
+                        <span class="empty-player">Ожидание...</span>
+                    </div>
                 </div>
             </div>
+            
+            <div id="waitingMessage" style="margin: 20px 0; color: #666;">
+                ⏳ Ожидание второго игрока...
+            </div>
+            
+            <div id="gameStartMessage" style="display: none; margin: 20px 0;">
+                <div style="color: #27ae60; font-size: 18px; margin-bottom: 15px;">
+                    🎉 Все готово для игры!
+                </div>
+                <button class="button success" id="startGameBtn">Начать игру</button>
+            </div>
+            
+            <button class="button secondary" id="leaveRoomBtn">Покинуть комнату</button>
         </div>
         
-        <div id="waitingMessage" style="display: none;">
-            <div class="waiting-animation">⏳ Ожидание второго игрока...</div>
-            <div style="margin-top: 15px; font-size: 14px; color: #666;">
-                Поделитесь кодом комнаты с другим игроком
+        <div class="loading" id="loading">⏳ Загрузка...</div>
+        <div class="error" id="error"></div>
+        <div class="success" id="success"></div>
+    </div>
+
+    <!-- Попап создания комнаты -->
+    <div class="popup-overlay" id="createRoomPopup">
+        <div class="popup">
+            <h3>Создать комнату</h3>
+            <input type="text" id="roomNameInput" placeholder="Введите название комнаты" maxlength="20">
+            <div class="popup-buttons">
+                <button class="button" id="confirmCreateBtn">Создать</button>
+                <button class="button secondary" id="cancelCreateBtn">Отмена</button>
             </div>
         </div>
-        
-        <div id="gameStartMessage" style="display: none;">
-            <div style="color: #27ae60; font-size: 18px; margin: 20px 0;">
-                🎉 Игра может начаться!
+    </div>
+
+    <!-- Попап присоединения к комнате -->
+    <div class="popup-overlay" id="joinRoomPopup">
+        <div class="popup">
+            <h3>Присоединиться</h3>
+            <input type="text" id="joinRoomNameInput" placeholder="Введите название комнаты">
+            <div class="popup-buttons">
+                <button class="button" id="confirmJoinBtn">Присоединиться</button>
+                <button class="button secondary" id="cancelJoinBtn">Отмена</button>
             </div>
-            <button class="button" id="startGameBtn">Начать игру</button>
-        </div>
-        
-        <div id="error" class="error" style="display: none;"></div>
-        
-        <div style="margin-top: 30px;">
-            <a href="index.html" class="button secondary">← Вернуться в меню</a>
-            <button class="button secondary" id="refreshBtn">🔄 Обновить</button>
         </div>
     </div>
 
@@ -200,13 +306,50 @@
         const API_BASE = 'https://app.nocodb.com/api/v2/tables/moziqqm4pwfy04n/records';
         const API_TOKEN = 'PYcOrnVaN8u2Ab5-Jk-IDiyAxWERltZbL1dS8Otc';
         
-        let gameData = null;
+        let tg = window.Telegram.WebApp;
+        let currentUser = null;
+        let currentRoom = null;
         let refreshInterval = null;
         
+        // Инициализация Telegram WebApp
+        tg.ready();
+        tg.expand();
+        
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            hideMessages();
+        }
+        
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
+        }
+        
         function showError(message) {
+            hideLoading();
             const errorDiv = document.getElementById('error');
             errorDiv.textContent = message;
             errorDiv.style.display = 'block';
+        }
+        
+        function showSuccess(message) {
+            hideLoading();
+            const successDiv = document.getElementById('success');
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+            setTimeout(() => successDiv.style.display = 'none', 3000);
+        }
+        
+        function hideMessages() {
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('success').style.display = 'none';
+        }
+        
+        function showPopup(popupId) {
+            document.getElementById(popupId).style.display = 'flex';
+        }
+        
+        function hidePopup(popupId) {
+            document.getElementById(popupId).style.display = 'none';
         }
         
         async function makeRequest(url, options = {}) {
@@ -226,74 +369,174 @@
                 }
             };
             
+            const response = await fetch(url, finalOptions);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return await response.json();
+        }
+        
+        function getCurrentUser() {
+            const savedUser = localStorage.getItem('telegramUser');
+            if (savedUser) {
+                return JSON.parse(savedUser);
+            }
+            
+            // Fallback
+            return {
+                telegram_id: Date.now(),
+                username: 'test_user',
+                display_name: 'Тестовый игрок'
+            };
+        }
+        
+        async function createRoom(roomName) {
+            showLoading();
+            
             try {
-                const response = await fetch(url, finalOptions);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                return await response.json();
+                const roomData = {
+                    room_name: roomName,
+                    player1: currentUser.telegram_id,
+                    player1_name: currentUser.display_name,
+                    player2: null,
+                    player2_name: null,
+                    status: 'Ожидание'
+                };
+                
+                const response = await makeRequest(API_BASE, {
+                    method: 'POST',
+                    body: JSON.stringify(roomData)
+                });
+                
+                currentRoom = { ...roomData, Id: response.Id };
+                showGameRoom();
+                showSuccess('Комната создана успешно!');
+                startAutoRefresh();
+                
             } catch (error) {
-                console.error('Request failed:', error);
-                throw error;
+                showError('Ошибка при создании комнаты');
+                console.error('Create room error:', error);
+            }
+        }
+        
+        async function joinRoom(roomName) {
+            showLoading();
+            
+            try {
+                // Поиск комнаты по названию
+                const searchResponse = await makeRequest(`${API_BASE}?where=(room_name,eq,${roomName})`);
+                
+                if (!searchResponse.list || searchResponse.list.length === 0) {
+                    showError('Комната с таким названием не найдена');
+                    return;
+                }
+                
+                const room = searchResponse.list[0];
+                
+                if (room.status !== 'Ожидание') {
+                    showError('Комната уже занята или игра началась');
+                    return;
+                }
+                
+                if (room.player2) {
+                    showError('В комнате уже есть второй игрок');
+                    return;
+                }
+                
+                if (room.player1 === currentUser.telegram_id) {
+                    showError('Вы не можете присоединиться к своей комнате');
+                    return;
+                }
+                
+                // Присоединение к комнате
+                const updateData = {
+                    player2: currentUser.telegram_id,
+                    player2_name: currentUser.display_name,
+                    status: 'Игра'
+                };
+                
+                await makeRequest(`${API_BASE}/${room.Id}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify(updateData)
+                });
+                
+                currentRoom = { ...room, ...updateData };
+                showGameRoom();
+                showSuccess('Успешно присоединились к комнате!');
+                startAutoRefresh();
+                
+            } catch (error) {
+                showError('Ошибка при присоединении к комнате');
+                console.error('Join room error:', error);
             }
         }
         
         async function loadRoomData() {
-            if (!gameData || !gameData.roomId) {
-                showError('Ошибка: Данные комнаты не найдены');
-                return;
-            }
+            if (!currentRoom || !currentRoom.Id) return;
             
             try {
-                const response = await makeRequest(`${API_BASE}/${gameData.roomId}`);
-                updateRoomDisplay(response);
+                const response = await makeRequest(`${API_BASE}/${currentRoom.Id}`);
+                currentRoom = response;
+                updateGameRoomDisplay();
             } catch (error) {
-                showError('Ошибка при загрузке данных комнаты');
                 console.error('Load room error:', error);
             }
         }
         
-        function updateRoomDisplay(roomData) {
-            // Обновляем код комнаты
-            document.getElementById('roomCode').textContent = gameData.roomCode;
+        function updateGameRoomDisplay() {
+            if (!currentRoom) return;
             
-            // Обновляем статус
+            document.getElementById('roomName').textContent = currentRoom.room_name;
+            
             const statusElement = document.getElementById('gameStatus');
-            statusElement.textContent = roomData.status;
-            statusElement.className = `status ${roomData.status === 'Ожидание' ? 'waiting' : 'playing'}`;
+            statusElement.textContent = currentRoom.status;
+            statusElement.className = `status ${currentRoom.status === 'Ожидание' ? 'waiting' : 'playing'}`;
             
-            // Обновляем информацию об игроках
-            document.getElementById('player1Id').textContent = roomData.player1 || '-';
+            document.getElementById('player1Name').textContent = currentRoom.player1_name || '-';
             
-            const player2Element = document.getElementById('player2Id');
-            if (roomData.player2) {
-                player2Element.textContent = roomData.player2;
-                player2Element.className = 'player-id';
+            const player2Element = document.getElementById('player2Name');
+            if (currentRoom.player2_name) {
+                player2Element.textContent = currentRoom.player2_name;
+                player2Element.className = 'player-name';
             } else {
-                player2Element.innerHTML = '<span class="empty-player">Ожидание игрока...</span>';
+                player2Element.innerHTML = '<span class="empty-player">Ожидание...</span>';
             }
             
             // Выделяем текущего игрока
-            document.getElementById('player1Info').classList.toggle('current', 
-                gameData.playerId === roomData.player1);
-            document.getElementById('player2Info').classList.toggle('current', 
-                gameData.playerId === roomData.player2);
+            document.getElementById('player1').classList.toggle('current', 
+                currentUser.telegram_id == currentRoom.player1);
+            document.getElementById('player2').classList.toggle('current', 
+                currentUser.telegram_id == currentRoom.player2);
             
             // Показываем соответствующие сообщения
             const waitingMessage = document.getElementById('waitingMessage');
             const gameStartMessage = document.getElementById('gameStartMessage');
             
-            if (roomData.status === 'Ожидание') {
+            if (currentRoom.status === 'Ожидание') {
                 waitingMessage.style.display = 'block';
                 gameStartMessage.style.display = 'none';
-            } else if (roomData.status === 'Игра') {
+            } else {
                 waitingMessage.style.display = 'none';
                 gameStartMessage.style.display = 'block';
             }
         }
         
+        function showGameRoom() {
+            document.getElementById('menuSection').style.display = 'none';
+            document.getElementById('gameRoom').style.display = 'block';
+            updateGameRoomDisplay();
+        }
+        
+        function hideGameRoom() {
+            document.getElementById('menuSection').style.display = 'block';
+            document.getElementById('gameRoom').style.display = 'none';
+            stopAutoRefresh();
+            currentRoom = null;
+        }
+        
         function startAutoRefresh() {
-            refreshInterval = setInterval(loadRoomData, 3000); // Обновляем каждые 3 секунды
+            stopAutoRefresh();
+            refreshInterval = setInterval(loadRoomData, 3000);
         }
         
         function stopAutoRefresh() {
@@ -303,36 +546,92 @@
             }
         }
         
-        function initializePage() {
-            // Получаем данные из localStorage
-            const savedData = localStorage.getItem('gameData');
-            if (!savedData) {
-                showError('Ошибка: Данные игры не найдены. Вернитесь в главное меню.');
-                return;
-            }
-            
-            try {
-                gameData = JSON.parse(savedData);
-                loadRoomData();
-                startAutoRefresh();
-            } catch (error) {
-                showError('Ошибка при загрузке данных игры');
-                console.error('Parse game data error:', error);
-            }
-        }
-        
         // Обработчики событий
-        document.getElementById('refreshBtn').addEventListener('click', loadRoomData);
-        
-        document.getElementById('startGameBtn').addEventListener('click', function() {
-            alert('Здесь будет логика начала игры!');
+        document.getElementById('createRoomBtn').addEventListener('click', () => {
+            showPopup('createRoomPopup');
+            document.getElementById('roomNameInput').focus();
         });
         
-        // Очистка интервала при закрытии страницы
-        window.addEventListener('beforeunload', stopAutoRefresh);
+        document.getElementById('joinRoomBtn').addEventListener('click', () => {
+            showPopup('joinRoomPopup');
+            document.getElementById('joinRoomNameInput').focus();
+        });
         
-        // Инициализация страницы
-        initializePage();
+        document.getElementById('confirmCreateBtn').addEventListener('click', () => {
+            const roomName = document.getElementById('roomNameInput').value.trim();
+            if (!roomName) {
+                showError('Введите название комнаты');
+                return;
+            }
+            hidePopup('createRoomPopup');
+            createRoom(roomName);
+            document.getElementById('roomNameInput').value = '';
+        });
+        
+        document.getElementById('confirmJoinBtn').addEventListener('click', () => {
+            const roomName = document.getElementById('joinRoomNameInput').value.trim();
+            if (!roomName) {
+                showError('Введите название комнаты');
+                return;
+            }
+            hidePopup('joinRoomPopup');
+            joinRoom(roomName);
+            document.getElementById('joinRoomNameInput').value = '';
+        });
+        
+        document.getElementById('cancelCreateBtn').addEventListener('click', () => {
+            hidePopup('createRoomPopup');
+            document.getElementById('roomNameInput').value = '';
+        });
+        
+        document.getElementById('cancelJoinBtn').addEventListener('click', () => {
+            hidePopup('joinRoomPopup');
+            document.getElementById('joinRoomNameInput').value = '';
+        });
+        
+        document.getElementById('leaveRoomBtn').addEventListener('click', () => {
+            hideGameRoom();
+            hideMessages();
+        });
+        
+        document.getElementById('startGameBtn').addEventListener('click', () => {
+            alert('🎮 Игра начинается! Здесь будет игровая логика.');
+        });
+        
+        // Обработка Enter в полях ввода
+        document.getElementById('roomNameInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('confirmCreateBtn').click();
+            }
+        });
+        
+        document.getElementById('joinRoomNameInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                document.getElementById('confirmJoinBtn').click();
+            }
+        });
+        
+        // Закрытие попапов по клику на overlay
+        document.getElementById('createRoomPopup').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) {
+                hidePopup('createRoomPopup');
+            }
+        });
+        
+        document.getElementById('joinRoomPopup').addEventListener('click', (e) => {
+            if (e.target === e.currentTarget) {
+                hidePopup('joinRoomPopup');
+            }
+        });
+        
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', () => {
+            currentUser = getCurrentUser();
+            console.log('Текущий пользователь:', currentUser);
+        });
+        
+        // Очистка при закрытии
+        window.addEventListener('beforeunload', stopAutoRefresh);
     </script>
 </body>
 </html>
