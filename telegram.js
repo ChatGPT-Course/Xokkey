@@ -12,9 +12,13 @@ class TelegramApp {
             this.tg.ready();
             this.tg.expand();
             
-            // Set theme
-            this.tg.setHeaderColor('#667eea');
-            this.tg.setBackgroundColor('#ffffff');
+            // Set theme colors (check if methods exist)
+            if (this.tg.setHeaderColor) {
+                this.tg.setHeaderColor('#667eea');
+            }
+            if (this.tg.setBackgroundColor) {
+                this.tg.setBackgroundColor('#ffffff');
+            }
             
             // Get user data
             this.user = this.tg.initDataUnsafe?.user;
