@@ -572,7 +572,7 @@
                     const response = await this.makeRequest('');
                     console.log('Find room response:', response);
                     
-                    if (response.list) {
+                    if (response && response.list) {
                         const room = response.list.find(r => r.room_name === roomName);
                         return room || null;
                     }
@@ -615,6 +615,21 @@
                 }
             }
 
+            async deleteRoom(roomId) {
+                try {
+                    console.log('Deleting room:', roomId);
+                    const result = await this.makeRequest(
+                        `/${roomId}`,
+                        'DELETE'
+                    );
+                    console.log('Delete result:', result);
+                    return result;
+                } catch (error) {
+                    console.error('Failed to delete room:', error);
+                    throw error;
+                }
+            }
+
             syncLocalData(gameId, updates) {
                 try {
                     const storageKey = 'hockey_games';
@@ -652,52 +667,16 @@
 
             async init() {
                 try {
-                    // Получаем данные пользователя из localStorage (переданные с index.html)
-                    const gameData = JSON.parse(localStorage.getItem('gameData') || '{}');
+                    // Получаем данные пользователя из Telegram WebApp
+                    const telegramId = tgApp.getUserId();
+                    this.currentUser = {
+                        telegram_id: telegramId.toString(),
+                        username: tgApp.getUsername(),
+                        display_name: tgApp.getDisplayName()
+                    };
                     
-                    if (gameData.playerId) {
-                        this.currentUser = {
-                            telegram_id: gameData.playerId,
-                            display_name: gameData.playerName,
-                            username: gameData.playerName
-                        };
-                        
-                        // Если пришли из созданной комнаты
-                        if (gameData.isCreator && gameData.roomId) {
-                            this.gameId = gameData.roomId;
-                            this.isPlayer1 = true;
-                            this.currentGame = {
-                                Id: gameData.roomId,
-                                room_name: gameData.roomName,
-                                player1: gameData.playerId,
-                                status: 'Ожидание'
-                            };
-                            this.showWaitingRoom(gameData.roomName);
-                            this.startGameLoop();
-                        }
-                        // Если присоединились к комнате
-                        else if (!gameData.isCreator && gameData.roomId) {
-                            this.gameId = gameData.roomId;
-                            this.isPlayer1 = false;
-                            this.showGamePlay();
-                            this.startGameLoop();
-                        }
-                        else {
-                            this.showGameMenu();
-                        }
-                        
-                        console.log('Текущий пользователь:', this.currentUser);
-                    } else {
-                        // Fallback если данных нет
-                        const telegramId = tgApp.getUserId();
-                        this.currentUser = {
-                            telegram_id: telegramId.toString(),
-                            username: tgApp.getUsername(),
-                            display_name: tgApp.getDisplayName()
-                        };
-                        this.showGameMenu();
-                        console.log('Using fallback user data:', this.currentUser);
-                    }
+                    this.showGameMenu();
+                    console.log('Текущий пользователь:', this.currentUser);
 
                 } catch (error) {
                     console.error('Failed to initialize game:', error);
@@ -705,20 +684,99 @@
                 }
             }
 
+            generateRoomCode() {
+                return Math.floor(1000 + Math.random() * 9000).toString();
+            }
+
             async createGame() {
-                // Этот метод больше не используется - комнаты создаются в index.html
-                this.showMessage('Создание игры происходит на главной странице', 'info');
-                setTimeout(() => {
-                    window.location.href = 'index.html';
-                }, 2000);
+                try {
+                    const roomCode = this.generateRoomCode();
+                    
+                    const roomData = {
+                        room_name: roomCode,
+                        player1: this.currentUser.telegram_id,
+                        player2: null,
+                        current_turn: null,
+                        player1_score: 0,
+                        player2_score: 0,
+                        game_state: 'waiting',
+                        winner: null
+                    };
+
+                    console.log('Creating room with data:', roomData);
+                    const createdRoom = await api.createGame(roomData);
+                    
+                    if (createdRoom) {
+                        this.currentGame = createdRoom;
+                        this.gameId = createdRoom.Id;
+                        this.isPlayer1 = true;
+                        
+                        this.showWaitingRoom(roomCode);
+                        this.startGameLoop();
+                        this.showMessage('Комната создана!', 'success');
+                    } else {
+                        this.showMessage('Ошибка создания комнаты', 'error');
+                    }
+                } catch (error) {
+                    console.error('Failed to create game:', error);
+                    this.showMessage('Ошибка создания игры', 'error');
+                }
             }
 
             async joinGame() {
-                // Этот метод больше не используется - присоединение происходит в index.html
-                this.showMessage('Присоединение к игре происходит на главной странице', 'info');
-                setTimeout(() => {
-                    window.location.href = 'index.html';
-                }, 2000);
+                const gameCodeInput = document.getElementById('gameCodeInput');
+                const roomCode = gameCodeInput.value.trim();
+                
+                if (!roomCode) {
+                    this.showMessage('Введите код комнаты', 'error');
+                    return;
+                }
+
+                try {
+                    console.log('Looking for room with code:', roomCode);
+                    const room = await api.findRoomByName(roomCode);
+                    
+                    if (!room) {
+                        this.showMessage('Комната не найдена', 'error');
+                        return;
+                    }
+
+                    if (room.player2) {
+                        this.showMessage('Комната уже заполнена', 'error');
+                        return;
+                    }
+
+                    if (room.player1 === this.currentUser.telegram_id) {
+                        this.showMessage('Вы не можете присоединиться к своей комнате', 'error');
+                        return;
+                    }
+
+                    // Присоединяемся к комнате - заполняем player2 и меняем статус на game
+                    const updateData = {
+                        player2: this.currentUser.telegram_id,
+                        game_state: 'game',
+                        current_turn: room.player1 // Первый ход у создателя
+                    };
+
+                    console.log('Joining room with updates:', updateData);
+                    const updatedRoom = await api.updateRoom(room.Id, updateData);
+                    
+                    if (updatedRoom) {
+                        this.currentGame = updatedRoom;
+                        this.gameId = room.Id;
+                        this.isPlayer1 = false;
+                        
+                        this.hideJoinForm();
+                        this.showGamePlay();
+                        this.startGameLoop();
+                        this.showMessage('Присоединились к игре!', 'success');
+                    } else {
+                        this.showMessage('Ошибка присоединения к игре', 'error');
+                    }
+                } catch (error) {
+                    console.error('Failed to join game:', error);
+                    this.showMessage('Ошибка присоединения к игре', 'error');
+                }
             }
 
             async startGameLoop() {
@@ -740,21 +798,21 @@
 
                     console.log('Checking room status:', updatedRoom);
 
-                    const wasWaiting = this.currentGame?.status === 'Ожидание' || 
+                    const wasWaiting = this.currentGame?.game_state === 'waiting' || 
                                      !document.getElementById('waitingRoom').classList.contains('hidden');
 
-                    const previousStatus = this.currentGame?.status;
+                    const previousStatus = this.currentGame?.game_state;
                     this.currentGame = updatedRoom;
 
                     // Если игра завершена
-                    if (this.currentGame.status === 'Завершена') {
+                    if (this.currentGame.game_state === 'finished') {
                         this.endGame();
                         return;
                     }
 
                     // Если ожидали игрока и он присоединился (для создателя)
-                    if (this.currentGame.status === 'Игра' && 
-                        (previousStatus === 'Ожидание' || wasWaiting) &&
+                    if (this.currentGame.game_state === 'game' && 
+                        (previousStatus === 'waiting' || wasWaiting) &&
                         this.currentGame.player2) {
                         console.log('Second player joined, starting game!');
                         this.showGamePlay();
@@ -762,7 +820,7 @@
                     }
 
                     // Обновляем интерфейс если игра идет
-                    if (this.currentGame.status === 'Игра' && 
+                    if (this.currentGame.game_state === 'game' && 
                         !document.getElementById('gamePlay').classList.contains('hidden')) {
                         this.updateGameDisplay();
                     }
@@ -779,23 +837,29 @@
 
             updateGameDisplay() {
                 if (!this.currentGame) return;
-
-                // Получаем имена игроков из localStorage или используем значения по умолчанию
-                const gameData = JSON.parse(localStorage.getItem('gameData') || '{}');
                 
-                document.getElementById('player1Name').textContent = gameData.isCreator ? gameData.playerName : 'Игрок 1';
-                document.getElementById('player2Name').textContent = !gameData.isCreator ? gameData.playerName : 'Игрок 2';
+                document.getElementById('player1Name').textContent = 'Игрок 1';
+                document.getElementById('player2Name').textContent = 'Игрок 2';
                 document.getElementById('player1Score').textContent = this.currentGame.player1_score || 0;
                 document.getElementById('player2Score').textContent = this.currentGame.player2_score || 0;
                 document.getElementById('roundNumber').textContent = 1; // Упрощенная версия
 
-                // Упрощенная логика - всегда показываем что игрок может выбрать зону
-                document.getElementById('roleInfo').textContent = '🎮 Выберите зону для игры';
-
-                const submitBtn = document.getElementById('submitMove');
-                submitBtn.textContent = 'Подтвердить выбор';
-                submitBtn.disabled = true;
-                this.enableZoneSelection();
+                // Определяем чей ход
+                const isMyTurn = this.currentGame.current_turn === this.currentUser.telegram_id;
+                
+                if (isMyTurn) {
+                    document.getElementById('roleInfo').textContent = '🎮 Ваш ход - выберите зону';
+                    this.enableZoneSelection();
+                    const submitBtn = document.getElementById('submitMove');
+                    submitBtn.textContent = 'Подтвердить выбор';
+                    submitBtn.disabled = true;
+                } else {
+                    document.getElementById('roleInfo').textContent = '⏳ Ход противника...';
+                    this.disableZoneSelection();
+                    const submitBtn = document.getElementById('submitMove');
+                    submitBtn.textContent = 'Ожидание...';
+                    submitBtn.disabled = true;
+                }
             }
 
             selectZone(zoneNumber) {
@@ -1006,16 +1070,24 @@
                     this.gameUpdateInterval = null;
                 }
 
+                // Если есть второй игрок, нельзя выходить из комнаты
+                if (this.currentGame?.player2) {
+                    this.showMessage('Нельзя выйти - в комнате уже есть второй игрок!', 'error');
+                    return;
+                }
+
                 if (this.gameId) {
                     try {
-                        await api.updateGame(this.gameId, { status: 'cancelled' });
+                        // Удаляем комнату если мы её создатель и нет второго игрока
+                        await api.deleteRoom(this.gameId);
+                        this.showMessage('Комната удалена', 'info');
                     } catch (error) {
-                        console.error('Failed to cancel game:', error);
+                        console.error('Failed to delete room:', error);
+                        this.showMessage('Ошибка удаления комнаты', 'error');
                     }
                 }
 
                 this.showGameMenu();
-                this.showMessage('Игра отменена', 'info');
             }
         }
 
