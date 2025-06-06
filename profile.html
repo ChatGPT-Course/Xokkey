@@ -5,8 +5,204 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Профиль - Хоккейная Битва</title>
-    <link href="style.css" rel="stylesheet">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+            min-height: 90vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h2 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .btn-back {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .btn-back:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .profile-card {
+            margin: 20px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 15px;
+        }
+
+        .profile-info {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .profile-info h3 {
+            color: #667eea;
+            font-size: 1.5rem;
+            margin-bottom: 5px;
+        }
+
+        .profile-info p {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .stat-value {
+            display: block;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #667eea;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .profile-actions {
+            padding: 0 20px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 15px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+
+        .btn.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn.secondary {
+            background: #f8f9fa;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .recent-games {
+            margin: 20px;
+        }
+
+        .recent-games h4 {
+            color: #667eea;
+            margin-bottom: 15px;
+            text-align: center;
+        }
+
+        .games-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .game-item {
+            padding: 15px;
+            margin-bottom: 10px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .game-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .game-result {
+            font-weight: bold;
+        }
+
+        .game-result.win {
+            color: #51cf66;
+        }
+
+        .game-result.loss {
+            color: #ff6b6b;
+        }
+
+        .game-date {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .game-score {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .no-games {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 20px;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -57,13 +253,226 @@
         <div class="recent-games">
             <h4>Последние игры:</h4>
             <div id="recentGamesList" class="games-list">
-                <p>Загрузка...</p>
+                <p class="no-games">Пока игр не было</p>
             </div>
         </div>
     </div>
     
-    <script src="telegram.js"></script>
-    <script src="api.js"></script>
-    <script src="profile.js"></script>
+    <script>
+        // Telegram Web App integration
+        class TelegramApp {
+            constructor() {
+                this.tg = window.Telegram?.WebApp;
+                this.user = null;
+                this.init();
+            }
+
+            init() {
+                if (this.tg) {
+                    this.tg.ready();
+                    this.tg.expand();
+                    this.user = this.tg.initDataUnsafe?.user;
+                    
+                    if (!this.user) {
+                        this.user = {
+                            id: Date.now(),
+                            username: 'test_user',
+                            first_name: 'Test'
+                        };
+                    }
+                } else {
+                    this.user = {
+                        id: Date.now(),
+                        username: 'test_user',
+                        first_name: 'Test'
+                    };
+                }
+            }
+
+            getUserId() {
+                return this.user?.id || Date.now();
+            }
+
+            getUsername() {
+                return this.user?.username || 'unknown';
+            }
+
+            getDisplayName() {
+                return this.user?.first_name || this.user?.username || 'Игрок';
+            }
+
+            showAlert(message) {
+                if (this.tg) {
+                    this.tg.showAlert(message);
+                } else {
+                    alert(message);
+                }
+            }
+        }
+
+        // Mock API for demo
+        class MockAPI {
+            async getOrCreateUser(telegramId, username) {
+                const userData = localStorage.getItem('hockeyGameUser');
+                if (userData) {
+                    return JSON.parse(userData);
+                }
+                
+                const newUser = {
+                    Id: 'user_' + telegramId,
+                    telegram_id: telegramId,
+                    username: username || 'unknown',
+                    wins: 0,
+                    losses: 0,
+                    total_games: 0
+                };
+                
+                localStorage.setItem('hockeyGameUser', JSON.stringify(newUser));
+                return newUser;
+            }
+
+            async updateUser(userId, updates) {
+                const userData = localStorage.getItem('hockeyGameUser');
+                if (userData) {
+                    const user = JSON.parse(userData);
+                    Object.assign(user, updates);
+                    localStorage.setItem('hockeyGameUser', JSON.stringify(user));
+                    return user;
+                }
+                return null;
+            }
+
+            async getRecentGames(telegramId, limit = 10) {
+                const gamesData = localStorage.getItem('hockeyGameHistory');
+                if (gamesData) {
+                    return JSON.parse(gamesData).slice(0, limit);
+                }
+                return [];
+            }
+        }
+
+        // Profile manager
+        class ProfileManager {
+            constructor() {
+                this.currentUser = null;
+                this.init();
+            }
+
+            async init() {
+                try {
+                    const telegramId = tgApp.getUserId();
+                    const username = tgApp.getUsername();
+                    
+                    this.currentUser = await api.getOrCreateUser(telegramId, username);
+                    this.displayProfile();
+                    await this.loadRecentGames();
+                } catch (error) {
+                    console.error('Failed to initialize profile:', error);
+                }
+            }
+
+            displayProfile() {
+                if (!this.currentUser) return;
+
+                document.getElementById('profileName').textContent = tgApp.getDisplayName();
+                document.getElementById('profileId').textContent = `ID: ${this.currentUser.telegram_id}`;
+
+                document.getElementById('totalGames').textContent = this.currentUser.total_games || 0;
+                document.getElementById('wins').textContent = this.currentUser.wins || 0;
+                document.getElementById('losses').textContent = this.currentUser.losses || 0;
+
+                const totalGames = this.currentUser.total_games || 0;
+                const wins = this.currentUser.wins || 0;
+                const winRate = totalGames > 0 ? Math.round((wins / totalGames) * 100) : 0;
+                document.getElementById('winRate').textContent = `${winRate}%`;
+            }
+
+            async loadRecentGames() {
+                try {
+                    const games = await api.getRecentGames(this.currentUser.telegram_id, 10);
+                    this.displayRecentGames(games);
+                } catch (error) {
+                    console.error('Failed to load recent games:', error);
+                }
+            }
+
+            displayRecentGames(games) {
+                const gamesList = document.getElementById('recentGamesList');
+                if (!gamesList) return;
+
+                if (games.length === 0) {
+                    gamesList.innerHTML = '<p class="no-games">Пока игр не было</p>';
+                    return;
+                }
+
+                const gamesHTML = games.map(game => {
+                    const resultClass = game.won ? 'win' : 'loss';
+                    const resultText = game.won ? 'ПОБЕДА' : 'ПОРАЖЕНИЕ';
+
+                    return `
+                        <div class="game-item">
+                            <div class="game-item-header">
+                                <span class="game-result ${resultClass}">${resultText}</span>
+                                <span class="game-date">${game.date}</span>
+                            </div>
+                            <div class="game-score">
+                                против ${game.opponent}: ${game.myScore}-${game.opponentScore}
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+                gamesList.innerHTML = gamesHTML;
+            }
+        }
+
+        // Initialize
+        const tgApp = new TelegramApp();
+        const api = new MockAPI();
+
+        // Global functions
+        function goHome() {
+            window.location.href = 'index.html';
+        }
+
+        async function resetStats() {
+            try {
+                await api.updateUser(null, {
+                    wins: 0,
+                    losses: 0,
+                    total_games: 0
+                });
+                
+                localStorage.removeItem('hockeyGameHistory');
+                
+                tgApp.showAlert('Статистика сброшена!');
+                window.location.reload();
+            } catch (error) {
+                console.error('Failed to reset stats:', error);
+                tgApp.showAlert('Ошибка при сбросе статистики');
+            }
+        }
+
+        function shareProfile() {
+            const text = `🏒 Мой профиль в Хоккейной Битве!\n\nИгр: ${document.getElementById('totalGames').textContent}\nПобед: ${document.getElementById('wins').textContent}\nПроцент побед: ${document.getElementById('winRate').textContent}`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Мой профиль - Хоккейная Битва',
+                    text: text
+                });
+            } else {
+                // Fallback - copy to clipboard
+                navigator.clipboard.writeText(text).then(() => {
+                    tgApp.showAlert('Профиль скопирован в буфер обмена!');
+                });
+            }
+        }
+
+        // Initialize profile when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            window.profileManager = new ProfileManager();
+        });
+    </script>
 </body>
 </html>
