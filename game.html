@@ -66,6 +66,95 @@
             padding: 20px;
         }
 
+        .menu-screen {
+            text-align: center;
+            padding: 30px 20px;
+        }
+
+        .menu-screen h3 {
+            color: #667eea;
+            margin-bottom: 30px;
+            font-size: 1.4rem;
+        }
+
+        .btn {
+            padding: 15px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        .btn.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn.secondary {
+            background: #f8f9fa;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .input-group {
+            margin: 20px 0;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #667eea;
+            font-weight: 600;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            text-align: center;
+            text-transform: uppercase;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .game-code {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .game-code h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .code-display {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #333;
+            letter-spacing: 3px;
+            font-family: monospace;
+        }
+
         .score {
             display: flex;
             justify-content: space-between;
@@ -141,37 +230,6 @@
             border-color: #5a67d8;
         }
 
-        .btn {
-            padding: 15px 20px;
-            border: none;
-            border-radius: 10px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
-            text-align: center;
-            width: 100%;
-            margin: 10px 0;
-        }
-
-        .btn.primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .btn.secondary {
-            background: #f8f9fa;
-            color: #667eea;
-            border: 2px solid #667eea;
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
         .hidden {
             display: none !important;
         }
@@ -198,6 +256,30 @@
             margin: 5px 0;
             font-size: 1.1rem;
         }
+
+        .message {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 15px 20px;
+            border-radius: 10px;
+            z-index: 1000;
+            color: white;
+            font-weight: 600;
+        }
+
+        .message.success {
+            background: #2ed573;
+        }
+
+        .message.error {
+            background: #ff4757;
+        }
+
+        .message.info {
+            background: #667eea;
+        }
     </style>
 </head>
 <body>
@@ -207,11 +289,46 @@
             <h2>🏒 Хоккейная Битва</h2>
         </div>
         
-        <div id="waitingRoom" class="waiting">
-            <h3>Поиск соперника...</h3>
-            <p>Ожидание подключения второго игрока</p>
+        <!-- Главное меню игры -->
+        <div id="gameMenu" class="menu-screen">
+            <h3>Выберите режим игры</h3>
+            
+            <button class="btn primary" onclick="createGame()">
+                🎮 Создать игру
+            </button>
+            
+            <button class="btn secondary" onclick="showJoinForm()">
+                🚪 Присоединиться к игре
+            </button>
+            
+            <div id="joinForm" class="hidden">
+                <div class="input-group">
+                    <label for="gameCodeInput">Введите код игры:</label>
+                    <input type="text" id="gameCodeInput" placeholder="ABC123" maxlength="6">
+                </div>
+                <button class="btn primary" onclick="joinGame()">
+                    Присоединиться
+                </button>
+                <button class="btn secondary" onclick="hideJoinForm()">
+                    Отмена
+                </button>
+            </div>
         </div>
         
+        <!-- Ожидание в комнате -->
+        <div id="waitingRoom" class="waiting hidden">
+            <h3>Комната создана!</h3>
+            <div class="game-code">
+                <h4>Код для присоединения:</h4>
+                <div class="code-display" id="roomCode">------</div>
+            </div>
+            <p>Ожидание второго игрока...</p>
+            <button class="btn secondary" onclick="cancelGame()">
+                Отменить игру
+            </button>
+        </div>
+        
+        <!-- Игровой процесс -->
         <div id="gamePlay" class="game-container hidden">
             <div class="score">
                 <div class="score-item">
@@ -245,6 +362,7 @@
             </p>
         </div>
         
+        <!-- Окончание игры -->
         <div id="gameEnd" class="game-end hidden">
             <h3 id="finalResult">Игра окончена!</h3>
             <div class="final-stats">
@@ -295,6 +413,10 @@
             getUsername() {
                 return this.user?.username || 'unknown';
             }
+
+            getDisplayName() {
+                return this.user?.first_name || this.user?.username || 'Игрок';
+            }
         }
 
         // NocoDB API
@@ -333,7 +455,6 @@
                     return await response.json();
                 } catch (error) {
                     console.error('API Request failed:', error);
-                    // Fallback to localStorage for demo
                     return this.handleOfflineRequest(endpoint, method, data);
                 }
             }
@@ -366,13 +487,13 @@
 
                 if (method === 'GET') {
                     if (endpoint.includes('where=')) {
-                        // Handle filtered requests
                         const urlParams = new URL(`http://dummy.com?${endpoint.split('?')[1]}`);
                         const whereClause = urlParams.searchParams.get('where');
                         
-                        if (whereClause && whereClause.includes('status,eq,waiting')) {
-                            const waitingGames = games.filter(g => g.status === 'waiting');
-                            return { list: waitingGames };
+                        if (whereClause && whereClause.includes('game_code,eq,')) {
+                            const gameCode = whereClause.split('game_code,eq,')[1].replace(/[()]/g, '');
+                            const game = games.find(g => g.game_code === gameCode);
+                            return { list: game ? [game] : [] };
                         }
                         
                         if (whereClause && whereClause.includes('Id,eq,')) {
@@ -388,57 +509,13 @@
                 return null;
             }
 
-            async getOrCreateUser(telegramId, username) {
-                try {
-                    const response = await this.makeRequest(
-                        `${API_CONFIG.usersTable}/records?where=(telegram_id,eq,${telegramId})`
-                    );
-                    
-                    let user = response.list?.[0];
-                    
-                    if (!user) {
-                        const userData = {
-                            telegram_id: telegramId,
-                            username: username || 'unknown',
-                            wins: 0,
-                            losses: 0,
-                            total_games: 0
-                        };
-                        
-                        user = await this.makeRequest(
-                            `${API_CONFIG.usersTable}/records`,
-                            'POST',
-                            userData
-                        );
-                    }
-                    
-                    return user;
-                } catch (error) {
-                    console.error('Failed to get/create user:', error);
-                    return {
-                        Id: 'user_' + telegramId,
-                        telegram_id: telegramId,
-                        username: username || 'unknown',
-                        wins: 0,
-                        losses: 0,
-                        total_games: 0
-                    };
+            generateGameCode() {
+                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+                let code = '';
+                for (let i = 0; i < 6; i++) {
+                    code += chars.charAt(Math.floor(Math.random() * chars.length));
                 }
-            }
-
-            async findWaitingGame(currentUserId) {
-                try {
-                    const response = await this.makeRequest(
-                        `${API_CONFIG.gamesTable}/records?where=(status,eq,waiting)&limit=1`
-                    );
-                    
-                    const waitingGames = response.list || [];
-                    // Найти игру, где текущий пользователь не является player1
-                    return waitingGames.find(game => game.player1_id !== currentUserId) || null;
-                } catch (error) {
-                    console.error('Failed to find waiting game:', error);
-                    return null;
-                }
+                return code;
             }
 
             async createGame(gameData) {
@@ -451,6 +528,18 @@
                 } catch (error) {
                     console.error('Failed to create game:', error);
                     throw error;
+                }
+            }
+
+            async findGameByCode(gameCode) {
+                try {
+                    const response = await this.makeRequest(
+                        `${API_CONFIG.gamesTable}/records?where=(game_code,eq,${gameCode})`
+                    );
+                    return response.list?.[0] || null;
+                } catch (error) {
+                    console.error('Failed to find game by code:', error);
+                    return null;
                 }
             }
 
@@ -478,35 +567,10 @@
                     throw error;
                 }
             }
-
-            async updateUserStats(userId, won) {
-                try {
-                    const response = await this.makeRequest(
-                        `${API_CONFIG.usersTable}/records?where=(telegram_id,eq,${userId})`
-                    );
-                    
-                    const user = response.list?.[0];
-                    if (user) {
-                        const updates = {
-                            total_games: (user.total_games || 0) + 1,
-                            wins: won ? (user.wins || 0) + 1 : (user.wins || 0),
-                            losses: !won ? (user.losses || 0) + 1 : (user.losses || 0)
-                        };
-                        
-                        await this.makeRequest(
-                            `${API_CONFIG.usersTable}/records/${user.Id}`,
-                            'PATCH',
-                            updates
-                        );
-                    }
-                } catch (error) {
-                    console.error('Failed to update user stats:', error);
-                }
-            }
         }
 
-        // Game logic
-        class HockeyGame {
+        // Game Manager
+        class HockeyGameManager {
             constructor() {
                 this.currentUser = null;
                 this.currentGame = null;
@@ -514,7 +578,6 @@
                 this.isPlayer1 = false;
                 this.selectedZones = [];
                 this.gameUpdateInterval = null;
-                this.waitingForOpponent = true;
                 this.init();
             }
 
@@ -522,65 +585,98 @@
                 try {
                     const telegramId = tgApp.getUserId();
                     const username = tgApp.getUsername();
-                    this.currentUser = await api.getOrCreateUser(telegramId, username);
+                    this.currentUser = {
+                        telegram_id: telegramId,
+                        username: username,
+                        display_name: tgApp.getDisplayName()
+                    };
                     
-                    await this.findOrCreateGame();
-                    this.startGameLoop();
+                    this.showGameMenu();
                 } catch (error) {
                     console.error('Failed to initialize game:', error);
-                    this.showMessage('Ошибка подключения к игре', 'error');
+                    this.showMessage('Ошибка инициализации игры', 'error');
                 }
             }
 
-            async findOrCreateGame() {
+            async createGame() {
                 try {
-                    // Попытаться найти ожидающую игру
-                    let waitingGame = await api.findWaitingGame(this.currentUser.telegram_id);
+                    const gameCode = api.generateGameCode();
+                    const gameData = {
+                        game_code: gameCode,
+                        player1_id: this.currentUser.telegram_id,
+                        player1_name: this.currentUser.display_name,
+                        player2_id: null,
+                        player2_name: null,
+                        status: 'waiting',
+                        score1: 0,
+                        score2: 0,
+                        current_round: 1,
+                        attacker: this.currentUser.telegram_id,
+                        player1_move: null,
+                        player2_move: null,
+                        round_attacker: this.currentUser.telegram_id
+                    };
                     
-                    if (waitingGame) {
-                        // Присоединиться к существующей игре
-                        this.gameId = waitingGame.Id;
-                        this.isPlayer1 = false;
-                        
-                        const updates = {
-                            player2_id: this.currentUser.telegram_id,
-                            player2_name: this.currentUser.username || `Игрок ${this.currentUser.telegram_id}`,
-                            status: 'playing',
-                            attacker: waitingGame.player1_id, // Player1 начинает как нападающий
-                            player1_move: null,
-                            player2_move: null,
-                            round_attacker: waitingGame.player1_id
-                        };
-                        
-                        this.currentGame = await api.updateGame(this.gameId, updates);
-                        this.waitingForOpponent = false;
-                    } else {
-                        // Создать новую игру
-                        const gameData = {
-                            player1_id: this.currentUser.telegram_id,
-                            player1_name: this.currentUser.username || `Игрок ${this.currentUser.telegram_id}`,
-                            player2_id: null,
-                            player2_name: null,
-                            status: 'waiting',
-                            score1: 0,
-                            score2: 0,
-                            current_round: 1,
-                            attacker: this.currentUser.telegram_id,
-                            player1_move: null,
-                            player2_move: null,
-                            round_attacker: this.currentUser.telegram_id
-                        };
-                        
-                        this.currentGame = await api.createGame(gameData);
-                        this.gameId = this.currentGame.Id;
-                        this.isPlayer1 = true;
-                        this.waitingForOpponent = true;
+                    this.currentGame = await api.createGame(gameData);
+                    this.gameId = this.currentGame.Id;
+                    this.isPlayer1 = true;
+                    
+                    this.showWaitingRoom(gameCode);
+                    this.startGameLoop();
+                    
+                    this.showMessage('Игра создана! Поделитесь кодом с другом', 'success');
+                } catch (error) {
+                    console.error('Failed to create game:', error);
+                    this.showMessage('Не удалось создать игру', 'error');
+                }
+            }
+
+            async joinGame() {
+                const gameCodeInput = document.getElementById('gameCodeInput');
+                const gameCode = gameCodeInput.value.trim().toUpperCase();
+                
+                if (!gameCode) {
+                    this.showMessage('Введите код игры', 'error');
+                    return;
+                }
+
+                try {
+                    const game = await api.findGameByCode(gameCode);
+                    
+                    if (!game) {
+                        this.showMessage('Игра с таким кодом не найдена', 'error');
+                        return;
                     }
                     
-                    await this.updateGameDisplay();
+                    if (game.status !== 'waiting') {
+                        this.showMessage('Эта игра уже началась или завершена', 'error');
+                        return;
+                    }
+                    
+                    if (game.player1_id === this.currentUser.telegram_id) {
+                        this.showMessage('Вы не можете присоединиться к своей игре', 'error');
+                        return;
+                    }
+                    
+                    // Присоединиться к игре
+                    this.gameId = game.Id;
+                    this.isPlayer1 = false;
+                    
+                    const updates = {
+                        player2_id: this.currentUser.telegram_id,
+                        player2_name: this.currentUser.display_name,
+                        status: 'playing'
+                    };
+                    
+                    this.currentGame = await api.updateGame(this.gameId, updates);
+                    
+                    this.startGameLoop();
+                    this.showGamePlay();
+                    
+                    this.showMessage('Успешно присоединились к игре!', 'success');
                 } catch (error) {
-                    console.error('Failed to find or create game:', error);
-                    this.showMessage('Не удалось создать игру', 'error');
+                    console.error('Failed to join game:', error);
+                    this.showMessage('Не удалось присоединиться к игре', 'error');
                 }
             }
 
@@ -605,16 +701,15 @@
                         return;
                     }
                     
-                    // Если ожидали противника и он присоединился
-                    if (this.waitingForOpponent && this.currentGame.status === 'playing') {
-                        this.waitingForOpponent = false;
-                        this.showMessage('Противник найден! Игра началась!', 'success');
+                    // Если ожидали игрока и он присоединился
+                    if (this.currentGame.status === 'playing' && 
+                        document.getElementById('waitingRoom').style.display !== 'none') {
+                        this.showGamePlay();
+                        this.showMessage('Второй игрок присоединился! Игра началась!', 'success');
                     }
                     
-                    await this.updateGameDisplay();
-                    
-                    // Проверить, нужно ли обработать ходы
                     if (this.currentGame.status === 'playing') {
+                        this.updateGameDisplay();
                         await this.checkRoundResults();
                     }
                 } catch (error) {
@@ -622,11 +717,11 @@
                 }
             }
 
-            async updateGameDisplay() {
+            updateGameDisplay() {
                 if (!this.currentGame) return;
 
-                document.getElementById('player1Name').textContent = this.currentGame.player1_name || 'Игрок 1';
-                document.getElementById('player2Name').textContent = this.currentGame.player2_name || 'Ожидание...';
+                document.getElementById('player1Name').textContent = this.currentGame.player1_name;
+                document.getElementById('player2Name').textContent = this.currentGame.player2_name;
                 document.getElementById('player1Score').textContent = this.currentGame.score1 || 0;
                 document.getElementById('player2Score').textContent = this.currentGame.score2 || 0;
                 document.getElementById('roundNumber').textContent = this.currentGame.current_round || 1;
@@ -638,41 +733,22 @@
                     '🥅 Вы защитник - выберите 2 зоны для защиты';
                 document.getElementById('roleInfo').textContent = roleText;
 
-                // Показать соответствующий экран
-                if (this.currentGame.status === 'waiting' || this.waitingForOpponent) {
-                    this.showElement('waitingRoom');
-                    this.hideElement('gamePlay');
-                    this.hideElement('gameEnd');
-                    
-                    const waitingText = document.querySelector('#waitingRoom h3');
-                    if (waitingText) {
-                        waitingText.textContent = this.isPlayer1 ? 
-                            'Ожидание второго игрока...' : 
-                            'Подключение к игре...';
-                    }
-                } else if (this.currentGame.status === 'playing') {
-                    this.hideElement('waitingRoom');
-                    this.showElement('gamePlay');
-                    this.hideElement('gameEnd');
-                    
-                    // Проверить, сделал ли игрок ход
-                    const myMove = this.isPlayer1 ? this.currentGame.player1_move : this.currentGame.player2_move;
-                    const submitBtn = document.getElementById('submitMove');
-                    
-                    if (myMove) {
-                        submitBtn.textContent = 'Ожидание хода противника...';
-                        submitBtn.disabled = true;
-                        this.disableZoneSelection();
-                    } else {
-                        submitBtn.textContent = 'Подтвердить выбор';
-                        submitBtn.disabled = true;
-                        this.enableZoneSelection();
-                    }
+                // Проверить, сделал ли игрок ход
+                const myMove = this.isPlayer1 ? this.currentGame.player1_move : this.currentGame.player2_move;
+                const submitBtn = document.getElementById('submitMove');
+                
+                if (myMove) {
+                    submitBtn.textContent = 'Ожидание хода противника...';
+                    submitBtn.disabled = true;
+                    this.disableZoneSelection();
+                } else {
+                    submitBtn.textContent = 'Подтвердить выбор';
+                    submitBtn.disabled = true;
+                    this.enableZoneSelection();
                 }
             }
 
             selectZone(zoneNumber) {
-                // Проверить, можно ли делать ход
                 const myMove = this.isPlayer1 ? this.currentGame.player1_move : this.currentGame.player2_move;
                 if (myMove) return;
 
@@ -698,14 +774,12 @@
                 if (this.selectedZones.length === 0) return;
 
                 try {
-                    // Сохранить ход в базе данных
                     const moveData = this.isPlayer1 ? 
                         { player1_move: JSON.stringify(this.selectedZones) } :
                         { player2_move: JSON.stringify(this.selectedZones) };
 
                     await api.updateGame(this.gameId, moveData);
 
-                    // Очистить выбор
                     this.selectedZones = [];
                     document.querySelectorAll('.zone').forEach(zone => {
                         zone.classList.remove('selected');
@@ -716,7 +790,7 @@
                     submitBtn.disabled = true;
                     this.disableZoneSelection();
 
-                    this.showMessage('Ход отправлен! Ожидание противника...', 'info');
+                    this.showMessage('Ход отправлен!', 'info');
                 } catch (error) {
                     console.error('Failed to submit move:', error);
                     this.showMessage('Ошибка отправки хода', 'error');
@@ -730,7 +804,6 @@
                     const player1Move = JSON.parse(this.currentGame.player1_move);
                     const player2Move = JSON.parse(this.currentGame.player2_move);
 
-                    // Определить результат раунда
                     const attackerMove = this.currentGame.round_attacker === this.currentGame.player1_id ? 
                         player1Move[0] : player2Move[0];
                     const defenderMoves = this.currentGame.round_attacker === this.currentGame.player1_id ? 
@@ -748,7 +821,6 @@
                             newScore2++;
                         }
                     } else {
-                        // Защитник получает очко
                         if (this.currentGame.round_attacker === this.currentGame.player1_id) {
                             newScore2++;
                         } else {
@@ -756,7 +828,6 @@
                         }
                     }
 
-                    // Показать результат
                     const isMyGoal = (this.isPlayer1 && newScore1 > this.currentGame.score1) ||
                                     (!this.isPlayer1 && newScore2 > this.currentGame.score2);
                     
@@ -768,10 +839,7 @@
                                        isMyGoal ? 'success' : 'info');
                     }
 
-                    // Проверить, закончена ли игра
                     const gameFinished = newScore1 >= 3 || newScore2 >= 3;
-                    
-                    // Сменить нападающего для следующего раунда
                     const nextAttacker = this.currentGame.round_attacker === this.currentGame.player1_id ? 
                         this.currentGame.player2_id : this.currentGame.player1_id;
 
@@ -788,11 +856,6 @@
                     await api.updateGame(this.gameId, updates);
 
                     if (gameFinished) {
-                        // Обновить статистику игроков
-                        const player1Won = newScore1 > newScore2;
-                        await api.updateUserStats(this.currentGame.player1_id, player1Won);
-                        await api.updateUserStats(this.currentGame.player2_id, !player1Won);
-                        
                         setTimeout(() => this.endGame(), 3000);
                     }
                 } catch (error) {
@@ -814,14 +877,31 @@
                 });
             }
 
+            showGameMenu() {
+                this.hideAllScreens();
+                document.getElementById('gameMenu').classList.remove('hidden');
+            }
+
+            showWaitingRoom(gameCode) {
+                this.hideAllScreens();
+                document.getElementById('waitingRoom').classList.remove('hidden');
+                document.getElementById('roomCode').textContent = gameCode;
+            }
+
+            showGamePlay() {
+                this.hideAllScreens();
+                document.getElementById('gamePlay').classList.remove('hidden');
+                this.updateGameDisplay();
+            }
+
             endGame() {
                 if (this.gameUpdateInterval) {
                     clearInterval(this.gameUpdateInterval);
                     this.gameUpdateInterval = null;
                 }
 
-                this.hideElement('gamePlay');
-                this.showElement('gameEnd');
+                this.hideAllScreens();
+                document.getElementById('gameEnd').classList.remove('hidden');
 
                 const myScore = this.isPlayer1 ? this.currentGame.score1 : this.currentGame.score2;
                 const opponentScore = this.isPlayer1 ? this.currentGame.score2 : this.currentGame.score1;
@@ -832,26 +912,24 @@
                 document.getElementById('finalPlayer2').textContent = this.currentGame.player2_name;
                 document.getElementById('finalScore1').textContent = this.currentGame.score1;
                 document.getElementById('finalScore2').textContent = this.currentGame.score2;
+            }
 
-                // Показать финальное сообщение
-                this.showMessage(won ? 'Поздравляем с победой!' : 'В следующий раз повезет больше!', 
-                               won ? 'success' : 'info');
+            hideAllScreens() {
+                document.getElementById('gameMenu').classList.add('hidden');
+                document.getElementById('waitingRoom').classList.add('hidden');
+                document.getElementById('gamePlay').classList.add('hidden');
+                document.getElementById('gameEnd').classList.add('hidden');
             }
 
             showMessage(message, type = 'info') {
+                const existingMessage = document.querySelector('.message');
+                if (existingMessage) {
+                    existingMessage.remove();
+                }
+
                 const messageDiv = document.createElement('div');
                 messageDiv.textContent = message;
-                messageDiv.style.cssText = `
-                    position: fixed;
-                    top: 20px;
-                    left: 50%;
-                    transform: translateX(-50%);
-                    background: ${type === 'error' ? '#ff4757' : type === 'success' ? '#2ed573' : '#667eea'};
-                    color: white;
-                    padding: 15px 20px;
-                    border-radius: 10px;
-                    z-index: 1000;
-                `;
+                messageDiv.className = `message ${type}`;
 
                 document.body.appendChild(messageDiv);
                 setTimeout(() => {
@@ -861,18 +939,22 @@
                 }, 3000);
             }
 
-            showElement(id) {
-                const element = document.getElementById(id);
-                if (element) {
-                    element.classList.remove('hidden');
+            async cancelGame() {
+                if (this.gameUpdateInterval) {
+                    clearInterval(this.gameUpdateInterval);
+                    this.gameUpdateInterval = null;
                 }
-            }
-
-            hideElement(id) {
-                const element = document.getElementById(id);
-                if (element) {
-                    element.classList.add('hidden');
+                
+                if (this.gameId) {
+                    try {
+                        await api.updateGame(this.gameId, { status: 'cancelled' });
+                    } catch (error) {
+                        console.error('Failed to cancel game:', error);
+                    }
                 }
+                
+                this.showGameMenu();
+                this.showMessage('Игра отменена', 'info');
             }
         }
 
@@ -881,16 +963,37 @@
         const api = new NocoDBAPI();
 
         // Global functions
+        function createGame() {
+            window.gameManager.createGame();
+        }
+
+        function showJoinForm() {
+            document.getElementById('joinForm').classList.remove('hidden');
+        }
+
+        function hideJoinForm() {
+            document.getElementById('joinForm').classList.add('hidden');
+            document.getElementById('gameCodeInput').value = '';
+        }
+
+        function joinGame() {
+            window.gameManager.joinGame();
+        }
+
         function selectZone(zoneNumber) {
-            if (window.hockeyGame) {
-                window.hockeyGame.selectZone(zoneNumber);
+            if (window.gameManager) {
+                window.gameManager.selectZone(zoneNumber);
             }
         }
 
         function submitMove() {
-            if (window.hockeyGame) {
-                window.hockeyGame.submitMove();
+            if (window.gameManager) {
+                window.gameManager.submitMove();
             }
+        }
+
+        function cancelGame() {
+            window.gameManager.cancelGame();
         }
 
         function playAgain() {
@@ -903,7 +1006,7 @@
 
         // Initialize game when page loads
         document.addEventListener('DOMContentLoaded', () => {
-            window.hockeyGame = new HockeyGame();
+            window.gameManager = new HockeyGameManager();
         });
     </script>
 </body>
