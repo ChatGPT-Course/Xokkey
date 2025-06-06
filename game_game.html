@@ -231,22 +231,6 @@
             overflow: hidden;
         }
 
-        .area::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(45deg, transparent, rgba(255, 255, 255, 0.1), transparent);
-            transform: translateX(-100%);
-            transition: transform 0.6s;
-        }
-
-        .area:hover::before {
-            transform: translateX(100%);
-        }
-
         .area:hover {
             border-color: var(--accent-light);
             background: rgba(231, 76, 60, 0.2);
@@ -302,23 +286,6 @@
             align-items: center;
             justify-content: center;
             gap: 10px;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .btn::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-            transition: left 0.5s;
-        }
-
-        .btn:hover::before {
-            left: 100%;
         }
 
         .btn-primary {
@@ -547,17 +514,17 @@
         <div class="game-header">
             <div class="scoreboard">
                 <div class="player-score">
-                    <div class="player-avatar" id="creator-avatar">👤</div>
-                    <div class="player-name" id="creator-name">Игрок 1</div>
-                    <div class="score-number" id="creator-score">0</div>
+                    <div class="player-avatar" id="player1-avatar">👤</div>
+                    <div class="player-name" id="player1-name">Игрок 1</div>
+                    <div class="score-number" id="player1-score">0</div>
                 </div>
                 
                 <div class="vs-divider">:</div>
                 
                 <div class="player-score">
-                    <div class="player-avatar" id="joiner-avatar">👤</div>
-                    <div class="player-name" id="joiner-name">Игрок 2</div>
-                    <div class="score-number" id="joiner-score">0</div>
+                    <div class="player-avatar" id="player2-avatar">👤</div>
+                    <div class="player-name" id="player2-name">Игрок 2</div>
+                    <div class="score-number" id="player2-score">0</div>
                 </div>
             </div>
 
@@ -635,13 +602,13 @@
     <script>
         // Конфигурация API
         const NOCODB_API = "https://app.nocodb.com/api/v1/db/data/weamcfo6/p27jdsmk69wuimh/meefo7wdwoh5mtv";
-        const ROOMS_API = "https://app.nocodb.com/api/v1/db/data/weamcfo6/p27jdsmk69wuimh/mznem6p3jztsgsl";
+        const ROOM_API = "https://app.nocodb.com/api/v1/db/data/weamcfo6/p27jdsmk69wuimh/NEW_TABLE_ID"; // Замени NEW_TABLE_ID на ID таблицы game_room
         const NOCODB_KEY = "bocQfycJpJsTG_tbwEf8ma8E5rhoig0njMDXFWtJ";
 
         // Глобальные переменные
         const tg = window.Telegram.WebApp;
         let currentUser = null;
-        let currentRoom = null;
+        let gameRoom = null;
         let roomId = null;
         let gameRefreshInterval = null;
         let timerInterval = null;
@@ -650,12 +617,12 @@
         // Игровое состояние
         let gameState = {
             isMyTurn: false,
-            phase: 'wait', // 'shoot', 'defend', 'wait'
+            phase: 'wait',
             selectedShootArea: null,
             selectedDefenseAreas: [],
             timeLeft: 10,
             roundNumber: 1,
-            isCreator: false
+            isPlayer1: false
         };
 
         // Инициализация пользователя
@@ -685,7 +652,7 @@
         async function init() {
             await loadUserBalance(currentUser.id);
             await loadRoom();
-            if (currentRoom) {
+            if (gameRoom) {
                 initializeGame();
                 gameRefreshInterval = setInterval(refreshGame, 1000);
             }
@@ -715,7 +682,7 @@
         // Загрузка данных комнаты
         async function loadRoom() {
             try {
-                const response = await fetch(`${ROOMS_API}/${roomId}`, {
+                const response = await fetch(`${ROOM_API}/${roomId}`, {
                     headers: { "xc-token": NOCODB_KEY }
                 });
 
@@ -725,11 +692,11 @@
                     return;
                 }
 
-                currentRoom = await response.json();
-                gameState.isCreator = currentRoom.id_creator == currentUser.id;
+                gameRoom = await response.json();
+                gameState.isPlayer1 = gameRoom.player1_id == currentUser.id;
 
                 // Проверяем, что игрок участвует в этой игре
-                if (currentRoom.id_creator != currentUser.id && currentRoom.id_joining != currentUser.id) {
+                if (gameRoom.player1_id != currentUser.id && gameRoom.player2_id != currentUser.id) {
                     showNotification('❌ Вы не участвуете в этой игре');
                     setTimeout(() => window.location.href = 'game.html', 2000);
                     return;
@@ -747,16 +714,16 @@
 
         // Обновление информации об игроках
         function updatePlayerInfo() {
-            document.getElementById('creator-name').textContent = currentRoom.name_creator || 'Игрок 1';
-            document.getElementById('joiner-name').textContent = currentRoom.name_joining || 'Игрок 2';
+            document.getElementById('player1-name').textContent = gameRoom.player1_name || 'Игрок 1';
+            document.getElementById('player2-name').textContent = gameRoom.player2_name || 'Игрок 2';
             
             // Аватары
-            setPlayerAvatar('creator-avatar', currentRoom.avatar_creator);
-            setPlayerAvatar('joiner-avatar', currentRoom.avatar_joining);
+            setPlayerAvatar('player1-avatar', gameRoom.player1_avatar);
+            setPlayerAvatar('player2-avatar', gameRoom.player2_avatar);
 
             // Счет
-            document.getElementById('creator-score').textContent = currentRoom.xp_cr || 0;
-            document.getElementById('joiner-score').textContent = currentRoom.xp_joi || 0;
+            document.getElementById('player1-score').textContent = gameRoom.xp_p1 || 0;
+            document.getElementById('player2-score').textContent = gameRoom.xp_p2 || 0;
         }
 
         // Установка аватара
@@ -777,23 +744,22 @@
 
         // Обновление состояния игры
         function updateGameState() {
-            // Определяем текущую фазу и чей ход
-            const totalRounds = (currentRoom.xp_cr || 0) + (currentRoom.xp_joi || 0);
-            const isCreatorTurn = totalRounds % 2 === 0; // четные раунды - создатель, нечетные - присоединившийся
+            const totalRounds = (gameRoom.xp_p1 || 0) + (gameRoom.xp_p2 || 0);
+            const isPlayer1Turn = gameRoom.turn === 1;
             
             gameState.roundNumber = totalRounds + 1;
-            gameState.timeLeft = currentRoom.sec || 10;
+            gameState.timeLeft = gameRoom.sec || 10;
 
             // Определяем фазу игры
-            if (currentRoom.send === null && currentRoom.block === null) {
+            if (gameRoom.send === null && gameRoom.block === null) {
                 // Новый раунд - фаза удара
                 gameState.phase = 'shoot';
-                gameState.isMyTurn = (gameState.isCreator && isCreatorTurn) || (!gameState.isCreator && !isCreatorTurn);
-            } else if (currentRoom.send !== null && currentRoom.block === null) {
+                gameState.isMyTurn = (gameState.isPlayer1 && isPlayer1Turn) || (!gameState.isPlayer1 && !isPlayer1Turn);
+            } else if (gameRoom.send !== null && gameRoom.block === null) {
                 // Удар сделан, ждем защиту
                 gameState.phase = 'defend';
-                gameState.isMyTurn = (gameState.isCreator && !isCreatorTurn) || (!gameState.isCreator && isCreatorTurn);
-            } else if (currentRoom.send !== null && currentRoom.block !== null) {
+                gameState.isMyTurn = (gameState.isPlayer1 && !isPlayer1Turn) || (!gameState.isPlayer1 && isPlayer1Turn);
+            } else if (gameRoom.send !== null && gameRoom.block !== null) {
                 // Обе фазы завершены, показываем результат
                 gameState.phase = 'result';
                 gameState.isMyTurn = false;
@@ -847,6 +813,22 @@
                 if (gameState.timeLeft > 0) {
                     gameState.timeLeft--;
                     document.getElementById('timer-display').textContent = gameState.timeLeft;
+                    
+                    // Обновляем таймер в базе только если наш ход
+                    if (gameState.isMyTurn) {
+                        try {
+                            await fetch(`${ROOM_API}/${roomId}`, {
+                                method: 'PATCH',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    "xc-token": NOCODB_KEY
+                                },
+                                body: JSON.stringify({ sec: gameState.timeLeft })
+                            });
+                        } catch (error) {
+                            console.error("Ошибка обновления таймера:", error);
+                        }
+                    }
                 } else {
                     clearInterval(timerInterval);
                     if (gameState.isMyTurn) {
@@ -859,12 +841,10 @@
         // Обработка истечения времени
         async function handleTimeOut() {
             if (gameState.phase === 'shoot') {
-                // Случайный выбор для удара
                 const randomArea = Math.floor(Math.random() * 4) + 1;
                 gameState.selectedShootArea = randomArea;
                 await submitShootAction();
             } else if (gameState.phase === 'defend') {
-                // Случайный выбор для защиты
                 const areas = [1, 2, 3, 4];
                 const selectedAreas = [];
                 for (let i = 0; i < 2; i++) {
@@ -906,11 +886,9 @@
             const areaElement = document.querySelector(`#defense-areas [data-area="${area}"]`);
             
             if (areaElement.classList.contains('selected')) {
-                // Убираем выбор
                 areaElement.classList.remove('selected');
                 gameState.selectedDefenseAreas = gameState.selectedDefenseAreas.filter(a => a !== area);
             } else {
-                // Добавляем выбор (максимум 2)
                 if (gameState.selectedDefenseAreas.length < 2) {
                     areaElement.classList.add('selected');
                     gameState.selectedDefenseAreas.push(area);
@@ -940,7 +918,7 @@
         // Отправка действия удара
         async function submitShootAction() {
             try {
-                await fetch(`${ROOMS_API}/${roomId}`, {
+                await fetch(`${ROOM_API}/${roomId}`, {
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',
@@ -948,7 +926,8 @@
                     },
                     body: JSON.stringify({
                         send: gameState.selectedShootArea,
-                        sec: 10
+                        sec: 10,
+                        turn: gameState.isPlayer1 ? 2 : 1
                     })
                 });
 
@@ -966,7 +945,7 @@
             try {
                 const blockValue = parseInt(gameState.selectedDefenseAreas.sort().join(''));
                 
-                await fetch(`${ROOMS_API}/${roomId}`, {
+                await fetch(`${ROOM_API}/${roomId}`, {
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',
@@ -988,8 +967,8 @@
 
         // Показ результата раунда
         function showRoundResult() {
-            const shootArea = currentRoom.send;
-            const blockAreas = currentRoom.block.toString().split('').map(n => parseInt(n));
+            const shootArea = gameRoom.send;
+            const blockAreas = gameRoom.block.toString().split('').map(n => parseInt(n));
             const isGoal = !blockAreas.includes(shootArea);
 
             // Визуальное отображение
@@ -1030,7 +1009,7 @@
         // Обновление игры
         async function refreshGame() {
             try {
-                const response = await fetch(`${ROOMS_API}/${roomId}`, {
+                const response = await fetch(`${ROOM_API}/${roomId}`, {
                     headers: { "xc-token": NOCODB_KEY }
                 });
 
@@ -1047,14 +1026,14 @@
                     return;
                 }
 
-                const oldRoom = currentRoom;
-                currentRoom = room;
+                const oldRoom = gameRoom;
+                gameRoom = room;
 
                 // Обновляем счет
                 updatePlayerInfo();
 
                 // Проверяем завершение игры
-                if (room.xp_cr >= 3 || room.xp_joi >= 3) {
+                if (room.xp_p1 >= 3 || room.xp_p2 >= 3) {
                     await endGame();
                     return;
                 }
@@ -1063,7 +1042,7 @@
                 const stateChanged = 
                     oldRoom.send !== room.send || 
                     oldRoom.block !== room.block ||
-                    oldRoom.sec !== room.sec;
+                    oldRoom.turn !== room.turn;
 
                 if (stateChanged) {
                     updateGameState();
@@ -1094,11 +1073,11 @@
                 timerInterval = null;
             }
 
-            const creatorWins = currentRoom.xp_cr >= 3;
-            const winnerId = creatorWins ? currentRoom.id_creator : currentRoom.id_joining;
-            const winnerName = creatorWins ? currentRoom.name_creator : currentRoom.name_joining;
+            const player1Wins = gameRoom.xp_p1 >= 3;
+            const winnerId = player1Wins ? gameRoom.player1_id : gameRoom.player2_id;
+            const winnerName = player1Wins ? gameRoom.player1_name : gameRoom.player2_name;
             const isWinner = winnerId == currentUser.id;
-            const prize = currentRoom.bet * 2;
+            const prize = 2; // Выигрыш 2 клюшки
 
             // Начисляем выигрыш
             if (isWinner) {
@@ -1121,14 +1100,32 @@
                 await loadUserBalance(currentUser.id);
             }
 
-            // Удаляем комнату
+            // Сбрасываем комнату
             try {
-                await fetch(`${ROOMS_API}/${roomId}`, {
-                    method: 'DELETE',
-                    headers: { "xc-token": NOCODB_KEY }
+                await fetch(`${ROOM_API}/${roomId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        "xc-token": NOCODB_KEY
+                    },
+                    body: JSON.stringify({
+                        player1_id: null,
+                        player1_name: null,
+                        player1_avatar: null,
+                        player2_id: null,
+                        player2_name: null,
+                        player2_avatar: null,
+                        status: "empty",
+                        xp_p1: 0,
+                        xp_p2: 0,
+                        sec: 10,
+                        send: null,
+                        block: null,
+                        turn: 1
+                    })
                 });
             } catch (error) {
-                console.error("Ошибка при удалении комнаты:", error);
+                console.error("Ошибка при сбросе комнаты:", error);
             }
 
             // Показываем финальный результат
@@ -1142,13 +1139,13 @@
                 icon.style.color = '#f39c12';
                 text.textContent = 'ПОБЕДА!';
                 text.style.color = '#27ae60';
-                description.textContent = `Вы выиграли ${prize} клюшек! Финальный счет: ${currentRoom.xp_cr}:${currentRoom.xp_joi}`;
+                description.textContent = `Вы выиграли ${prize} клюшек! Финальный счет: ${gameRoom.xp_p1}:${gameRoom.xp_p2}`;
             } else {
                 icon.textContent = '💔';
                 icon.style.color = '#e74c3c';
                 text.textContent = 'ПОРАЖЕНИЕ';
                 text.style.color = '#e74c3c';
-                description.textContent = `Победитель: ${winnerName}. Финальный счет: ${currentRoom.xp_cr}:${currentRoom.xp_joi}`;
+                description.textContent = `Победитель: ${winnerName}. Финальный счет: ${gameRoom.xp_p1}:${gameRoom.xp_p2}`;
             }
 
             modal.style.display = 'flex';
@@ -1173,28 +1170,46 @@
             }
         });
 
-        document.getElementById('result-ok-btn').addEventListener('click', () => {
+        document.getElementById('result-ok-btn').addEventListener('click', async () => {
             document.getElementById('result-modal').style.display = 'none';
             
             // Подготавливаем следующий раунд
-            setTimeout(async () => {
-                try {
-                    await fetch(`${ROOMS_API}/${roomId}`, {
-                        method: 'PATCH',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            "xc-token": NOCODB_KEY
-                        },
-                        body: JSON.stringify({
-                            send: null,
-                            block: null,
-                            sec: 10
-                        })
-                    });
-                } catch (error) {
-                    console.error("Ошибка при сбросе раунда:", error);
+            const shooterWon = !gameRoom.block.toString().split('').map(n => parseInt(n)).includes(gameRoom.send);
+            const isPlayer1Shooter = gameRoom.turn === 1;
+            
+            let updateData = {
+                send: null,
+                block: null,
+                sec: 10,
+                turn: isPlayer1Shooter ? 2 : 1
+            };
+
+            if (shooterWon) {
+                if (isPlayer1Shooter) {
+                    updateData.xp_p1 = (gameRoom.xp_p1 || 0) + 1;
+                } else {
+                    updateData.xp_p2 = (gameRoom.xp_p2 || 0) + 1;
                 }
-            }, 1000);
+            } else {
+                if (isPlayer1Shooter) {
+                    updateData.xp_p2 = (gameRoom.xp_p2 || 0) + 1;
+                } else {
+                    updateData.xp_p1 = (gameRoom.xp_p1 || 0) + 1;
+                }
+            }
+
+            try {
+                await fetch(`${ROOM_API}/${roomId}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        "xc-token": NOCODB_KEY
+                    },
+                    body: JSON.stringify(updateData)
+                });
+            } catch (error) {
+                console.error("Ошибка при сбросе раунда:", error);
+            }
         });
 
         document.getElementById('final-ok-btn').addEventListener('click', () => {
