@@ -804,11 +804,16 @@
                 if (data.list.length > 0) {
                     const balance = data.list[0].point || 0;
                     document.getElementById('balance').textContent = `Клюшек: ${balance} 🏒`;
+                    userBalance = balance; // Обновляем глобальную переменную
                     return balance;
                 }
+                document.getElementById('balance').textContent = `Клюшек: 0 🏒`;
+                userBalance = 0;
                 return 0;
             } catch (error) {
                 console.error("Ошибка при загрузке баланса:", error);
+                document.getElementById('balance').textContent = `Клюшек: 0 🏒`;
+                userBalance = 0;
                 return 0;
             }
         }
@@ -862,6 +867,9 @@
         // Функция для загрузки списка комнат
         async function loadRooms() {
             try {
+                // Обновляем баланс перед загрузкой комнат
+                await loadUserBalance(currentUser.id);
+
                 const response = await fetch(`${ROOMS_API}?where=(status,eq,open)`, {
                     headers: {
                         "xc-token": NOCODB_KEY
@@ -962,9 +970,10 @@
                 return;
             }
 
-            userBalance = await loadUserBalance(currentUser.id);
+            // Получаем актуальный баланс перед проверкой
+            const currentBalance = await loadUserBalance(currentUser.id);
 
-            if (userBalance < bet) {
+            if (currentBalance < bet) {
                 showNotification('Недостаточно клюшек для создания комнаты');
                 return;
             }
@@ -1050,9 +1059,10 @@
 
                 const room = await roomResponse.json();
 
-                userBalance = await loadUserBalance(currentUser.id);
+                // Получаем актуальный баланс перед проверкой
+                const currentBalance = await loadUserBalance(currentUser.id);
 
-                if (userBalance < room.bet) {
+                if (currentBalance < room.bet) {
                     showNotification('Недостаточно клюшек для присоединения');
                     return;
                 }
