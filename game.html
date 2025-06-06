@@ -267,8 +267,6 @@
             z-index: 1000;
             color: white;
             font-weight: 600;
-            max-width: 350px;
-            word-wrap: break-word;
         }
 
         .message.success {
@@ -281,18 +279,6 @@
 
         .message.info {
             background: #667eea;
-        }
-
-        .debug-info {
-            background: #f8f9fa;
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 10px;
-            margin: 10px 0;
-            font-size: 0.8rem;
-            color: #666;
-            max-height: 200px;
-            overflow-y: auto;
         }
     </style>
 </head>
@@ -374,11 +360,6 @@
             <p style="text-align: center; margin-top: 10px;">
                 Раунд <span id="roundNumber">1</span>
             </p>
-
-            <!-- Отладочная информация -->
-            <div class="debug-info" id="debugInfo">
-                Загрузка данных...
-            </div>
         </div>
 
         <!-- Окончание игры -->
@@ -517,6 +498,7 @@
                     
                     const gameIndex = games.findIndex(g => g.Id === gameId);
                     if (gameIndex !== -1) {
+                        // Создаем полностью новый объект с обновленными данными
                         games[gameIndex] = { 
                             ...games[gameIndex], 
                             ...data, 
@@ -622,6 +604,7 @@
                     console.log('Update result:', result);
                     
                     if (result) {
+                        // Синхронизируем локальные данные
                         this.syncLocalData(roomId, updates);
                         return result;
                     }
@@ -668,7 +651,7 @@
             }
         }
 
-        // Game Manager с новой логикой через current_hod
+        // Game Manager с улучшенной обработкой ошибок
         class HockeyGameManager {
             constructor() {
                 this.currentUser = null;
@@ -678,11 +661,14 @@
                 this.selectedZones = [];
                 this.maxZoneSelection = 1;
                 this.gameUpdateInterval = null;
+                this.maxRetries = 3;
+                this.retryCount = 0;
                 this.init();
             }
 
             async init() {
                 try {
+                    // Получаем данные пользователя из Telegram WebApp
                     const telegramId = tgApp.getUserId();
                     this.currentUser = {
                         telegram_id: telegramId.toString(),
@@ -695,7 +681,7 @@
 
                 } catch (error) {
                     console.error('Failed to initialize game:', error);
-                    this.showError('Ошибка инициализации игры: ' + error.message);
+                    this.showMessage('Ошибка инициализации игры', 'error');
                 }
             }
 
@@ -711,9 +697,9 @@
                         room_name: roomCode,
                         player1: this.currentUser.telegram_id,
                         player2: null,
-                        current_hod: this.currentUser.telegram_id, // Новый столбец - кто сейчас ходит
                         current_sender: this.currentUser.telegram_id, // Создатель начинает подавать
                         current_protect: null, // Пуст изначально
+                        current_hod: this.currentUser.telegram_id, // Создатель ходит первым
                         player1_score: 0,
                         player2_score: 0,
                         game_state: 'waiting',
@@ -734,11 +720,11 @@
                         this.startGameLoop();
                         this.showMessage('Комната создана!', 'success');
                     } else {
-                        this.showError('Ошибка создания комнаты - получен null ответ от API');
+                        this.showMessage('Ошибка создания комнаты', 'error');
                     }
                 } catch (error) {
                     console.error('Failed to create game:', error);
-                    this.showError('Ошибка создания игры: ' + error.message);
+                    this.showMessage('Ошибка создания игры', 'error');
                 }
             }
 
@@ -747,7 +733,7 @@
                 const roomCode = gameCodeInput.value.trim();
                 
                 if (!roomCode) {
-                    this.showError('Введите код комнаты');
+                    this.showMessage('Введите код комнаты', 'error');
                     return;
                 }
 
@@ -756,25 +742,25 @@
                     const room = await api.findRoomByName(roomCode);
                     
                     if (!room) {
-                        this.showError('Комната не найдена с кодом: ' + roomCode);
+                        this.showMessage('Комната не найдена', 'error');
                         return;
                     }
 
                     if (room.player2) {
-                        this.showError('Комната уже заполнена');
+                        this.showMessage('Комната уже заполнена', 'error');
                         return;
                     }
 
                     if (room.player1 === this.currentUser.telegram_id) {
-                        this.showError('Вы не можете присоединиться к своей комнате');
+                        this.showMessage('Вы не можете присоединиться к своей комнате', 'error');
                         return;
                     }
 
-                    // Присоединяемся к комнате
+                    // Присоединяемся к комнате - заполняем player2 и меняем статус на game
                     const updateData = {
                         player2: this.currentUser.telegram_id,
                         game_state: 'game'
-                        // current_hod и роли остаются у создателя
+                        // current_sender остается у создателя, current_protect остается пустым
                     };
 
                     console.log('Joining room with updates:', updateData);
@@ -790,11 +776,11 @@
                         this.startGameLoop();
                         this.showMessage('Присоединились к игре!', 'success');
                     } else {
-                        this.showError('Ошибка присоединения к игре - не удалось обновить комнату');
+                        this.showMessage('Ошибка присоединения к игре', 'error');
                     }
                 } catch (error) {
                     console.error('Failed to join game:', error);
-                    this.showError('Ошибка присоединения к игре: ' + error.message);
+                    this.showMessage('Ошибка присоединения к игре', 'error');
                 }
             }
 
@@ -814,19 +800,35 @@
                     if (!this.gameId) return;
 
                     const updatedRoom = await api.getRoom(this.gameId);
-                    if (!updatedRoom) {
-                        this.showError('Не удалось получить данные комнаты с ID: ' + this.gameId);
-                        return;
-                    }
+                    if (!updatedRoom) return;
 
-                    const previousGame = this.currentGame ? { ...this.currentGame } : {};
+                    console.log('=== ПРОВЕРКА СТАТУСА КОМНАТЫ ===');
+                    console.log('Обновленная комната:', updatedRoom);
+                    console.log('Мой ID:', this.currentUser.telegram_id);
+
                     const wasWaiting = this.currentGame?.game_state === 'waiting' || 
                                      !document.getElementById('waitingRoom').classList.contains('hidden');
+
+                    const previousStatus = this.currentGame?.game_state;
+                    const previousGame = this.currentGame ? { ...this.currentGame } : {};
+                    
+                    // Сохраняем предыдущие роли для сравнения
+                    const prevSender = this.currentGame?.current_sender;
+                    const prevProtect = this.currentGame?.current_protect;
+                    const prevHod = this.currentGame?.current_hod;
+                    const prevAttackerMove = this.currentGame?.attacker_move;
+                    const prevDefenderMove = this.currentGame?.defender_move;
                     
                     this.currentGame = updatedRoom;
 
-                    // Обновляем отладочную информацию
-                    this.updateDebugInfo();
+                    // Проверяем состояние игры на ошибки
+                    const gameStateError = this.validateGameState();
+                    if (gameStateError) {
+                        this.showMessage(`ОШИБКА: ${gameStateError}`, 'error');
+                        console.error('Ошибка состояния игры:', gameStateError);
+                        console.error('Данные комнаты:', this.currentGame);
+                        return;
+                    }
 
                     // Если игра завершена
                     if (this.currentGame.game_state === 'finished') {
@@ -834,14 +836,33 @@
                         return;
                     }
 
-                    // Если ожидали игрока и он присоединился
+                    // Если ожидали игрока и он присоединился (для создателя)
                     if (this.currentGame.game_state === 'game' && 
-                        wasWaiting &&
+                        (previousStatus === 'waiting' || wasWaiting) &&
                         this.currentGame.player2) {
                         console.log('Second player joined, starting game!');
                         this.showGamePlay();
                         this.showMessage('Второй игрок присоединился! Игра началась!', 'success');
                         return;
+                    }
+
+                    // Проверяем любые изменения в игровых данных
+                    const dataChanged = (
+                        prevSender !== this.currentGame.current_sender ||
+                        prevProtect !== this.currentGame.current_protect ||
+                        prevHod !== this.currentGame.current_hod ||
+                        prevAttackerMove !== this.currentGame.attacker_move ||
+                        prevDefenderMove !== this.currentGame.defender_move
+                    );
+                    
+                    if (dataChanged) {
+                        console.log('=== ДАННЫЕ ИГРЫ ИЗМЕНИЛИСЬ ===');
+                        console.log('Предыдущий подающий:', prevSender, '→', this.currentGame.current_sender);
+                        console.log('Предыдущий защитник:', prevProtect, '→', this.currentGame.current_protect);
+                        console.log('Предыдущий ход:', prevHod, '→', this.currentGame.current_hod);
+                        console.log('Ход подающего:', prevAttackerMove, '→', this.currentGame.attacker_move);
+                        console.log('Ход защитника:', prevDefenderMove, '→', this.currentGame.defender_move);
+                        console.log('===========================');
                     }
 
                     // Проверяем, нужно ли обработать результат раунда
@@ -851,51 +872,67 @@
                         (!previousGame.attacker_move || !previousGame.defender_move)) {
                         console.log('Оба игрока сделали ходы, обрабатываем результат');
                         await this.processRoundResult();
-                        return;
+                        return; // После обработки результата updateGameDisplay вызовется автоматически
                     }
 
-                    // Обновляем интерфейс
+                    // ПРИНУДИТЕЛЬНО обновляем интерфейс если игра идет
                     if (this.currentGame.game_state === 'game' && 
                         !document.getElementById('gamePlay').classList.contains('hidden')) {
-                        this.updateGameDisplay();
+                        console.log('ПРИНУДИТЕЛЬНОЕ обновление игрового интерфейса');
+                        this.forceUpdateGameDisplay();
                     }
                 } catch (error) {
                     console.error('Failed to check room status:', error);
-                    this.showError('Ошибка проверки статуса комнаты: ' + error.message);
+                    this.retryCount++;
+                    
+                    if (this.retryCount > 5) {
+                        this.showMessage('Проблемы с подключением к серверу', 'error');
+                        this.retryCount = 0;
+                    }
                 }
             }
 
-            updateDebugInfo() {
-                const debugElement = document.getElementById('debugInfo');
-                if (!debugElement || !this.currentGame) return;
+            validateGameState() {
+                if (!this.currentGame) return null;
 
-                const debugData = {
-                    'Мой ID': this.currentUser.telegram_id,
-                    'Player1': this.currentGame.player1,
-                    'Player2': this.currentGame.player2,
-                    'Current_hod': this.currentGame.current_hod,
-                    'Current_sender': this.currentGame.current_sender,
-                    'Current_protect': this.currentGame.current_protect,
-                    'Attacker_move': this.currentGame.attacker_move,
-                    'Defender_move': this.currentGame.defender_move,
-                    'Game_state': this.currentGame.game_state
-                };
+                const myId = this.currentUser.telegram_id;
+                const iAmSender = this.currentGame.current_sender === myId;
+                const iAmProtect = this.currentGame.current_protect === myId;
+                const isMyTurn = this.currentGame.current_hod === myId;
+                const attackerMoved = !!this.currentGame.attacker_move;
+                const defenderMoved = !!this.currentGame.defender_move;
 
-                let debugText = '';
-                for (const [key, value] of Object.entries(debugData)) {
-                    debugText += `${key}: ${value || 'null'}\n`;
+                // Создаем детальное описание состояния
+                const stateInfo = `isMyTurn=${isMyTurn}, iAmSender=${iAmSender}, iAmProtect=${iAmProtect}, attackerMoved=${attackerMoved}, defenderMoved=${defenderMoved}`;
+
+                // Проверяем на неопределенные состояния
+                if (isMyTurn && iAmProtect && !attackerMoved) {
+                    return `Неопределенное состояние игры: ${stateInfo}. Вы защитник, но подающий еще не сделал ход.`;
                 }
 
-                debugElement.textContent = debugText;
+                if (isMyTurn && !iAmSender && !iAmProtect) {
+                    return `Неопределенное состояние игры: ${stateInfo}. Ваш ход, но у вас нет роли.`;
+                }
+
+                if (iAmSender && iAmProtect) {
+                    return `Неопределенное состояние игры: ${stateInfo}. Вы не можете быть одновременно подающим и защитником.`;
+                }
+
+                return null; // Состояние корректное
             }
 
             updateGameDisplay() {
+                this.forceUpdateGameDisplay();
+            }
+
+            forceUpdateGameDisplay() {
                 if (!this.currentGame) {
-                    this.showError('Нет данных об игре для обновления интерфейса');
+                    console.log('Нет данных об игре для обновления');
                     return;
                 }
                 
-                console.log('=== ОБНОВЛЕНИЕ ИНТЕРФЕЙСА ===');
+                console.log('=== ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ ИНТЕРФЕЙСА ===');
+                console.log('Данные игры:', this.currentGame);
                 
                 // Обновляем счет и раунд
                 document.getElementById('player1Name').textContent = 'Игрок 1';
@@ -904,47 +941,54 @@
                 document.getElementById('player2Score').textContent = this.currentGame.player2_score || 0;
                 document.getElementById('roundNumber').textContent = this.currentGame.current_round || 1;
 
-                // Очищаем выборы зон
+                // Принудительно очищаем выборы зон
                 this.selectedZones = [];
                 document.querySelectorAll('.zone').forEach(zone => {
                     zone.classList.remove('selected');
                 });
 
-                // НОВАЯ ЛОГИКА: проверяем current_hod
-                const isMyTurn = this.currentGame.current_hod === this.currentUser.telegram_id;
-                const iAmSender = this.currentGame.current_sender === this.currentUser.telegram_id;
-                const iAmProtect = this.currentGame.current_protect === this.currentUser.telegram_id;
+                // Определяем роли игрока на основе current_hod
+                const myId = this.currentUser.telegram_id;
+                const isMyTurn = this.currentGame.current_hod === myId;
+                const iAmSender = this.currentGame.current_sender === myId;
+                const iAmProtect = this.currentGame.current_protect === myId;
                 const attackerMoved = !!this.currentGame.attacker_move;
                 const defenderMoved = !!this.currentGame.defender_move;
                 
-                console.log('=== АНАЛИЗ РОЛЕЙ (НОВАЯ ЛОГИКА) ===');
-                console.log('Сейчас мой ход (current_hod):', isMyTurn);
-                console.log('Я подающий (current_sender):', iAmSender);
-                console.log('Я защитник (current_protect):', iAmProtect);
-                console.log('Ход подающего сделан:', attackerMoved);
-                console.log('Ход защитника сделан:', defenderMoved);
-                console.log('===============================');
+                console.log('=== ДЕТАЛЬНЫЙ АНАЛИЗ РОЛЕЙ ===');
+                console.log('Мой Telegram ID:', myId);
+                console.log('Current hod в БД:', this.currentGame.current_hod);
+                console.log('Current sender в БД:', this.currentGame.current_sender);
+                console.log('Current protect в БД:', this.currentGame.current_protect);
+                console.log('Это мой ход (current_hod):', isMyTurn);
+                console.log('Я подающий (sender):', iAmSender);
+                console.log('Я защитник (protect):', iAmProtect);
+                console.log('Ход подающего сделан (attacker_move):', attackerMoved, this.currentGame.attacker_move);
+                console.log('Ход защитника сделан (defender_move):', defenderMoved, this.currentGame.defender_move);
+                console.log('=============================');
                 
                 const submitBtn = document.getElementById('submitMove');
                 const roleInfoElement = document.getElementById('roleInfo');
                 
-                // Сброс состояния
+                // Сброс состояния кнопки и зон
                 this.disableZoneSelection();
                 submitBtn.disabled = true;
                 
                 if (!isMyTurn) {
-                    // НЕ МОЙ ХОД
-                    console.log('>>> НЕ МОЙ ХОД - ОЖИДАНИЕ <<<');
+                    // Не мой ход
+                    console.log('>>> НЕ МОЙ ХОД <<<');
                     roleInfoElement.textContent = '⏳ Ожидание хода противника...';
                     roleInfoElement.style.background = '#e2e3e5';
                     roleInfoElement.style.borderColor = '#d6d8db';
                     roleInfoElement.style.color = '#383d41';
+                    this.disableZoneSelection();
                     submitBtn.textContent = 'Ожидание...';
+                    submitBtn.disabled = true;
                     submitBtn.style.background = '#6c757d';
                     
                 } else if (isMyTurn && iAmSender && !attackerMoved) {
-                    // МОЙ ХОД И Я ПОДАЮЩИЙ
-                    console.log('>>> МОЙ ХОД КАК ПОДАЮЩИЙ <<<');
+                    // Мой ход - я подающий
+                    console.log('>>> МОЙ ХОД - ПОДАЮЩИЙ <<<');
                     roleInfoElement.textContent = '⚽ ВАШ ХОД - выберите 1 зону для броска';
                     roleInfoElement.style.background = '#fff3cd';
                     roleInfoElement.style.borderColor = '#ffeaa7';
@@ -956,8 +1000,8 @@
                     submitBtn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
                     
                 } else if (isMyTurn && iAmProtect && attackerMoved && !defenderMoved) {
-                    // МОЙ ХОД И Я ЗАЩИТНИК
-                    console.log('>>> МОЙ ХОД КАК ЗАЩИТНИК <<<');
+                    // Мой ход - я защитник
+                    console.log('>>> МОЙ ХОД - ЗАЩИТНИК <<<');
                     roleInfoElement.textContent = '🛡️ ВАШ ХОД - выберите 2 зоны для защиты';
                     roleInfoElement.style.background = '#d1ecf1';
                     roleInfoElement.style.borderColor = '#bee5eb';
@@ -969,37 +1013,43 @@
                     submitBtn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
                     
                 } else if (attackerMoved && defenderMoved) {
-                    // ОБА ХОДА СДЕЛАНЫ
-                    console.log('>>> ОЖИДАНИЕ РЕЗУЛЬТАТА <<<');
+                    // Оба хода сделаны, ожидаем результат
+                    console.log('>>> РЕЖИМ ОЖИДАНИЯ РЕЗУЛЬТАТА <<<');
                     roleInfoElement.textContent = '⏳ Обработка результата...';
                     roleInfoElement.style.background = '#f8d7da';
                     roleInfoElement.style.borderColor = '#f5c6cb';
                     roleInfoElement.style.color = '#721c24';
-                    submitBtn.textContent = 'Ожидание результата...';
+                    this.disableZoneSelection();
+                    submitBtn.textContent = 'Ожидание...';
+                    submitBtn.disabled = true;
                     submitBtn.style.background = '#6c757d';
                     
                 } else {
-                    // НЕОПРЕДЕЛЕННОЕ СОСТОЯНИЕ
-                    console.log('>>> НЕОПРЕДЕЛЕННОЕ СОСТОЯНИЕ <<<');
-                    this.showError(`Неопределенное состояние игры: isMyTurn=${isMyTurn}, iAmSender=${iAmSender}, iAmProtect=${iAmProtect}, attackerMoved=${attackerMoved}, defenderMoved=${defenderMoved}`);
-                    roleInfoElement.textContent = '❓ Неопределенное состояние - проверьте данные';
+                    // Ошибочное состояние
+                    console.log('>>> ОШИБОЧНОЕ СОСТОЯНИЕ <<<');
+                    const debugInfo = `Мой ход: ${isMyTurn}, Подающий: ${iAmSender}, Защитник: ${iAmProtect}, Ход подающего: ${attackerMoved}, Ход защитника: ${defenderMoved}`;
+                    roleInfoElement.textContent = `❌ Ошибка состояния игры`;
                     roleInfoElement.style.background = '#f8d7da';
                     roleInfoElement.style.borderColor = '#f5c6cb';
                     roleInfoElement.style.color = '#721c24';
+                    this.disableZoneSelection();
                     submitBtn.textContent = 'Ошибка состояния';
+                    submitBtn.disabled = true;
                     submitBtn.style.background = '#dc3545';
+                    
+                    // Показываем отладочную информацию
+                    this.showMessage(`Ошибка состояния: ${debugInfo}`, 'error');
                 }
                 
-                console.log('=== ИНТЕРФЕЙС ОБНОВЛЕН ===');
+                console.log('=== ИНТЕРФЕЙС ПРИНУДИТЕЛЬНО ОБНОВЛЕН ===');
             }
 
             selectZone(zoneNumber) {
-                const isMyTurn = this.currentGame?.current_hod === this.currentUser.telegram_id;
+                const iAmSender = this.currentGame.current_sender === this.currentUser.telegram_id;
+                const iAmProtect = this.currentGame.current_protect === this.currentUser.telegram_id;
                 
-                if (!isMyTurn) {
-                    this.showError('Сейчас не ваш ход!');
-                    return;
-                }
+                // Можно выбирать зоны только если у меня есть активная роль
+                if (!iAmSender && !iAmProtect) return;
 
                 const zone = document.getElementById(`zone${zoneNumber}`);
                 const maxSelections = this.maxZoneSelection || 1;
@@ -1019,70 +1069,63 @@
             }
 
             async submitMove() {
-                if (this.selectedZones.length === 0) {
-                    this.showError('Выберите зоны для хода');
-                    return;
-                }
+                if (this.selectedZones.length === 0) return;
 
                 try {
-                    const isMyTurn = this.currentGame?.current_hod === this.currentUser.telegram_id;
-                    if (!isMyTurn) {
-                        this.showError('Сейчас не ваш ход!');
-                        return;
-                    }
-
-                    const iAmSender = this.currentGame.current_sender === this.currentUser.telegram_id;
-                    const iAmProtect = this.currentGame.current_protect === this.currentUser.telegram_id;
+                    const myId = this.currentUser.telegram_id;
+                    const isMyTurn = this.currentGame.current_hod === myId;
+                    const iAmSender = this.currentGame.current_sender === myId;
+                    const iAmProtect = this.currentGame.current_protect === myId;
                     const attackerMoved = this.currentGame.attacker_move;
                     const defenderMoved = this.currentGame.defender_move;
+                    
+                    if (!isMyTurn) {
+                        this.showMessage('Сейчас не ваш ход!', 'error');
+                        return;
+                    }
                     
                     let moveData = {};
                     
                     if (iAmSender && !attackerMoved) {
                         // Я подающий - делаю бросок (1 зона)
                         if (this.selectedZones.length !== 1) {
-                            this.showError('Выберите ровно 1 зону для броска!');
+                            this.showMessage('Выберите ровно 1 зону для броска!', 'error');
                             return;
                         }
                         
-                        // После броска: убираю себя из sender, добавляю противника в protect и передаю ход
-                        const opponentId = this.currentGame.player1 === this.currentUser.telegram_id ? 
+                        // После броска: убираю себя из sender, добавляю противника в protect и передаю ему ход
+                        const opponentId = this.currentGame.player1 === myId ? 
                             this.currentGame.player2 : this.currentGame.player1;
                         
                         moveData = {
                             attacker_move: JSON.stringify(this.selectedZones),
                             current_sender: null, // Убираю себя из подающих
                             current_protect: opponentId, // Противник становится защитником
-                            current_hod: opponentId // Ход переходит к противнику
+                            current_hod: opponentId // Передаю ход противнику
                         };
                         this.showMessage('Бросок сделан!', 'success');
                         
                     } else if (iAmProtect && attackerMoved && !defenderMoved) {
                         // Я защитник - ставлю защиту (2 зоны)
                         if (this.selectedZones.length !== 2) {
-                            this.showError('Выберите ровно 2 зоны для защиты!');
+                            this.showMessage('Выберите ровно 2 зоны для защиты!', 'error');
                             return;
                         }
                         
                         moveData = {
                             defender_move: JSON.stringify(this.selectedZones),
                             current_protect: null, // Убираю себя из защитников
-                            current_hod: null // Временно убираем ход (результат раунда)
+                            current_hod: null // Никто не ходит, ждем обработки результата
                         };
                         this.showMessage('Защита поставлена!', 'success');
                         
                     } else {
-                        this.showError(`Неверное состояние для хода: iAmSender=${iAmSender}, iAmProtect=${iAmProtect}, attackerMoved=${attackerMoved}, defenderMoved=${defenderMoved}`);
+                        this.showMessage('Некорректное состояние для хода!', 'error');
                         return;
                     }
 
                     console.log('Отправляем ход:', moveData);
-                    const result = await api.updateRoom(this.gameId, moveData);
-                    
-                    if (!result) {
-                        this.showError('Не удалось отправить ход - API вернул null');
-                        return;
-                    }
+                    await api.updateRoom(this.gameId, moveData);
 
                     this.selectedZones = [];
                     document.querySelectorAll('.zone').forEach(zone => {
@@ -1096,35 +1139,36 @@
 
                 } catch (error) {
                     console.error('Failed to submit move:', error);
-                    this.showError('Ошибка отправки хода: ' + error.message);
+                    this.showMessage('Ошибка отправки хода', 'error');
                 }
             }
 
             async processRoundResult() {
                 try {
-                    const attackerMove = JSON.parse(this.currentGame.attacker_move)[0];
-                    const defenderMoves = JSON.parse(this.currentGame.defender_move);
+                    const attackerMove = JSON.parse(this.currentGame.attacker_move)[0]; // Подающий выбирает 1 зону
+                    const defenderMoves = JSON.parse(this.currentGame.defender_move); // Защитник выбирает 2 зоны
 
                     const goalScored = !defenderMoves.includes(attackerMove);
                     
                     let newPlayer1Score = this.currentGame.player1_score || 0;
                     let newPlayer2Score = this.currentGame.player2_score || 0;
 
-                    // Определяем кто был подающим - это тот кто НЕ равен current_protect
-                    // Нужно понять из истории ходов кто был подающим
-                    const player1WasAttacker = this.currentGame.player1 !== this.currentGame.current_protect;
-                    
+                    // Определяем кто был подающим (тот кто НЕ в current_protect, так как он уже убран из current_sender)
+                    const lastProtector = this.currentGame.current_protect; // Это null после хода защитника
+                    // Ищем кто делал последний attacker_move - это можно определить по тому, кто НЕ был в protect
+                    const lastAttacker = this.currentGame.player1 === lastProtector ? this.currentGame.player2 : this.currentGame.player1;
+
                     // Начисляем очки
                     if (goalScored) {
                         // Гол - очко подающему
-                        if (player1WasAttacker) {
+                        if (lastAttacker === this.currentGame.player1) {
                             newPlayer1Score++;
                         } else {
                             newPlayer2Score++;
                         }
                     } else {
                         // Отбил - очко защитнику  
-                        if (player1WasAttacker) {
+                        if (lastAttacker === this.currentGame.player1) {
                             newPlayer2Score++;
                         } else {
                             newPlayer1Score++;
@@ -1132,7 +1176,6 @@
                     }
 
                     // Показываем результат
-                    const lastAttacker = player1WasAttacker ? this.currentGame.player1 : this.currentGame.player2;
                     const amIAttacker = lastAttacker === this.currentUser.telegram_id;
                     const didIScore = (goalScored && amIAttacker) || (!goalScored && !amIAttacker);
 
@@ -1147,11 +1190,13 @@
                     // Проверяем окончание игры
                     const gameFinished = newPlayer1Score >= 3 || newPlayer2Score >= 3;
                     
-                    // Следующий подающий - тот кто был защитником
-                    const nextSender = player1WasAttacker ? this.currentGame.player2 : this.currentGame.player1;
+                    // ВАЖНО: Защитник становится следующим подающим
+                    const nextSender = lastAttacker === this.currentGame.player1 ? 
+                        this.currentGame.player2 : this.currentGame.player1;
                     
                     console.log('=== СМЕНА РОЛЕЙ ===');
-                    console.log('Защитник становится подающим:', nextSender);
+                    console.log('Последний подающий:', lastAttacker);
+                    console.log('Следующий подающий:', nextSender);
                     console.log('==================');
 
                     const updates = {
@@ -1159,9 +1204,9 @@
                         player2_score: newPlayer2Score,
                         attacker_move: null,
                         defender_move: null,
-                        current_sender: gameFinished ? null : nextSender, // Следующий раунд начинает бывший защитник
+                        current_sender: gameFinished ? null : nextSender, // Следующий раунд начинает защитник
                         current_protect: null, // Очищаем защитника
-                        current_hod: gameFinished ? null : nextSender, // Ход у следующего подающего
+                        current_hod: gameFinished ? null : nextSender, // Ход передается следующему подающему
                         game_state: gameFinished ? 'finished' : 'game'
                     };
 
@@ -1170,19 +1215,14 @@
                     }
 
                     console.log('Обновляем игру с данными:', updates);
-                    const result = await api.updateRoom(this.gameId, updates);
-                    
-                    if (!result) {
-                        this.showError('Не удалось обновить результаты раунда');
-                        return;
-                    }
+                    await api.updateRoom(this.gameId, updates);
 
                     if (gameFinished) {
                         setTimeout(() => this.endGame(), 3000);
                     }
                 } catch (error) {
                     console.error('Failed to process round results:', error);
-                    this.showError('Ошибка обработки результата раунда: ' + error.message);
+                    this.showMessage('Ошибка обработки результата', 'error');
                 }
             }
 
@@ -1209,6 +1249,12 @@
                 this.hideAllScreens();
                 document.getElementById('waitingRoom').classList.remove('hidden');
                 document.getElementById('roomCode').textContent = roomName;
+                
+                // Обновляем текст для отображения названия комнаты
+                const roomCodeDiv = document.querySelector('.game-code h4');
+                if (roomCodeDiv) {
+                    roomCodeDiv.textContent = 'Название комнаты:';
+                }
             }
 
             showGamePlay() {
@@ -1226,15 +1272,15 @@
                 this.hideAllScreens();
                 document.getElementById('gameEnd').classList.remove('hidden');
 
-                const myScore = this.isPlayer1 ? this.currentGame.player1_score : this.currentGame.player2_score;
-                const opponentScore = this.isPlayer1 ? this.currentGame.player2_score : this.currentGame.player1_score;
+                const myScore = this.isPlayer1 ? this.currentGame.score1 : this.currentGame.score2;
+                const opponentScore = this.isPlayer1 ? this.currentGame.score2 : this.currentGame.score1;
                 const won = myScore > opponentScore;
 
                 document.getElementById('finalResult').textContent = won ? '🎉 ПОБЕДА!' : '😔 ПОРАЖЕНИЕ';
-                document.getElementById('finalPlayer1').textContent = 'Игрок 1';
-                document.getElementById('finalPlayer2').textContent = 'Игрок 2';
-                document.getElementById('finalScore1').textContent = this.currentGame.player1_score;
-                document.getElementById('finalScore2').textContent = this.currentGame.player2_score;
+                document.getElementById('finalPlayer1').textContent = this.currentGame.player1_name;
+                document.getElementById('finalPlayer2').textContent = this.currentGame.player2_name;
+                document.getElementById('finalScore1').textContent = this.currentGame.score1;
+                document.getElementById('finalScore2').textContent = this.currentGame.score2;
             }
 
             hideAllScreens() {
@@ -1264,12 +1310,7 @@
                     if (document.body.contains(messageDiv)) {
                         document.body.removeChild(messageDiv);
                     }
-                }, 4000);
-            }
-
-            showError(errorMessage) {
-                console.error('GAME ERROR:', errorMessage);
-                this.showMessage('ОШИБКА: ' + errorMessage, 'error');
+                }, 3000);
             }
 
             async cancelGame() {
@@ -1278,18 +1319,20 @@
                     this.gameUpdateInterval = null;
                 }
 
+                // Если есть второй игрок, нельзя выходить из комнаты
                 if (this.currentGame?.player2) {
-                    this.showError('Нельзя выйти - в комнате уже есть второй игрок!');
+                    this.showMessage('Нельзя выйти - в комнате уже есть второй игрок!', 'error');
                     return;
                 }
 
                 if (this.gameId) {
                     try {
+                        // Удаляем комнату если мы её создатель и нет второго игрока
                         await api.deleteRoom(this.gameId);
                         this.showMessage('Комната удалена', 'info');
                     } catch (error) {
                         console.error('Failed to delete room:', error);
-                        this.showError('Ошибка удаления комнаты: ' + error.message);
+                        this.showMessage('Ошибка удаления комнаты', 'error');
                     }
                 }
 
