@@ -649,74 +649,52 @@
                 }
             }
 
-            async joinGame() {
-                const gameCodeInput = document.getElementById('gameCodeInput');
-                const gameCode = gameCodeInput.value.trim().toUpperCase();
-                
-                if (!gameCode) {
-                    this.showMessage('Введите код игры', 'error');
+        async joinGame() {
+            const gameCodeInput = document.getElementById('gameCodeInput');
+            const gameCode = gameCodeInput.value.trim().toUpperCase();
+            
+            if (!gameCode) {
+                this.showMessage('Введите код игры', 'error');
+                return;
+            }
+        
+            try {
+                const game = await api.findGameByCode(gameCode);
+                if (!game) {
+                    this.showMessage('Игра с таким кодом не найдена', 'error');
                     return;
                 }
-
-                console.log('Attempting to join game with code:', gameCode);
-                console.log('Current user:', this.currentUser);
-
-                try {
-                    const game = await api.findGameByCode(gameCode);
-                    console.log('Found game:', game);
-                    
-                    if (!game) {
-                        this.showMessage('Игра с таким кодом не найдена', 'error');
-                        return;
-                    }
-                    
-                    if (game.status !== 'waiting') {
-                        this.showMessage('Эта игра уже началась или завершена', 'error');
-                        return;
-                    }
-                    
-                    if (game.player1_id == this.currentUser.telegram_id) {
-                        this.showMessage('Вы не можете присоединиться к своей игре', 'error');
-                        return;
-                    }
-                    
-                    if (game.player2_id) {
-                        this.showMessage('К этой игре уже присоединился другой игрок', 'error');
-                        return;
-                    }
-                    
-                    // Присоединиться к игре
-                    this.gameId = game.Id;
-                    this.isPlayer1 = false;
-                    
-                    const updates = {
-                        player2_id: this.currentUser.telegram_id,
-                        player2_name: this.currentUser.display_name,
-                        status: 'playing'
-                    };
-                    
-                    console.log('Joining game - updates to send:', updates);
-                    
-                    // Обновляем игру в базе данных
-                    const updateResult = await api.updateGame(this.gameId, updates);
-                    console.log('Update result:', updateResult);
-                    
-                    this.currentGame = { ...game, ...updates };
-                    console.log('Current game after join:', this.currentGame);
-                    
-                    // Скрываем форму присоединения
-                    this.hideJoinForm();
-                    
-                    // Запускаем игровой цикл и показываем игру
-                    this.startGameLoop();
-                    this.showGamePlay();
-                    
-                    this.showMessage('Успешно присоединились к игре!', 'success');
-                } catch (error) {
-                    console.error('Failed to join game:', error);
-                    this.showMessage('Не удалось присоединиться к игре: ' + error.message, 'error');
+                
+                if (game.status !== 'waiting') {
+                    this.showMessage('Эта игра уже началась', 'error');
+                    return;
                 }
+        
+                // Присоединяемся к игре
+                this.gameId = game.Id;
+                this.isPlayer1 = false;
+                
+                const updates = {
+                    player2_id: this.currentUser.telegram_id,
+                    player2_name: this.currentUser.display_name,
+                    status: 'playing'
+                };
+        
+                console.log('Joining game - updates to send:', updates);
+                
+                const updateResult = await api.updateGame(this.gameId, updates);
+                if (updateResult) {
+                    this.currentGame = { ...game, ...updates };
+                    this.showGamePlay();
+                    this.showMessage('Успешно присоединились к игре!', 'success');
+                } else {
+                    this.showMessage('Не удалось обновить игру', 'error');
+                }
+            } catch (error) {
+                console.error('Failed to join game:', error);
+                this.showMessage('Не удалось присоединиться к игре: ' + error.message, 'error');
             }
+        }
 
             async startGameLoop() {
                 this.gameUpdateInterval = setInterval(async () => {
