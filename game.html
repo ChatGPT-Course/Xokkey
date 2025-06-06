@@ -333,40 +333,175 @@
                     return await response.json();
                 } catch (error) {
                     console.error('API Request failed:', error);
+                    // Fallback to localStorage for demo
+                    return this.handleOfflineRequest(endpoint, method, data);
+                }
+            }
+
+            handleOfflineRequest(endpoint, method, data) {
+                const storageKey = 'hockey_games';
+                let games = JSON.parse(localStorage.getItem(storageKey) || '[]');
+
+                if (method === 'POST' && endpoint.includes('records')) {
+                    const newGame = {
+                        Id: 'game_' + Date.now(),
+                        created_at: new Date().toISOString(),
+                        updated_at: new Date().toISOString(),
+                        ...data
+                    };
+                    games.push(newGame);
+                    localStorage.setItem(storageKey, JSON.stringify(games));
+                    return newGame;
+                }
+
+                if (method === 'PATCH' && endpoint.includes('records')) {
+                    const gameId = endpoint.split('/').pop();
+                    const gameIndex = games.findIndex(g => g.Id === gameId);
+                    if (gameIndex !== -1) {
+                        games[gameIndex] = { ...games[gameIndex], ...data, updated_at: new Date().toISOString() };
+                        localStorage.setItem(storageKey, JSON.stringify(games));
+                        return games[gameIndex];
+                    }
+                }
+
+                if (method === 'GET') {
+                    if (endpoint.includes('where=')) {
+                        // Handle filtered requests
+                        const urlParams = new URL(`http://dummy.com?${endpoint.split('?')[1]}`);
+                        const whereClause = urlParams.searchParams.get('where');
+                        
+                        if (whereClause && whereClause.includes('status,eq,waiting')) {
+                            const waitingGames = games.filter(g => g.status === 'waiting');
+                            return { list: waitingGames };
+                        }
+                        
+                        if (whereClause && whereClause.includes('Id,eq,')) {
+                            const gameId = whereClause.split('Id,eq,')[1].replace(/[()]/g, '');
+                            const game = games.find(g => g.Id === gameId);
+                            return game || null;
+                        }
+                    }
+                    
+                    return { list: games };
+                }
+
+                return null;
+            }
+
+            async getOrCreateUser(telegramId, username) {
+                try {
+                    const response = await this.makeRequest(
+                        `${API_CONFIG.usersTable}/records?where=(telegram_id,eq,${telegramId})`
+                    );
+                    
+                    let user = response.list?.[0];
+                    
+                    if (!user) {
+                        const userData = {
+                            telegram_id: telegramId,
+                            username: username || 'unknown',
+                            wins: 0,
+                            losses: 0,
+                            total_games: 0
+                        };
+                        
+                        user = await this.makeRequest(
+                            `${API_CONFIG.usersTable}/records`,
+                            'POST',
+                            userData
+                        );
+                    }
+                    
+                    return user;
+                } catch (error) {
+                    console.error('Failed to get/create user:', error);
+                    return {
+                        Id: 'user_' + telegramId,
+                        telegram_id: telegramId,
+                        username: username || 'unknown',
+                        wins: 0,
+                        losses: 0,
+                        total_games: 0
+                    };
+                }
+            }
+
+            async findWaitingGame(currentUserId) {
+                try {
+                    const response = await this.makeRequest(
+                        `${API_CONFIG.gamesTable}/records?where=(status,eq,waiting)&limit=1`
+                    );
+                    
+                    const waitingGames = response.list || [];
+                    // Найти игру, где текущий пользователь не является player1
+                    return waitingGames.find(game => game.player1_id !== currentUserId) || null;
+                } catch (error) {
+                    console.error('Failed to find waiting game:', error);
+                    return null;
+                }
+            }
+
+            async createGame(gameData) {
+                try {
+                    return await this.makeRequest(
+                        `${API_CONFIG.gamesTable}/records`,
+                        'POST',
+                        gameData
+                    );
+                } catch (error) {
+                    console.error('Failed to create game:', error);
                     throw error;
                 }
             }
 
-            async getOrCreateUser(telegramId, username) {
-                return {
-                    Id: 'mock_' + telegramId,
-                    telegram_id: telegramId,
-                    username: username || 'unknown',
-                    wins: 0,
-                    losses: 0,
-                    total_games: 0
-                };
-            }
-
-            async createGame(gameData) {
-                console.log('Creating game:', gameData);
-                return { Id: 'mock_game_' + Date.now(), ...gameData };
-            }
-
             async getGame(gameId) {
-                return this.mockGame;
+                try {
+                    const response = await this.makeRequest(
+                        `${API_CONFIG.gamesTable}/records?where=(Id,eq,${gameId})`
+                    );
+                    return response.list?.[0] || null;
+                } catch (error) {
+                    console.error('Failed to get game:', error);
+                    return null;
+                }
             }
 
             async updateGame(gameId, updates) {
-                console.log('Updating game:', gameId, updates);
-                if (this.mockGame) {
-                    Object.assign(this.mockGame, updates);
+                try {
+                    return await this.makeRequest(
+                        `${API_CONFIG.gamesTable}/records/${gameId}`,
+                        'PATCH',
+                        updates
+                    );
+                } catch (error) {
+                    console.error('Failed to update game:', error);
+                    throw error;
                 }
-                return this.mockGame;
             }
 
-            async findWaitingGame() {
-                return null; // Always create new game for demo
+            async updateUserStats(userId, won) {
+                try {
+                    const response = await this.makeRequest(
+                        `${API_CONFIG.usersTable}/records?where=(telegram_id,eq,${userId})`
+                    );
+                    
+                    const user = response.list?.[0];
+                    if (user) {
+                        const updates = {
+                            total_games: (user.total_games || 0) + 1,
+                            wins: won ? (user.wins || 0) + 1 : (user.wins || 0),
+                            losses: !won ? (user.losses || 0) + 1 : (user.losses || 0)
+                        };
+                        
+                        await this.makeRequest(
+                            `${API_CONFIG.usersTable}/records/${user.Id}`,
+                            'PATCH',
+                            updates
+                        );
+                    }
+                } catch (error) {
+                    console.error('Failed to update user stats:', error);
+                }
             }
         }
 
@@ -376,9 +511,10 @@
                 this.currentUser = null;
                 this.currentGame = null;
                 this.gameId = null;
-                this.isAttacker = true;
-                this.currentRound = 1;
+                this.isPlayer1 = false;
                 this.selectedZones = [];
+                this.gameUpdateInterval = null;
+                this.waitingForOpponent = true;
                 this.init();
             }
 
@@ -392,37 +528,97 @@
                     this.startGameLoop();
                 } catch (error) {
                     console.error('Failed to initialize game:', error);
+                    this.showMessage('Ошибка подключения к игре', 'error');
                 }
             }
 
             async findOrCreateGame() {
-                this.gameId = 'game_' + Date.now();
-                this.currentGame = {
-                    game_id: this.gameId,
-                    player1_id: this.currentUser.telegram_id,
-                    player1_name: this.currentUser.username,
-                    player2_id: 'bot_' + Date.now(),
-                    player2_name: 'Бот',
-                    status: 'playing',
-                    score1: 0,
-                    score2: 0,
-                    current_round: 1,
-                    attacker: this.currentUser.telegram_id
-                };
-                
-                api.mockGame = this.currentGame;
-                await this.updateGameDisplay();
+                try {
+                    // Попытаться найти ожидающую игру
+                    let waitingGame = await api.findWaitingGame(this.currentUser.telegram_id);
+                    
+                    if (waitingGame) {
+                        // Присоединиться к существующей игре
+                        this.gameId = waitingGame.Id;
+                        this.isPlayer1 = false;
+                        
+                        const updates = {
+                            player2_id: this.currentUser.telegram_id,
+                            player2_name: this.currentUser.username || `Игрок ${this.currentUser.telegram_id}`,
+                            status: 'playing',
+                            attacker: waitingGame.player1_id, // Player1 начинает как нападающий
+                            player1_move: null,
+                            player2_move: null,
+                            round_attacker: waitingGame.player1_id
+                        };
+                        
+                        this.currentGame = await api.updateGame(this.gameId, updates);
+                        this.waitingForOpponent = false;
+                    } else {
+                        // Создать новую игру
+                        const gameData = {
+                            player1_id: this.currentUser.telegram_id,
+                            player1_name: this.currentUser.username || `Игрок ${this.currentUser.telegram_id}`,
+                            player2_id: null,
+                            player2_name: null,
+                            status: 'waiting',
+                            score1: 0,
+                            score2: 0,
+                            current_round: 1,
+                            attacker: this.currentUser.telegram_id,
+                            player1_move: null,
+                            player2_move: null,
+                            round_attacker: this.currentUser.telegram_id
+                        };
+                        
+                        this.currentGame = await api.createGame(gameData);
+                        this.gameId = this.currentGame.Id;
+                        this.isPlayer1 = true;
+                        this.waitingForOpponent = true;
+                    }
+                    
+                    await this.updateGameDisplay();
+                } catch (error) {
+                    console.error('Failed to find or create game:', error);
+                    this.showMessage('Не удалось создать игру', 'error');
+                }
             }
 
             async startGameLoop() {
-                setInterval(async () => {
+                this.gameUpdateInterval = setInterval(async () => {
                     await this.checkGameStatus();
                 }, 2000);
             }
 
             async checkGameStatus() {
-                if (this.currentGame && this.currentGame.status === 'finished') {
-                    this.endGame();
+                try {
+                    if (!this.gameId) return;
+                    
+                    const updatedGame = await api.getGame(this.gameId);
+                    if (!updatedGame) return;
+                    
+                    this.currentGame = updatedGame;
+                    
+                    // Если игра завершена
+                    if (this.currentGame.status === 'finished') {
+                        this.endGame();
+                        return;
+                    }
+                    
+                    // Если ожидали противника и он присоединился
+                    if (this.waitingForOpponent && this.currentGame.status === 'playing') {
+                        this.waitingForOpponent = false;
+                        this.showMessage('Противник найден! Игра началась!', 'success');
+                    }
+                    
+                    await this.updateGameDisplay();
+                    
+                    // Проверить, нужно ли обработать ходы
+                    if (this.currentGame.status === 'playing') {
+                        await this.checkRoundResults();
+                    }
+                } catch (error) {
+                    console.error('Failed to check game status:', error);
                 }
             }
 
@@ -430,28 +626,59 @@
                 if (!this.currentGame) return;
 
                 document.getElementById('player1Name').textContent = this.currentGame.player1_name || 'Игрок 1';
-                document.getElementById('player2Name').textContent = this.currentGame.player2_name || 'Игрок 2';
+                document.getElementById('player2Name').textContent = this.currentGame.player2_name || 'Ожидание...';
                 document.getElementById('player1Score').textContent = this.currentGame.score1 || 0;
                 document.getElementById('player2Score').textContent = this.currentGame.score2 || 0;
                 document.getElementById('roundNumber').textContent = this.currentGame.current_round || 1;
 
-                const roleText = this.isAttacker ? '🏒 Вы нападающий - выберите 1 зону для броска' : '🥅 Вы защитник - выберите 2 зоны для защиты';
+                // Определить роль текущего игрока
+                const isCurrentPlayerAttacker = this.currentGame.round_attacker === this.currentUser.telegram_id;
+                const roleText = isCurrentPlayerAttacker ? 
+                    '🏒 Вы нападающий - выберите 1 зону для броска' : 
+                    '🥅 Вы защитник - выберите 2 зоны для защиты';
                 document.getElementById('roleInfo').textContent = roleText;
 
-                if (this.currentGame.status === 'waiting') {
+                // Показать соответствующий экран
+                if (this.currentGame.status === 'waiting' || this.waitingForOpponent) {
                     this.showElement('waitingRoom');
                     this.hideElement('gamePlay');
                     this.hideElement('gameEnd');
+                    
+                    const waitingText = document.querySelector('#waitingRoom h3');
+                    if (waitingText) {
+                        waitingText.textContent = this.isPlayer1 ? 
+                            'Ожидание второго игрока...' : 
+                            'Подключение к игре...';
+                    }
                 } else if (this.currentGame.status === 'playing') {
                     this.hideElement('waitingRoom');
                     this.showElement('gamePlay');
                     this.hideElement('gameEnd');
+                    
+                    // Проверить, сделал ли игрок ход
+                    const myMove = this.isPlayer1 ? this.currentGame.player1_move : this.currentGame.player2_move;
+                    const submitBtn = document.getElementById('submitMove');
+                    
+                    if (myMove) {
+                        submitBtn.textContent = 'Ожидание хода противника...';
+                        submitBtn.disabled = true;
+                        this.disableZoneSelection();
+                    } else {
+                        submitBtn.textContent = 'Подтвердить выбор';
+                        submitBtn.disabled = true;
+                        this.enableZoneSelection();
+                    }
                 }
             }
 
             selectZone(zoneNumber) {
+                // Проверить, можно ли делать ход
+                const myMove = this.isPlayer1 ? this.currentGame.player1_move : this.currentGame.player2_move;
+                if (myMove) return;
+
                 const zone = document.getElementById(`zone${zoneNumber}`);
-                const maxSelections = this.isAttacker ? 1 : 2;
+                const isCurrentPlayerAttacker = this.currentGame.round_attacker === this.currentUser.telegram_id;
+                const maxSelections = isCurrentPlayerAttacker ? 1 : 2;
 
                 if (zone.classList.contains('selected')) {
                     zone.classList.remove('selected');
@@ -470,66 +697,134 @@
             async submitMove() {
                 if (this.selectedZones.length === 0) return;
 
-                // Simulate bot move
-                const botZones = this.isAttacker ? 
-                    [Math.floor(Math.random() * 4) + 1, Math.floor(Math.random() * 4) + 1] : 
-                    [Math.floor(Math.random() * 4) + 1];
+                try {
+                    // Сохранить ход в базе данных
+                    const moveData = this.isPlayer1 ? 
+                        { player1_move: JSON.stringify(this.selectedZones) } :
+                        { player2_move: JSON.stringify(this.selectedZones) };
 
-                // Check if goal was scored
-                const attackerZone = this.isAttacker ? this.selectedZones[0] : botZones[0];
-                const defenderZones = this.isAttacker ? botZones : this.selectedZones;
-                const goalScored = !defenderZones.includes(attackerZone);
+                    await api.updateGame(this.gameId, moveData);
 
-                let newScore1 = this.currentGame.score1;
-                let newScore2 = this.currentGame.score2;
+                    // Очистить выбор
+                    this.selectedZones = [];
+                    document.querySelectorAll('.zone').forEach(zone => {
+                        zone.classList.remove('selected');
+                    });
 
-                if (goalScored) {
-                    if (this.isAttacker) {
-                        newScore1++;
-                        this.showMessage('⚽ ГОЛ! Вы забили!', 'success');
-                    } else {
-                        newScore2++;
-                        this.showMessage('⚽ ГОЛ против вас!', 'error');
-                    }
-                } else {
-                    if (this.isAttacker) {
-                        newScore2++;
-                        this.showMessage('🥅 Ваш бросок отбит!', 'info');
-                    } else {
-                        newScore1++;
-                        this.showMessage('🥅 Отличная защита!', 'success');
-                    }
-                }
+                    const submitBtn = document.getElementById('submitMove');
+                    submitBtn.textContent = 'Ожидание хода противника...';
+                    submitBtn.disabled = true;
+                    this.disableZoneSelection();
 
-                // Update game
-                const gameFinished = newScore1 >= 3 || newScore2 >= 3;
-                this.currentGame.score1 = newScore1;
-                this.currentGame.score2 = newScore2;
-                this.currentGame.current_round++;
-                this.currentGame.status = gameFinished ? 'finished' : 'playing';
-
-                // Clear selections
-                this.selectedZones = [];
-                document.querySelectorAll('.zone').forEach(zone => {
-                    zone.classList.remove('selected');
-                });
-
-                // Switch roles
-                this.isAttacker = !this.isAttacker;
-
-                await this.updateGameDisplay();
-
-                if (gameFinished) {
-                    setTimeout(() => this.endGame(), 2000);
+                    this.showMessage('Ход отправлен! Ожидание противника...', 'info');
+                } catch (error) {
+                    console.error('Failed to submit move:', error);
+                    this.showMessage('Ошибка отправки хода', 'error');
                 }
             }
 
+            async checkRoundResults() {
+                if (!this.currentGame.player1_move || !this.currentGame.player2_move) return;
+
+                try {
+                    const player1Move = JSON.parse(this.currentGame.player1_move);
+                    const player2Move = JSON.parse(this.currentGame.player2_move);
+
+                    // Определить результат раунда
+                    const attackerMove = this.currentGame.round_attacker === this.currentGame.player1_id ? 
+                        player1Move[0] : player2Move[0];
+                    const defenderMoves = this.currentGame.round_attacker === this.currentGame.player1_id ? 
+                        player2Move : player1Move;
+
+                    const goalScored = !defenderMoves.includes(attackerMove);
+
+                    let newScore1 = this.currentGame.score1;
+                    let newScore2 = this.currentGame.score2;
+
+                    if (goalScored) {
+                        if (this.currentGame.round_attacker === this.currentGame.player1_id) {
+                            newScore1++;
+                        } else {
+                            newScore2++;
+                        }
+                    } else {
+                        // Защитник получает очко
+                        if (this.currentGame.round_attacker === this.currentGame.player1_id) {
+                            newScore2++;
+                        } else {
+                            newScore1++;
+                        }
+                    }
+
+                    // Показать результат
+                    const isMyGoal = (this.isPlayer1 && newScore1 > this.currentGame.score1) ||
+                                    (!this.isPlayer1 && newScore2 > this.currentGame.score2);
+                    
+                    if (goalScored) {
+                        this.showMessage(isMyGoal ? '⚽ ГОЛ! Вы забили!' : '⚽ Противник забил гол!', 
+                                       isMyGoal ? 'success' : 'error');
+                    } else {
+                        this.showMessage(isMyGoal ? '🥅 Отличная защита!' : '🥅 Ваш бросок отбит!', 
+                                       isMyGoal ? 'success' : 'info');
+                    }
+
+                    // Проверить, закончена ли игра
+                    const gameFinished = newScore1 >= 3 || newScore2 >= 3;
+                    
+                    // Сменить нападающего для следующего раунда
+                    const nextAttacker = this.currentGame.round_attacker === this.currentGame.player1_id ? 
+                        this.currentGame.player2_id : this.currentGame.player1_id;
+
+                    const updates = {
+                        score1: newScore1,
+                        score2: newScore2,
+                        current_round: this.currentGame.current_round + 1,
+                        player1_move: null,
+                        player2_move: null,
+                        round_attacker: nextAttacker,
+                        status: gameFinished ? 'finished' : 'playing'
+                    };
+
+                    await api.updateGame(this.gameId, updates);
+
+                    if (gameFinished) {
+                        // Обновить статистику игроков
+                        const player1Won = newScore1 > newScore2;
+                        await api.updateUserStats(this.currentGame.player1_id, player1Won);
+                        await api.updateUserStats(this.currentGame.player2_id, !player1Won);
+                        
+                        setTimeout(() => this.endGame(), 3000);
+                    }
+                } catch (error) {
+                    console.error('Failed to process round results:', error);
+                }
+            }
+
+            enableZoneSelection() {
+                document.querySelectorAll('.zone').forEach(zone => {
+                    zone.style.pointerEvents = 'auto';
+                    zone.style.opacity = '1';
+                });
+            }
+
+            disableZoneSelection() {
+                document.querySelectorAll('.zone').forEach(zone => {
+                    zone.style.pointerEvents = 'none';
+                    zone.style.opacity = '0.6';
+                });
+            }
+
             endGame() {
+                if (this.gameUpdateInterval) {
+                    clearInterval(this.gameUpdateInterval);
+                    this.gameUpdateInterval = null;
+                }
+
                 this.hideElement('gamePlay');
                 this.showElement('gameEnd');
 
-                const myScore = this.currentGame.score1;
-                const opponentScore = this.currentGame.score2;
+                const myScore = this.isPlayer1 ? this.currentGame.score1 : this.currentGame.score2;
+                const opponentScore = this.isPlayer1 ? this.currentGame.score2 : this.currentGame.score1;
                 const won = myScore > opponentScore;
 
                 document.getElementById('finalResult').textContent = won ? '🎉 ПОБЕДА!' : '😔 ПОРАЖЕНИЕ';
@@ -537,6 +832,10 @@
                 document.getElementById('finalPlayer2').textContent = this.currentGame.player2_name;
                 document.getElementById('finalScore1').textContent = this.currentGame.score1;
                 document.getElementById('finalScore2').textContent = this.currentGame.score2;
+
+                // Показать финальное сообщение
+                this.showMessage(won ? 'Поздравляем с победой!' : 'В следующий раз повезет больше!', 
+                               won ? 'success' : 'info');
             }
 
             showMessage(message, type = 'info') {
