@@ -1,995 +1,338 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Игра - Хоккейная Битва</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <title>Игровая комната</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
+        
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Arial', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #333;
             min-height: 100vh;
-            padding: 10px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
-
+        
         .container {
-            max-width: 400px;
-            margin: 0 auto;
             background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            overflow: hidden;
-            min-height: 90vh;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             text-align: center;
-            position: relative;
+            min-width: 400px;
         }
-
-        .header h2 {
-            font-size: 1.5rem;
-            margin-bottom: 10px;
-        }
-
-        .btn-back {
-            position: absolute;
-            left: 15px;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(255,255,255,0.2);
-            border: none;
-            color: white;
-            padding: 8px 12px;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 0.9rem;
-        }
-
-        .btn-back:hover {
-            background: rgba(255,255,255,0.3);
-        }
-
-        .game-container {
-            padding: 20px;
-        }
-
-        .menu-screen {
-            text-align: center;
-            padding: 30px 20px;
-        }
-
-        .menu-screen h3 {
-            color: #667eea;
+        
+        h1 {
+            color: #333;
             margin-bottom: 30px;
-            font-size: 1.4rem;
+            font-size: 2.5em;
         }
-
-        .btn {
-            padding: 15px 20px;
-            border: none;
+        
+        .room-info {
+            background: #f8f9fa;
+            padding: 20px;
             border-radius: 10px;
-            font-size: 1rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
-            text-align: center;
-            width: 100%;
+            margin: 20px 0;
+        }
+        
+        .room-code {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
             margin: 10px 0;
         }
-
-        .btn.primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .btn.secondary {
-            background: #f8f9fa;
-            color: #667eea;
-            border: 2px solid #667eea;
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .input-group {
-            margin: 20px 0;
-        }
-
-        .input-group label {
-            display: block;
-            margin-bottom: 8px;
-            color: #667eea;
-            font-weight: 600;
-        }
-
-        .input-group input {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #ddd;
-            border-radius: 8px;
-            font-size: 1rem;
-            text-align: center;
-            text-transform: uppercase;
-        }
-
-        .input-group input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .game-code {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
-            text-align: center;
-        }
-
-        .game-code h4 {
-            color: #667eea;
-            margin-bottom: 10px;
-        }
-
-        .code-display {
-            font-size: 2rem;
+        
+        .status {
+            padding: 10px 20px;
+            border-radius: 20px;
             font-weight: bold;
-            color: #333;
-            letter-spacing: 3px;
-            font-family: monospace;
-        }
-
-        .score {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding: 15px;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        }
-
-        .score-item {
-            text-align: center;
-        }
-
-        .player-name {
-            font-size: 0.9rem;
-            color: #666;
-            margin-bottom: 5px;
-        }
-
-        .player-score {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #667eea;
-        }
-
-        .vs {
-            font-size: 1.2rem;
-            color: #666;
-            font-weight: bold;
-        }
-
-        .role-info {
-            text-align: center;
-            padding: 15px;
             margin: 15px 0;
+            display: inline-block;
+        }
+        
+        .status.waiting {
             background: #fff3cd;
-            border: 1px solid #ffeaa7;
-            border-radius: 10px;
             color: #856404;
         }
-
-        .zones {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 10px;
-            margin: 20px 0;
+        
+        .status.playing {
+            background: #d4edda;
+            color: #155724;
         }
-
-        .zone {
-            aspect-ratio: 1;
-            border: 2px solid #2196f3;
-            border-radius: 10px;
-            background: white;
+        
+        .players {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            font-size: 1.2rem;
-            font-weight: bold;
+            justify-content: space-around;
+            margin: 30px 0;
         }
-
-        .zone:hover {
-            background: #f0f8ff;
-            transform: scale(1.02);
-        }
-
-        .zone.selected {
-            background: #667eea;
-            color: white;
-            border-color: #5a67d8;
-        }
-
-        .hidden {
-            display: none !important;
-        }
-
-        .waiting {
-            text-align: center;
-            padding: 40px 20px;
-            color: #666;
-        }
-
-        .game-end {
-            text-align: center;
-            padding: 30px 20px;
-        }
-
-        .final-stats {
-            margin: 20px 0;
-            padding: 20px;
+        
+        .player {
             background: #f8f9fa;
+            padding: 20px;
             border-radius: 10px;
-        }
-
-        .final-stats p {
-            margin: 5px 0;
-            font-size: 1.1rem;
-        }
-
-        .message {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            padding: 15px 20px;
-            border-radius: 10px;
-            z-index: 1000;
-            color: white;
-            font-weight: 600;
-        }
-
-        .message.success {
-            background: #2ed573;
-        }
-
-        .message.error {
-            background: #ff4757;
-        }
-
-        .message.info {
-            background: #667eea;
-        }
-
-        .rooms-container {
-            max-height: 300px;
-            overflow-y: auto;
-            margin: 15px 0;
-        }
-
-        .room-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 15px;
-            margin: 10px 0;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-            border-left: 4px solid #667eea;
-        }
-
-        .room-info {
             flex: 1;
+            margin: 0 10px;
         }
-
-        .room-creator {
+        
+        .player.current {
+            background: #e3f2fd;
+            border: 2px solid #667eea;
+        }
+        
+        .player-title {
             font-weight: bold;
+            margin-bottom: 10px;
             color: #333;
-            margin-bottom: 5px;
         }
-
-        .room-time {
-            font-size: 0.8rem;
-            color: #666;
+        
+        .player-id {
+            font-size: 18px;
+            color: #667eea;
         }
-
-        .join-room-btn {
-            padding: 8px 15px;
-            background: #667eea;
+        
+        .empty-player {
+            color: #999;
+            font-style: italic;
+        }
+        
+        .button {
+            display: inline-block;
+            padding: 12px 24px;
+            margin: 10px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
             color: white;
             border: none;
-            border-radius: 6px;
+            border-radius: 8px;
+            font-size: 16px;
             cursor: pointer;
-            font-size: 0.9rem;
-            transition: all 0.3s ease;
+            text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
-
-        .join-room-btn:hover {
-            background: #5a67d8;
-            transform: translateY(-1px);
+        
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
         }
-
-        .no-rooms {
-            text-align: center;
-            color: #666;
-            font-style: italic;
-            padding: 30px 20px;
+        
+        .button.secondary {
+            background: #6c757d;
         }
-
+        
         .loading {
-            text-align: center;
             color: #667eea;
-            padding: 20px;
-        }
-
-        .room-info-box {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
             margin: 20px 0;
-            text-align: center;
         }
-
-        .room-info-box h4 {
-            color: #667eea;
-            margin-bottom: 10px;
-        }
-
-        .game-start {
-            text-align: center;
-            padding: 30px 20px;
-        }
-
-        .vs-display {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 10px;
+        
+        .error {
+            color: #e74c3c;
             margin: 20px 0;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
+            padding: 15px;
+            background: #fdf2f2;
+            border-radius: 8px;
         }
-
-        .player-info {
-            text-align: center;
+        
+        .waiting-animation {
+            display: inline-block;
+            animation: pulse 2s infinite;
         }
-
-        .player-name {
-            font-weight: bold;
-            color: #333;
-            margin-bottom: 5px;
-        }
-
-        .player-id {
-            font-size: 0.8rem;
-            color: #666;
-        }
-
-        .vs {
-            font-size: 1.5rem;
-            font-weight: bold;
-            color: #667eea;
+        
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <button class="btn-back" onclick="goHome()">← Назад</button>
-            <h2>🏒 Хоккейная Битва</h2>
+        <h1>🎮 Игровая комната</h1>
+        
+        <div class="room-info">
+            <div>Код комнаты:</div>
+            <div class="room-code" id="roomCode">-</div>
+            <div class="status" id="gameStatus">Загрузка...</div>
         </div>
-
-        <!-- Главное меню игры -->
-        <div id="gameMenu" class="menu-screen">
-            <h3>Выберите режим игры</h3>
-
-            <button class="btn primary" onclick="createRoom()">
-                🎮 Создать комнату
-            </button>
-
-            <button class="btn secondary" onclick="showRoomsList()">
-                🚪 Присоединиться к игре
-            </button>
-
-            <div id="roomsList" class="hidden">
-                <h4 style="color: #667eea; margin-bottom: 15px;">Доступные комнаты:</h4>
-                <div id="availableRooms" class="rooms-container">
-                    <div class="loading">Загрузка комнат...</div>
-                </div>
-                <button class="btn secondary" onclick="hideRoomsList()" style="margin-top: 15px;">
-                    Назад
-                </button>
+        
+        <div class="players">
+            <div class="player" id="player1Info">
+                <div class="player-title">Игрок 1 (Создатель)</div>
+                <div class="player-id" id="player1Id">-</div>
             </div>
-        </div>
-
-        <!-- Ожидание в комнате -->
-        <div id="waitingRoom" class="waiting hidden">
-            <h3>Комната создана!</h3>
-            <div class="room-info-box">
-                <h4>Ваша комната ожидает игрока</h4>
-                <p style="color: #667eea; margin: 10px 0;">ID комнаты: <span id="roomIdDisplay"></span></p>
-                <p>Другие игроки могут найти вашу комнату в списке доступных игр</p>
-            </div>
-            <p>Ожидание второго игрока...</p>
-            <button class="btn secondary" onclick="cancelRoom()">
-                Отменить комнату
-            </button>
-        </div>
-
-        <!-- Игра готова к началу -->
-        <div id="gameReady" class="game-start hidden">
-            <h3>🎉 Второй игрок присоединился!</h3>
-            <div class="vs-display">
-                <div class="player-info">
-                    <div class="player-name" id="player1DisplayName">Игрок 1</div>
-                    <div class="player-id" id="player1DisplayId">ID: ---</div>
-                </div>
-                <div class="vs">VS</div>
-                <div class="player-info">
-                    <div class="player-name" id="player2DisplayName">Игрок 2</div>
-                    <div class="player-id" id="player2DisplayId">ID: ---</div>
+            <div class="player" id="player2Info">
+                <div class="player-title">Игрок 2</div>
+                <div class="player-id" id="player2Id">
+                    <span class="empty-player">Ожидание игрока...</span>
                 </div>
             </div>
-            <p style="margin: 20px 0; color: #667eea;">Игра готова к началу!</p>
-            <button class="btn primary" onclick="goHome()">
-                Вернуться в меню
-            </button>
+        </div>
+        
+        <div id="waitingMessage" style="display: none;">
+            <div class="waiting-animation">⏳ Ожидание второго игрока...</div>
+            <div style="margin-top: 15px; font-size: 14px; color: #666;">
+                Поделитесь кодом комнаты с другим игроком
+            </div>
+        </div>
+        
+        <div id="gameStartMessage" style="display: none;">
+            <div style="color: #27ae60; font-size: 18px; margin: 20px 0;">
+                🎉 Игра может начаться!
+            </div>
+            <button class="button" id="startGameBtn">Начать игру</button>
+        </div>
+        
+        <div id="error" class="error" style="display: none;"></div>
+        
+        <div style="margin-top: 30px;">
+            <a href="index.html" class="button secondary">← Вернуться в меню</a>
+            <button class="button secondary" id="refreshBtn">🔄 Обновить</button>
         </div>
     </div>
 
     <script>
-        // Telegram Web App integration
-        class TelegramApp {
-            constructor() {
-                this.tg = window.Telegram?.WebApp;
-                this.user = null;
-                this.init();
-            }
-
-            init() {
-                if (this.tg) {
-                    this.tg.ready();
-                    this.tg.expand();
-                    this.user = this.tg.initDataUnsafe?.user;
-
-                    if (!this.user) {
-                        this.user = {
-                            id: Date.now(),
-                            username: 'test_user',
-                            first_name: 'Test'
-                        };
-                    }
-                } else {
-                    this.user = {
-                        id: Date.now(),
-                        username: 'test_user',
-                        first_name: 'Test'
-                    };
+        const API_BASE = 'https://app.nocodb.com/api/v2/tables/moziqqm4pwfy04n/records';
+        const API_TOKEN = 'PYcOrnVaN8u2Ab5-Jk-IDiyAxWERltZbL1dS8Otc';
+        
+        let gameData = null;
+        let refreshInterval = null;
+        
+        function showError(message) {
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+        
+        async function makeRequest(url, options = {}) {
+            const defaultOptions = {
+                headers: {
+                    'xc-auth': API_TOKEN,
+                    'Content-Type': 'application/json'
                 }
-            }
-
-            getUserId() {
-                return this.user?.id || Date.now();
-            }
-
-            getUsername() {
-                return this.user?.username || 'unknown';
-            }
-
-            getDisplayName() {
-                return this.user?.first_name || this.user?.username || 'Игрок';
+            };
+            
+            const finalOptions = {
+                ...defaultOptions,
+                ...options,
+                headers: {
+                    ...defaultOptions.headers,
+                    ...options.headers
+                }
+            };
+            
+            try {
+                const response = await fetch(url, finalOptions);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('Request failed:', error);
+                throw error;
             }
         }
-
-        // NocoDB API для работы с таблицей rooms
-        const API_CONFIG = {
-            baseUrl: 'https://app.nocodb.com/api/v2/tables',
-            token: 'bocQfycJpJsTG_tbwEf8ma8E5rhoig0njMDXFWtJ',
-            roomsTable: 'moziqqm4pwfy04n'
-        };
-
-        class NocoDBAPI {
-            constructor() {
-                this.headers = {
-                    'Content-Type': 'application/json',
-                    'xc-token': API_CONFIG.token
-                };
+        
+        async function loadRoomData() {
+            if (!gameData || !gameData.roomId) {
+                showError('Ошибка: Данные комнаты не найдены');
+                return;
             }
-
-            async makeRequest(endpoint, method = 'GET', data = null) {
-                const url = `${API_CONFIG.baseUrl}/${endpoint}`;
-
-                const options = {
-                    method,
-                    headers: this.headers
-                };
-
-                if (data && (method === 'POST' || method === 'PATCH')) {
-                    options.body = JSON.stringify(data);
-                }
-
-                console.log(`Making ${method} request to: ${url}`, data);
-
-                try {
-                    const response = await fetch(url, options);
-
-                    if (!response.ok) {
-                        const errorText = await response.text();
-                        console.error(`HTTP error! status: ${response.status}, response:`, errorText);
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-
-                    const result = await response.json();
-                    console.log('API Response:', result);
-                    return result;
-                } catch (error) {
-                    console.error('API Request failed:', error);
-                    throw error;
-                }
-            }
-
-            async createRoom(roomData) {
-                try {
-                    const result = await this.makeRequest(
-                        `${API_CONFIG.roomsTable}/records`,
-                        'POST',
-                        roomData
-                    );
-                    console.log('Room created:', result);
-                    return result;
-                } catch (error) {
-                    console.error('Failed to create room:', error);
-                    throw error;
-                }
-            }
-
-            async getWaitingRooms() {
-                try {
-                    console.log('Getting waiting rooms...');
-                    const response = await this.makeRequest(
-                        `${API_CONFIG.roomsTable}/records?where=(status,eq,ожидание)&sort=-CreatedAt&limit=10`
-                    );
-                    console.log('Waiting rooms response:', response);
-                    return response.list || [];
-                } catch (error) {
-                    console.error('Failed to get waiting rooms:', error);
-                    return [];
-                }
-            }
-
-            async getRoomById(roomId) {
-                try {
-                    const response = await this.makeRequest(
-                        `${API_CONFIG.roomsTable}/records?where=(Id,eq,${roomId})`
-                    );
-                    return response.list?.[0] || null;
-                } catch (error) {
-                    console.error('Failed to get room by ID:', error);
-                    return null;
-                }
-            }
-
-            async updateRoom(roomId, updates) {
-                try {
-                    console.log('Updating room:', roomId, 'with data:', updates);
-                    const result = await this.makeRequest(
-                        `${API_CONFIG.roomsTable}/records/${roomId}`,
-                        'PATCH',
-                        updates
-                    );
-                    console.log('Update result:', result);
-                    return result;
-                } catch (error) {
-                    console.error('Failed to update room:', error);
-                    throw error;
-                }
-            }
-
-            async deleteRoom(roomId) {
-                try {
-                    console.log('Deleting room:', roomId);
-                    const result = await this.makeRequest(
-                        `${API_CONFIG.roomsTable}/records/${roomId}`,
-                        'DELETE'
-                    );
-                    console.log('Delete result:', result);
-                    return result;
-                } catch (error) {
-                    console.error('Failed to delete room:', error);
-                    throw error;
-                }
-            }
-
-            // Альтернативный метод - удаление и создание новой записи
-            async recreateRoom(roomId, newRoomData) {
-                try {
-                    console.log('Recreating room:', roomId, 'with new data:', newRoomData);
-
-                    // Удаляем старую запись
-                    await this.deleteRoom(roomId);
-
-                    // Создаем новую с обновленными данными
-                    const newRoom = await this.createRoom(newRoomData);
-                    console.log('Room recreated:', newRoom);
-                    return newRoom;
-                } catch (error) {
-                    console.error('Failed to recreate room:', error);
-                    throw error;
-                }
+            
+            try {
+                const response = await makeRequest(`${API_BASE}/${gameData.roomId}`);
+                updateRoomDisplay(response);
+            } catch (error) {
+                showError('Ошибка при загрузке данных комнаты');
+                console.error('Load room error:', error);
             }
         }
-
-        // Room Manager
-        class RoomManager {
-            constructor() {
-                this.currentUser = null;
-                this.currentRoom = null;
-                this.roomId = null;
-                this.isRoomCreator = false;
-                this.roomUpdateInterval = null;
-                this.init();
+        
+        function updateRoomDisplay(roomData) {
+            // Обновляем код комнаты
+            document.getElementById('roomCode').textContent = gameData.roomCode;
+            
+            // Обновляем статус
+            const statusElement = document.getElementById('gameStatus');
+            statusElement.textContent = roomData.status;
+            statusElement.className = `status ${roomData.status === 'Ожидание' ? 'waiting' : 'playing'}`;
+            
+            // Обновляем информацию об игроках
+            document.getElementById('player1Id').textContent = roomData.player1 || '-';
+            
+            const player2Element = document.getElementById('player2Id');
+            if (roomData.player2) {
+                player2Element.textContent = roomData.player2;
+                player2Element.className = 'player-id';
+            } else {
+                player2Element.innerHTML = '<span class="empty-player">Ожидание игрока...</span>';
             }
-
-            async init() {
-                try {
-                    // Загружаем данные пользователя из localStorage
-                    const savedUserData = localStorage.getItem('hockeyGameCurrentUser');
-                    if (savedUserData) {
-                        this.currentUser = JSON.parse(savedUserData);
-                        console.log('User data loaded from localStorage:', this.currentUser);
-                    } else {
-                        // Fallback если данных нет
-                        const telegramId = tgApp.getUserId();
-                        const username = tgApp.getUsername();
-                        this.currentUser = {
-                            telegram_id: telegramId,
-                            username: username,
-                            display_name: tgApp.getDisplayName()
-                        };
-                        console.log('Using fallback user data:', this.currentUser);
-                    }
-
-                    this.showGameMenu();
-                } catch (error) {
-                    console.error('Failed to initialize room manager:', error);
-                    this.showMessage('Ошибка инициализации', 'error');
-                }
-            }
-
-            async createRoom() {
-                try {
-                    if (!this.currentUser || !this.currentUser.telegram_id) {
-                        this.showMessage('Ошибка: данные пользователя не найдены', 'error');
-                        return;
-                    }
-
-                    const roomData = {
-                        player1: this.currentUser.telegram_id,
-                        player2: null,
-                        status: 'ожидание'
-                    };
-
-                    console.log('Creating room with data:', roomData);
-                    this.currentRoom = await api.createRoom(roomData);
-                    this.roomId = this.currentRoom.Id;
-                    this.isRoomCreator = true;
-
-                    this.showWaitingRoom();
-                    this.startRoomLoop();
-
-                    this.showMessage('Комната создана! Ожидание игрока...', 'success');
-                } catch (error) {
-                    console.error('Failed to create room:', error);
-                    this.showMessage('Не удалось создать комнату', 'error');
-                }
-            }
-
-            async loadAvailableRooms() {
-                try {
-                    const rooms = await api.getWaitingRooms();
-                    this.displayAvailableRooms(rooms);
-                } catch (error) {
-                    console.error('Failed to load rooms:', error);
-                    this.showMessage('Ошибка загрузки комнат', 'error');
-                }
-            }
-
-            displayAvailableRooms(rooms) {
-                const container = document.getElementById('availableRooms');
-                if (!container) return;
-
-                if (rooms.length === 0) {
-                    container.innerHTML = '<div class="no-rooms">Нет доступных комнат</div>';
-                    return;
-                }
-
-                const roomsHTML = rooms.map(room => {
-                    const createdTime = new Date(room.CreatedAt).toLocaleTimeString('ru-RU', {
-                        hour: '2-digit',
-                        minute: '2-digit'
-                    });
-
-                    const isMyRoom = room.player1 == this.currentUser.telegram_id;
-                    const buttonText = isMyRoom ? 'Моя комната' : 'Присоединиться';
-                    const buttonDisabled = isMyRoom ? 'disabled' : '';
-
-                    return `
-                        <div class="room-item">
-                            <div class="room-info">
-                                <div class="room-creator">Комната #${room.Id}</div>
-                                <div class="room-time">Создана в ${createdTime}</div>
-                            </div>
-                            <button class="join-room-btn" ${buttonDisabled} onclick="joinRoomById('${room.Id}')">
-                                ${buttonText}
-                            </button>
-                        </div>
-                    `;
-                }).join('');
-
-                container.innerHTML = roomsHTML;
-            }
-
-            async joinRoomById(roomId) {
-                if (!this.currentUser || !this.currentUser.telegram_id) {
-                    this.showMessage('Ошибка: данные пользователя не найдены', 'error');
-                    return;
-                }
-
-                try {
-                    this.showMessage('Присоединение к комнате...', 'info');
-
-                    const room = await api.getRoomById(roomId);
-                    if (!room) {
-                        this.showMessage('Комната не найдена', 'error');
-                        return;
-                    }
-
-                    if (room.status !== 'ожидание') {
-                        this.showMessage('Эта комната уже занята или закрыта', 'error');
-                        return;
-                    }
-
-                    if (room.player2) {
-                        this.showMessage('В этой комнате уже есть второй игрок', 'error');
-                        return;
-                    }
-
-                    if (room.player1 == this.currentUser.telegram_id) {
-                        this.showMessage('Вы не можете присоединиться к своей же комнате', 'error');
-                        return;
-                    }
-
-                    // Присоединяемся к комнате
-                    this.roomId = room.Id;
-                    this.isRoomCreator = false;
-
-                    const updates = {
-                        player2: this.currentUser.telegram_id,
-                        status: 'игра'
-                    };
-
-                    console.log('Joining room - Room ID:', this.roomId);
-                    console.log('Joining room - Current user:', this.currentUser);
-                    console.log('Joining room - Updates to send:', updates);
-
-                    // Пробуем обновить обычным способом
-                    let updateResult = null;
-                    try {
-                        updateResult = await api.updateRoom(this.roomId, updates);
-                    } catch (error) {
-                        console.log('Normal update failed, trying recreate method...');
-
-                        // Если обычное обновление не работает, используем метод пересоздания
-                        const newRoomData = {
-                            player1: room.player1,
-                            player2: this.currentUser.telegram_id,
-                            status: 'игра'
-                        };
-
-                        updateResult = await api.recreateRoom(this.roomId, newRoomData);
-                        if (updateResult) {
-                            this.roomId = updateResult.Id;
-                        }
-                    }
-
-                    if (updateResult) {
-                        this.currentRoom = { ...room, ...updates };
-                        this.showGameReady();
-                        this.showMessage('Успешно присоединились к комнате!', 'success');
-                    } else {
-                        throw new Error('Не удалось обновить состояние комнаты');
-                    }
-                } catch (error) {
-                    console.error('Failed to join room:', error);
-                    this.showMessage('Не удалось присоединиться к комнате: ' + error.message, 'error');
-                }
-            }
-
-            async startRoomLoop() {
-                if (this.roomUpdateInterval) {
-                    clearInterval(this.roomUpdateInterval);
-                }
-
-                this.roomUpdateInterval = setInterval(async () => {
-                    await this.checkRoomStatus();
-                }, 2000);
-            }
-
-            async checkRoomStatus() {
-                try {
-                    if (!this.roomId) return;
-
-                    const updatedRoom = await api.getRoomById(this.roomId);
-                    if (!updatedRoom) return;
-
-                    console.log('Checking room status:', updatedRoom);
-
-                    const previousStatus = this.currentRoom?.status;
-                    this.currentRoom = updatedRoom;
-
-                    // Если статус изменился на "игра" и мы создатель комнаты
-                    if (this.currentRoom.status === 'игра' && 
-                        previousStatus === 'ожидание' &&
-                        this.isRoomCreator &&
-                        this.currentRoom.player2) {
-                        console.log('Second player joined the room!');
-                        this.showGameReady();
-                        this.showMessage('Второй игрок присоединился!', 'success');
-
-                        // Останавливаем проверку статуса
-                        if (this.roomUpdateInterval) {
-                            clearInterval(this.roomUpdateInterval);
-                            this.roomUpdateInterval = null;
-                        }
-                    }
-                } catch (error) {
-                    console.error('Failed to check room status:', error);
-                }
-            }
-
-            showGameMenu() {
-                this.hideAllScreens();
-                document.getElementById('gameMenu').classList.remove('hidden');
-            }
-
-            showWaitingRoom() {
-                this.hideAllScreens();
-                document.getElementById('waitingRoom').classList.remove('hidden');
-
-                if (this.roomId) {
-                    document.getElementById('roomIdDisplay').textContent = this.roomId;
-                }
-            }
-
-            showGameReady() {
-                this.hideAllScreens();
-                document.getElementById('gameReady').classList.remove('hidden');
-
-                if (this.currentRoom) {
-                    document.getElementById('player1DisplayName').textContent = `Игрок ${this.currentRoom.player1}`;
-                    document.getElementById('player1DisplayId').textContent = `ID: ${this.currentRoom.player1}`;
-                    document.getElementById('player2DisplayName').textContent = `Игрок ${this.currentRoom.player2}`;
-                    document.getElementById('player2DisplayId').textContent = `ID: ${this.currentRoom.player2}`;
-                }
-            }
-
-            hideAllScreens() {
-                document.getElementById('gameMenu').classList.add('hidden');
-                document.getElementById('waitingRoom').classList.add('hidden');
-                document.getElementById('gameReady').classList.add('hidden');
-            }
-
-            showMessage(message, type = 'info') {
-                const existingMessage = document.querySelector('.message');
-                if (existingMessage) {
-                    existingMessage.remove();
-                }
-
-                const messageDiv = document.createElement('div');
-                messageDiv.textContent = message;
-                messageDiv.className = `message ${type}`;
-
-                document.body.appendChild(messageDiv);
-                setTimeout(() => {
-                    if (document.body.contains(messageDiv)) {
-                        document.body.removeChild(messageDiv);
-                    }
-                }, 3000);
-            }
-
-            async cancelRoom() {
-                if (this.roomUpdateInterval) {
-                    clearInterval(this.roomUpdateInterval);
-                    this.roomUpdateInterval = null;
-                }
-
-                if (this.roomId) {
-                    try {
-                        await api.deleteRoom(this.roomId);
-                    } catch (error) {
-                        console.error('Failed to delete room:', error);
-                    }
-                }
-
-                this.showGameMenu();
-                this.showMessage('Комната отменена', 'info');
+            
+            // Выделяем текущего игрока
+            document.getElementById('player1Info').classList.toggle('current', 
+                gameData.playerId === roomData.player1);
+            document.getElementById('player2Info').classList.toggle('current', 
+                gameData.playerId === roomData.player2);
+            
+            // Показываем соответствующие сообщения
+            const waitingMessage = document.getElementById('waitingMessage');
+            const gameStartMessage = document.getElementById('gameStartMessage');
+            
+            if (roomData.status === 'Ожидание') {
+                waitingMessage.style.display = 'block';
+                gameStartMessage.style.display = 'none';
+            } else if (roomData.status === 'Игра') {
+                waitingMessage.style.display = 'none';
+                gameStartMessage.style.display = 'block';
             }
         }
-
-        // Initialize
-        const tgApp = new TelegramApp();
-        const api = new NocoDBAPI();
-
-        // Global functions
-        function createRoom() {
-            window.roomManager.createRoom();
+        
+        function startAutoRefresh() {
+            refreshInterval = setInterval(loadRoomData, 3000); // Обновляем каждые 3 секунды
         }
-
-        function showRoomsList() {
-            document.getElementById('roomsList').classList.remove('hidden');
-            if (window.roomManager) {
-                window.roomManager.loadAvailableRooms();
+        
+        function stopAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+                refreshInterval = null;
             }
         }
-
-        function hideRoomsList() {
-            document.getElementById('roomsList').classList.add('hidden');
-        }
-
-        function joinRoomById(roomId) {
-            if (window.roomManager) {
-                window.roomManager.joinRoomById(roomId);
+        
+        function initializePage() {
+            // Получаем данные из localStorage
+            const savedData = localStorage.getItem('gameData');
+            if (!savedData) {
+                showError('Ошибка: Данные игры не найдены. Вернитесь в главное меню.');
+                return;
+            }
+            
+            try {
+                gameData = JSON.parse(savedData);
+                loadRoomData();
+                startAutoRefresh();
+            } catch (error) {
+                showError('Ошибка при загрузке данных игры');
+                console.error('Parse game data error:', error);
             }
         }
-
-        function selectZone(zoneNumber) {
-           // Intentionally left blank - selectZone is no longer required
-        }
-
-        function submitMove() {
-            // Intentionally left blank - submitMove is no longer required
-        }
-
-        function cancelRoom() {
-            window.roomManager.cancelRoom();
-        }
-
-        function playAgain() {
-           // Intentionally left blank - playAgain is no longer required
-        }
-
-        function goHome() {
-            window.location.href = 'index.html';
-        }
-
-        function cancelGame() {
-            // Intentionally left blank - cancelGame is no longer required
-        }
-
-        // Initialize room manager when page loads
-        document.addEventListener('DOMContentLoaded', () => {
-            window.roomManager = new RoomManager();
+        
+        // Обработчики событий
+        document.getElementById('refreshBtn').addEventListener('click', loadRoomData);
+        
+        document.getElementById('startGameBtn').addEventListener('click', function() {
+            alert('Здесь будет логика начала игры!');
         });
+        
+        // Очистка интервала при закрытии страницы
+        window.addEventListener('beforeunload', stopAutoRefresh);
+        
+        // Инициализация страницы
+        initializePage();
     </script>
 </body>
 </html>
