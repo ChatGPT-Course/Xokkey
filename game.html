@@ -477,12 +477,15 @@
 
                 if (method === 'PATCH' && endpoint.includes('records')) {
                     const gameId = endpoint.split('/').pop();
+                    console.log('Updating game with ID:', gameId, 'Data:', data);
                     const gameIndex = games.findIndex(g => g.Id === gameId);
                     if (gameIndex !== -1) {
                         games[gameIndex] = { ...games[gameIndex], ...data, updated_at: new Date().toISOString() };
                         localStorage.setItem(storageKey, JSON.stringify(games));
+                        console.log('Game updated in storage:', games[gameIndex]);
                         return games[gameIndex];
                     }
+                    console.log('Game not found for update');
                     return null;
                 }
 
@@ -669,8 +672,10 @@
                         status: 'playing'
                     };
                     
+                    console.log('Updating game with:', updates);
+                    
                     // Обновляем игру в базе данных
-                    const updatedGame = await api.updateGame(this.gameId, updates);
+                    await api.updateGame(this.gameId, updates);
                     this.currentGame = { ...game, ...updates };
                     
                     console.log('Game updated after joining:', this.currentGame);
@@ -692,7 +697,7 @@
             async startGameLoop() {
                 this.gameUpdateInterval = setInterval(async () => {
                     await this.checkGameStatus();
-                }, 2000);
+                }, 1000);
             }
 
             async checkGameStatus() {
@@ -707,6 +712,7 @@
                     const wasWaiting = this.currentGame?.status === 'waiting' || 
                                      !document.getElementById('waitingRoom').classList.contains('hidden');
                     
+                    const previousStatus = this.currentGame?.status;
                     this.currentGame = updatedGame;
                     
                     // Если игра завершена
@@ -716,7 +722,9 @@
                     }
                     
                     // Если ожидали игрока и он присоединился (для создателя)
-                    if (this.currentGame.status === 'playing' && wasWaiting) {
+                    if (this.currentGame.status === 'playing' && 
+                        (previousStatus === 'waiting' || wasWaiting) &&
+                        this.currentGame.player2_id) {
                         console.log('Second player joined, starting game!');
                         this.showGamePlay();
                         this.showMessage('Второй игрок присоединился! Игра началась!', 'success');
