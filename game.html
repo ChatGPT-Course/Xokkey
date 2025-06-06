@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -70,7 +69,7 @@
             flex-direction: column;
             padding: 25px;
             gap: 25px;
-            max-width: 800px;
+            max-width: 600px;
             margin: 0 auto;
             width: 100%;
             box-sizing: border-box;
@@ -93,54 +92,106 @@
             margin-bottom: 20px;
         }
 
-        .create-room-section {
+        .room-card {
             background: var(--card-bg);
             border-radius: 20px;
-            padding: 25px;
+            padding: 30px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             backdrop-filter: blur(10px);
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            text-align: center;
         }
 
-        .create-room-form {
-            display: flex;
-            flex-direction: column;
+        .room-status {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: var(--accent-light);
+        }
+
+        .players-container {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
             gap: 20px;
             align-items: center;
+            margin-bottom: 25px;
         }
 
-        .bet-input-group {
+        .player-slot {
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 10px;
+            gap: 15px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 15px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            min-height: 140px;
+            justify-content: center;
         }
 
-        .bet-input-group label {
+        .player-slot.occupied {
+            border-color: var(--success);
+            background: rgba(39, 174, 96, 0.1);
+        }
+
+        .player-slot.empty {
+            border-color: var(--warning);
+            border-style: dashed;
+            background: rgba(243, 156, 18, 0.1);
+        }
+
+        .player-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            border: 3px solid var(--accent);
+            overflow: hidden;
+        }
+
+        .player-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .player-name {
+            font-weight: bold;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        .player-status {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .vs-text {
+            font-size: 32px;
+            font-weight: bold;
+            color: var(--accent-light);
+        }
+
+        .room-bet-info {
+            background: rgba(243, 156, 18, 0.1);
+            padding: 15px;
+            border-radius: 15px;
+            border: 2px solid rgba(243, 156, 18, 0.3);
+            margin-bottom: 25px;
+        }
+
+        .bet-text {
             font-size: 18px;
             font-weight: bold;
-            color: var(--text);
+            color: var(--warning);
         }
 
-        .bet-input {
-            padding: 15px 20px;
-            font-size: 18px;
-            border-radius: 15px;
-            border: 2px solid rgba(255, 255, 255, 0.2);
-            background: rgba(0, 0, 0, 0.3);
-            color: var(--text);
-            text-align: center;
-            width: 120px;
-            transition: all 0.3s ease;
-        }
-
-        .bet-input:focus {
-            outline: none;
-            border-color: var(--accent-light);
-            box-shadow: 0 0 20px rgba(231, 76, 60, 0.3);
-        }
-
-        .btn {
+        .action-button {
             padding: 15px 30px;
             font-size: 18px;
             font-weight: bold;
@@ -152,11 +203,11 @@
             align-items: center;
             justify-content: center;
             gap: 10px;
-            position: relative;
-            overflow: hidden;
+            margin: 0 auto;
+            min-width: 200px;
         }
 
-        .btn:disabled {
+        .action-button:disabled {
             opacity: 0.6;
             cursor: not-allowed;
             transform: none !important;
@@ -182,112 +233,6 @@
         .btn-secondary:hover:not(:disabled) {
             background: rgba(255, 255, 255, 0.2);
             border-color: rgba(255, 255, 255, 0.3);
-        }
-
-        .rooms-section {
-            background: var(--card-bg);
-            border-radius: 20px;
-            padding: 25px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        }
-
-        .rooms-list {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .room-card {
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
-            padding: 20px;
-            border: 2px solid rgba(255, 255, 255, 0.1);
-            transition: all 0.3s ease;
-        }
-
-        .room-card:hover {
-            transform: translateY(-5px);
-            border-color: var(--accent-light);
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
-        }
-
-        .room-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .room-creator {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
-
-        .creator-avatar {
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 18px;
-            border: 2px solid var(--accent);
-            overflow: hidden;
-        }
-
-        .creator-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .creator-info {
-            display: flex;
-            flex-direction: column;
-        }
-
-        .creator-name {
-            font-weight: bold;
-            font-size: 16px;
-        }
-
-        .creator-status {
-            font-size: 12px;
-            color: var(--success);
-        }
-
-        .room-bet {
-            background: linear-gradient(45deg, var(--warning), #f1c40f);
-            color: #2c3e50;
-            padding: 8px 15px;
-            border-radius: 20px;
-            font-weight: bold;
-            font-size: 14px;
-            box-shadow: 0 3px 10px rgba(243, 156, 18, 0.3);
-        }
-
-        .room-actions {
-            display: flex;
-            justify-content: flex-end;
-        }
-
-        .join-btn {
-            padding: 12px 25px;
-            font-size: 16px;
-        }
-
-        .empty-message {
-            text-align: center;
-            color: var(--text-secondary);
-            padding: 40px 20px;
-            font-size: 18px;
-            background: rgba(255, 255, 255, 0.05);
-            border-radius: 15px;
-            border: 2px dashed rgba(255, 255, 255, 0.2);
         }
 
         .loading {
@@ -319,7 +264,7 @@
             font-weight: bold;
         }
 
-        .back-to-menu-btn {
+        .back-btn {
             position: fixed;
             top: 20px;
             left: 20px;
@@ -339,106 +284,9 @@
             border: 2px solid rgba(255, 255, 255, 0.2);
         }
 
-        .back-to-menu-btn:hover {
+        .back-btn:hover {
             background: rgba(0, 0, 0, 0.6);
             transform: scale(1.1);
-        }
-
-        .room-waiting {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-            padding: 30px;
-            background: var(--card-bg);
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            backdrop-filter: blur(10px);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        }
-
-        .waiting-title {
-            font-size: 24px;
-            font-weight: bold;
-            text-align: center;
-            color: var(--accent-light);
-        }
-
-        .players-display {
-            display: grid;
-            grid-template-columns: 1fr auto 1fr;
-            gap: 20px;
-            align-items: center;
-            width: 100%;
-            max-width: 400px;
-        }
-
-        .player-card {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-            padding: 20px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 15px;
-            border: 2px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .player-avatar {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            border: 3px solid var(--accent);
-            overflow: hidden;
-        }
-
-        .player-avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .player-name {
-            font-weight: bold;
-            text-align: center;
-        }
-
-        .player-status {
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-
-        .vs-text {
-            font-size: 32px;
-            font-weight: bold;
-            color: var(--accent-light);
-        }
-
-        .room-bet-display {
-            text-align: center;
-            font-size: 20px;
-            color: var(--warning);
-            font-weight: bold;
-            background: rgba(243, 156, 18, 0.1);
-            padding: 15px;
-            border-radius: 15px;
-            border: 2px solid rgba(243, 156, 18, 0.3);
-        }
-
-        .room-controls {
-            display: flex;
-            gap: 15px;
-            width: 100%;
-            max-width: 300px;
-        }
-
-        .room-controls .btn {
-            flex: 1;
         }
 
         @media (max-width: 600px) {
@@ -446,7 +294,7 @@
                 padding: 15px;
             }
 
-            .players-display {
+            .players-container {
                 grid-template-columns: 1fr;
                 gap: 15px;
             }
@@ -454,17 +302,11 @@
             .vs-text {
                 display: none;
             }
-
-            .room-header {
-                flex-direction: column;
-                gap: 15px;
-                align-items: flex-start;
-            }
         }
     </style>
 </head>
 <body>
-    <button class="back-to-menu-btn" onclick="window.location.href='index.html'">←</button>
+    <button class="back-btn" onclick="window.location.href='index.html'">←</button>
 
     <div class="notification" id="notification"></div>
 
@@ -476,85 +318,51 @@
     </div>
 
     <div class="main-content">
-        <!-- Экран списка комнат -->
-        <div id="lobby-screen">
-            <div class="section-title">Игровое лобби</div>
-            <div class="section-subtitle">Создайте комнату или присоединитесь к существующей</div>
+        <div class="section-title">Главная комната</div>
+        <div class="section-subtitle">Быстрая игра на 1 клюшку</div>
 
-            <div class="create-room-section">
-                <h3 style="text-align: center; margin-bottom: 20px; color: var(--accent-light);">Создать новую комнату</h3>
-                <div class="create-room-form">
-                    <div class="bet-input-group">
-                        <label for="room-bet">Ставка</label>
-                        <input type="number" id="room-bet" class="bet-input" min="1" value="1" max="999">
-                        <small style="color: var(--text-secondary);">клюшек за игру</small>
-                    </div>
-                    <button class="btn btn-primary" id="create-room-btn">
-                        <span>🏒</span>
-                        <span>Создать комнату</span>
-                    </button>
-                </div>
+        <div class="room-card">
+            <div class="room-status" id="room-status">Загрузка...</div>
+
+            <div class="room-bet-info">
+                <div class="bet-text">🏒 Ставка: 1 клюшка</div>
             </div>
 
-            <div class="rooms-section">
-                <h3 style="text-align: center; margin-bottom: 20px; color: var(--accent-light);">Доступные комнаты</h3>
-                <div class="rooms-list" id="rooms-list">
-                    <div class="empty-message">
-                        <div class="loading"></div>
-                        <br>Загрузка комнат...
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Экран ожидания в комнате -->
-        <div class="room-waiting" id="room-waiting" style="display: none;">
-            <div class="waiting-title">Комната создана!</div>
-
-            <div class="room-bet-display" id="room-bet-display">
-                Ставка: 1 клюшка
-            </div>
-
-            <div class="players-display">
-                <div class="player-card">
-                    <div class="player-avatar" id="creator-avatar">👤</div>
-                    <div class="player-name" id="creator-name">Игрок 1</div>
-                    <div class="player-status">Создатель</div>
+            <div class="players-container">
+                <div class="player-slot empty" id="player1-slot">
+                    <div class="player-avatar" id="player1-avatar">❓</div>
+                    <div class="player-name" id="player1-name">Свободно</div>
+                    <div class="player-status">Ожидание игрока</div>
                 </div>
 
                 <div class="vs-text">VS</div>
 
-                <div class="player-card">
-                    <div class="player-avatar" id="joiner-avatar">❓</div>
-                    <div class="player-name" id="joiner-name">Ожидание...</div>
-                    <div class="player-status" id="joiner-status">Поиск игрока</div>
+                <div class="player-slot empty" id="player2-slot">
+                    <div class="player-avatar" id="player2-avatar">❓</div>
+                    <div class="player-name" id="player2-name">Свободно</div>
+                    <div class="player-status">Ожидание игрока</div>
                 </div>
             </div>
 
-            <div class="room-controls">
-                <button class="btn btn-secondary" id="leave-room-btn">Покинуть</button>
-                <button class="btn btn-primary" id="start-game-btn" style="display: none;">
-                    <span>🎮</span>
-                    <span>Начать игру</span>
-                </button>
-            </div>
+            <button class="action-button btn-primary" id="action-btn" disabled>
+                <div class="loading"></div>
+                <span>Загрузка...</span>
+            </button>
         </div>
     </div>
 
     <script>
         // Конфигурация API
         const NOCODB_API = "https://app.nocodb.com/api/v1/db/data/weamcfo6/p27jdsmk69wuimh/meefo7wdwoh5mtv";
-        const ROOMS_API = "https://app.nocodb.com/api/v1/db/data/weamcfo6/p27jdsmk69wuimh/mznem6p3jztsgsl";
+        const ROOM_API = "https://app.nocodb.com/api/v1/db/data/weamcfo6/p27jdsmk69wuimh/mznem6p3jztsgsl"; // Замени NEW_TABLE_ID на ID таблицы game_room
         const NOCODB_KEY = "bocQfycJpJsTG_tbwEf8ma8E5rhoig0njMDXFWtJ";
 
         // Глобальные переменные
         const tg = window.Telegram.WebApp;
         let currentUser = null;
-        let currentRoom = null;
-        let balanceRefreshInterval = null;
-        let roomsRefreshInterval = null;
-        let roomRefreshInterval = null;
+        let gameRoom = null;
         let userBalance = 0;
+        let refreshInterval = null;
         let isOperationInProgress = false;
 
         // Инициализация пользователя
@@ -574,15 +382,13 @@
 
         async function init() {
             await loadUserBalance();
-            balanceRefreshInterval = setInterval(loadUserBalance, 5000);
-            await checkActiveRoom();
+            await initializeRoom();
+            await loadRoom();
 
-            if (!currentRoom) {
-                showLobbyScreen();
-            }
+            refreshInterval = setInterval(loadRoom, 2000);
         }
 
-        // Загрузка баланса пользователя
+        // Загрузка баланса
         async function loadUserBalance() {
             try {
                 const response = await fetch(`${NOCODB_API}?where=(tg_user_id,eq,${currentUser.id})`, {
@@ -594,192 +400,360 @@
                     const balance = data.list[0].point || 0;
                     document.getElementById('balance').textContent = `Клюшек: ${balance} 🏒`;
                     userBalance = balance;
-                    return balance;
                 }
-                document.getElementById('balance').textContent = `Клюшек: 0 🏒`;
-                userBalance = 0;
-                return 0;
             } catch (error) {
                 console.error("Ошибка при загрузке баланса:", error);
-                userBalance = 0;
-                return 0;
             }
         }
 
-        // Проверка активной комнаты
-        async function checkActiveRoom() {
+        // Инициализация комнаты
+        async function initializeRoom() {
             try {
-                const [creatorResponse, joinerResponse] = await Promise.all([
-                    fetch(`${ROOMS_API}?where=(id_creator,eq,${currentUser.id})`, {
-                        headers: { "xc-token": NOCODB_KEY }
-                    }),
-                    fetch(`${ROOMS_API}?where=(id_joining,eq,${currentUser.id})`, {
-                        headers: { "xc-token": NOCODB_KEY }
-                    })
-                ]);
-
-                const creatorData = await creatorResponse.json();
-                const joinerData = await joinerResponse.json();
-
-                if (creatorData.list.length > 0) {
-                    const room = creatorData.list[0];
-                    if (room.status === 'playing') {
-                        window.location.href = `game_game.html?room=${room.Id}`;
-                        return;
-                    } else {
-                        showRoomWaiting(room);
-                        return;
-                    }
-                }
-
-                if (joinerData.list.length > 0) {
-                    const room = joinerData.list[0];
-                    if (room.status === 'playing') {
-                        window.location.href = `game_game.html?room=${room.Id}`;
-                        return;
-                    } else {
-                        showRoomWaiting(room);
-                        return;
-                    }
-                }
-            } catch (error) {
-                console.error("Ошибка при проверке активной комнаты:", error);
-            }
-        }
-
-        // Показ лобби
-        function showLobbyScreen() {
-            document.getElementById('lobby-screen').style.display = 'block';
-            document.getElementById('room-waiting').style.display = 'none';
-            
-            loadRooms();
-            if (roomsRefreshInterval) clearInterval(roomsRefreshInterval);
-            roomsRefreshInterval = setInterval(loadRooms, 3000);
-        }
-
-        // Загрузка списка комнат
-        async function loadRooms() {
-            if (isOperationInProgress) return;
-            
-            try {
-                const response = await fetch(`${ROOMS_API}?where=(status,eq,open)`, {
+                const response = await fetch(`${ROOM_API}?where=(id_room,eq,main_room)`, {
                     headers: { "xc-token": NOCODB_KEY }
                 });
 
                 const data = await response.json();
-                const roomsList = document.getElementById('rooms-list');
 
                 if (data.list.length === 0) {
-                    roomsList.innerHTML = '<div class="empty-message">🏒 Нет доступных комнат<br><small>Создайте первую!</small></div>';
-                    return;
+                    // Создаем главную комнату
+                    await fetch(ROOM_API, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            "xc-token": NOCODB_KEY
+                        },
+                        body: JSON.stringify({
+                            id_room: "main_room",
+                            status: "empty",
+                            bet: 1,
+                            xp_p1: 0,
+                            xp_p2: 0,
+                            sec: 10,
+                            turn: 1
+                        })
+                    });
                 }
-
-                roomsList.innerHTML = '';
-
-                data.list.forEach(room => {
-                    if (room.id_creator == currentUser.id) return;
-
-                    const roomCard = document.createElement('div');
-                    roomCard.className = 'room-card';
-
-                    const canJoin = userBalance >= room.bet;
-
-                    roomCard.innerHTML = `
-                        <div class="room-header">
-                            <div class="room-creator">
-                                <div class="creator-avatar">${getAvatarDisplay(room.avatar_creator)}</div>
-                                <div class="creator-info">
-                                    <div class="creator-name">${room.name_creator || 'Игрок'}</div>
-                                    <div class="creator-status">• В сети</div>
-                                </div>
-                            </div>
-                            <div class="room-bet">🏒 ${room.bet}</div>
-                        </div>
-                        <div class="room-actions">
-                            <button class="btn btn-primary join-btn" data-room-id="${room.Id}" ${!canJoin ? 'disabled' : ''}>
-                                ${canJoin ? '🎮 Присоединиться' : '❌ Недостаточно клюшек'}
-                            </button>
-                        </div>
-                    `;
-
-                    roomsList.appendChild(roomCard);
-                });
-
-                // Добавляем обработчики
-                document.querySelectorAll('.join-btn').forEach(btn => {
-                    btn.addEventListener('click', joinRoom);
-                });
-
             } catch (error) {
-                console.error("Ошибка при загрузке комнат:", error);
-                document.getElementById('rooms-list').innerHTML = '<div class="empty-message">❌ Ошибка загрузки комнат</div>';
+                console.error("Ошибка при инициализации комнаты:", error);
             }
         }
 
-        // Получение аватара для отображения
-        function getAvatarDisplay(avatarUrl) {
-            if (avatarUrl) {
-                return `<img src="${avatarUrl}" alt="Аватар" onerror="this.parentElement.innerHTML='👤'">`;
-            }
-            return '👤';
-        }
-
-        // Создание комнаты
-        async function createRoom() {
+        // Загрузка состояния комнаты
+        async function loadRoom() {
             if (isOperationInProgress) return;
 
-            const bet = parseInt(document.getElementById('room-bet').value);
-            if (isNaN(bet) || bet <= 0) {
-                showNotification('❌ Введите корректную ставку');
+            try {
+                const response = await fetch(`${ROOM_API}?where=(id_room,eq,main_room)`, {
+                    headers: { "xc-token": NOCODB_KEY }
+                });
+
+                const data = await response.json();
+                if (data.list.length > 0) {
+                    gameRoom = data.list[0];
+                    updateRoomDisplay();
+                }
+            } catch (error) {
+                console.error("Ошибка при загрузке комнаты:", error);
+            }
+        }
+
+        // Обновление отображения комнаты
+        function updateRoomDisplay() {
+            const statusEl = document.getElementById('room-status');
+            const actionBtn = document.getElementById('action-btn');
+            const player1Slot = document.getElementById('player1-slot');
+            const player2Slot = document.getElementById('player2-slot');
+
+            // Проверяем, играет ли пользователь
+            const isPlayer1 = gameRoom.player1_id == currentUser.id;
+            const isPlayer2 = gameRoom.player2_id == currentUser.id;
+            const isInGame = isPlayer1 || isPlayer2;
+
+            if (gameRoom.status === 'playing' && isInGame) {
+                // Игра началась
+                window.location.href = `game_game.html?room=${gameRoom.Id}`;
                 return;
             }
 
-            if (userBalance < bet) {
-                showNotification('❌ Недостаточно клюшек для создания комнаты');
-                return;
+            // Обновляем слоты игроков
+            updatePlayerSlot(1, gameRoom.player1_id, gameRoom.player1_name, gameRoom.player1_avatar);
+            updatePlayerSlot(2, gameRoom.player2_id, gameRoom.player2_name, gameRoom.player2_avatar);
+
+            // Определяем состояние и действие
+            if (gameRoom.status === 'empty') {
+                statusEl.textContent = 'Комната пуста';
+                setupJoinButton(actionBtn);
+            } else if (gameRoom.status === 'waiting') {
+                if (isInGame) {
+                    if (isPlayer1) {
+                        statusEl.textContent = 'Ожидание второго игрока';
+                        setupLeaveButton(actionBtn);
+                    } else {
+                        statusEl.textContent = 'Ожидание начала игры';
+                        if (gameRoom.player2_id) {
+                            setupStartButton(actionBtn);
+                        } else {
+                            setupLeaveButton(actionBtn);
+                        }
+                    }
+                } else {
+                    if (!gameRoom.player2_id) {
+                        statusEl.textContent = 'Есть свободное место';
+                        setupJoinButton(actionBtn);
+                    } else {
+                        statusEl.textContent = 'Игроки готовятся к игре';
+                        actionBtn.innerHTML = '<span>⏳ Ожидание...</span>';
+                        actionBtn.disabled = true;
+                    }
+                }
+            } else if (gameRoom.status === 'playing') {
+                statusEl.textContent = 'Игра в процессе';
+                actionBtn.innerHTML = '<span>🎮 Игра идет</span>';
+                actionBtn.disabled = true;
             }
+        }
+
+        // Обновление слота игрока
+        function updatePlayerSlot(playerNum, playerId, playerName, playerAvatar) {
+            const slot = document.getElementById(`player${playerNum}-slot`);
+            const avatar = document.getElementById(`player${playerNum}-avatar`);
+            const name = document.getElementById(`player${playerNum}-name`);
+
+            if (playerId) {
+                slot.className = 'player-slot occupied';
+                avatar.innerHTML = playerAvatar ? 
+                    `<img src="${playerAvatar}" alt="Аватар" onerror="this.parentElement.innerHTML='👤'">` : 
+                    '👤';
+                name.textContent = playerName || 'Игрок';
+            } else {
+                slot.className = 'player-slot empty';
+                avatar.innerHTML = '❓';
+                name.textContent = 'Свободно';
+            }
+        }
+
+        // Настройка кнопки присоединения
+        function setupJoinButton(btn) {
+            if (userBalance < 1) {
+                btn.innerHTML = '<span>❌ Недостаточно клюшек</span>';
+                btn.disabled = true;
+                btn.className = 'action-button btn-secondary';
+            } else {
+                btn.innerHTML = '<span>🎮 Присоединиться</span>';
+                btn.disabled = false;
+                btn.className = 'action-button btn-primary';
+                btn.onclick = joinRoom;
+            }
+        }
+
+        // Настройка кнопки выхода
+        function setupLeaveButton(btn) {
+            btn.innerHTML = '<span>🚪 Покинуть комнату</span>';
+            btn.disabled = false;
+            btn.className = 'action-button btn-secondary';
+            btn.onclick = leaveRoom;
+        }
+
+        // Настройка кнопки старта
+        function setupStartButton(btn) {
+            btn.innerHTML = '<span>🎮 Начать игру</span>';
+            btn.disabled = false;
+            btn.className = 'action-button btn-primary';
+            btn.onclick = startGame;
+        }
+
+        // Присоединение к комнате
+        async function joinRoom() {
+            if (isOperationInProgress || userBalance < 1) return;
 
             isOperationInProgress = true;
-            const createBtn = document.getElementById('create-room-btn');
-            createBtn.innerHTML = '<div class="loading"></div> Создание...';
-            createBtn.disabled = true;
+            const btn = document.getElementById('action-btn');
+            btn.innerHTML = '<div class="loading"></div><span>Присоединение...</span>';
+            btn.disabled = true;
 
             try {
                 const fullName = `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim();
                 const userAvatar = await getUserAvatar();
 
-                const response = await fetch(ROOMS_API, {
-                    method: 'POST',
+                let updateData = {};
+
+                if (!gameRoom.player1_id) {
+                    updateData = {
+                        player1_id: currentUser.id,
+                        player1_name: fullName,
+                        player1_avatar: userAvatar,
+                        status: "waiting"
+                    };
+                } else if (!gameRoom.player2_id) {
+                    updateData = {
+                        player2_id: currentUser.id,
+                        player2_name: fullName,
+                        player2_avatar: userAvatar,
+                        status: "waiting"
+                    };
+                }
+
+                await fetch(`${ROOM_API}/${gameRoom.Id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        "xc-token": NOCODB_KEY
+                    },
+                    body: JSON.stringify(updateData)
+                });
+
+                showNotification('✅ Вы присоединились к игре!');
+
+            } catch (error) {
+                console.error("Ошибка при присоединении:", error);
+                showNotification('❌ Ошибка присоединения');
+            } finally {
+                isOperationInProgress = false;
+            }
+        }
+
+        // Покидание комнаты
+        async function leaveRoom() {
+            if (isOperationInProgress) return;
+
+            isOperationInProgress = true;
+
+            try {
+                const isPlayer1 = gameRoom.player1_id == currentUser.id;
+                let updateData = {};
+
+                if (isPlayer1) {
+                    if (gameRoom.player2_id) {
+                        // Перемещаем игрока 2 в слот 1
+                        updateData = {
+                            player1_id: gameRoom.player2_id,
+                            player1_name: gameRoom.player2_name,
+                            player1_avatar: gameRoom.player2_avatar,
+                            player2_id: null,
+                            player2_name: null,
+                            player2_avatar: null,
+                            status: "waiting"
+                        };
+                    } else {
+                        updateData = {
+                            player1_id: null,
+                            player1_name: null,
+                            player1_avatar: null,
+                            status: "empty"
+                        };
+                    }
+                } else {
+                    updateData = {
+                        player2_id: null,
+                        player2_name: null,
+                        player2_avatar: null,
+                        status: gameRoom.player1_id ? "waiting" : "empty"
+                    };
+                }
+
+                await fetch(`${ROOM_API}/${gameRoom.Id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        "xc-token": NOCODB_KEY
+                    },
+                    body: JSON.stringify(updateData)
+                });
+
+                showNotification('🚪 Вы покинули комнату');
+
+            } catch (error) {
+                console.error("Ошибка при выходе:", error);
+                showNotification('❌ Ошибка при выходе');
+            } finally {
+                isOperationInProgress = false;
+            }
+        }
+
+        // Начало игры
+        async function startGame() {
+            if (isOperationInProgress || !gameRoom.player1_id || !gameRoom.player2_id) return;
+
+            isOperationInProgress = true;
+
+            try {
+                // Снимаем ставки
+                await deductBets();
+
+                // Обновляем статус комнаты
+                await fetch(`${ROOM_API}/${gameRoom.Id}`, {
+                    method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',
                         "xc-token": NOCODB_KEY
                     },
                     body: JSON.stringify({
-                        id_creator: currentUser.id,
-                        name_creator: fullName,
-                        avatar_creator: userAvatar,
-                        bet: bet,
-                        status: "open",
-                        xp_cr: 0,
-                        xp_joi: 0,
+                        status: "playing",
+                        xp_p1: 0,
+                        xp_p2: 0,
                         sec: 10,
                         send: null,
-                        block: null
+                        block: null,
+                        turn: 1
                     })
                 });
 
-                const room = await response.json();
-                showRoomWaiting(room);
-                showNotification('✅ Комната создана! Ожидание игрока...');
+                window.location.href = `game_game.html?room=${gameRoom.Id}`;
 
             } catch (error) {
-                console.error("Ошибка при создании комнаты:", error);
-                showNotification('❌ Ошибка при создании комнаты');
-            } finally {
+                console.error("Ошибка при начале игры:", error);
+                showNotification('❌ Ошибка при начале игры');
                 isOperationInProgress = false;
-                createBtn.innerHTML = '<span>🏒</span><span>Создать комнату</span>';
-                createBtn.disabled = false;
             }
+        }
+
+        // Снятие ставок
+        async function deductBets() {
+            const promises = [];
+
+            // Снимаем ставку с игрока 1
+            const p1Response = await fetch(`${NOCODB_API}?where=(tg_user_id,eq,${gameRoom.player1_id})`, {
+                headers: { "xc-token": NOCODB_KEY }
+            });
+            const p1Data = await p1Response.json();
+            if (p1Data.list.length > 0) {
+                promises.push(
+                    fetch(`${NOCODB_API}/${p1Data.list[0].Id}`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            "xc-token": NOCODB_KEY
+                        },
+                        body: JSON.stringify({
+                            point: Math.max(0, (p1Data.list[0].point || 0) - 1)
+                        })
+                    })
+                );
+            }
+
+            // Снимаем ставку с игрока 2
+            const p2Response = await fetch(`${NOCODB_API}?where=(tg_user_id,eq,${gameRoom.player2_id})`, {
+                headers: { "xc-token": NOCODB_KEY }
+            });
+            const p2Data = await p2Response.json();
+            if (p2Data.list.length > 0) {
+                promises.push(
+                    fetch(`${NOCODB_API}/${p2Data.list[0].Id}`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            "xc-token": NOCODB_KEY
+                        },
+                        body: JSON.stringify({
+                            point: Math.max(0, (p2Data.list[0].point || 0) - 1)
+                        })
+                    })
+                );
+            }
+
+            await Promise.all(promises);
+            await loadUserBalance();
         }
 
         // Получение аватара пользователя
@@ -796,281 +770,19 @@
             }
         }
 
-        // Присоединение к комнате
-        async function joinRoom(event) {
-            if (isOperationInProgress) return;
-
-            const roomId = event.target.getAttribute('data-room-id');
-            isOperationInProgress = true;
-
-            try {
-                const roomResponse = await fetch(`${ROOMS_API}/${roomId}`, {
-                    headers: { "xc-token": NOCODB_KEY }
-                });
-                const room = await roomResponse.json();
-
-                if (userBalance < room.bet) {
-                    showNotification('❌ Недостаточно клюшек для присоединения');
-                    return;
-                }
-
-                const fullName = `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim();
-                const userAvatar = await getUserAvatar();
-
-                await fetch(`${ROOMS_API}/${roomId}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        "xc-token": NOCODB_KEY
-                    },
-                    body: JSON.stringify({
-                        id_joining: currentUser.id,
-                        name_joining: fullName,
-                        avatar_joining: userAvatar,
-                        status: "waiting"
-                    })
-                });
-
-                const updatedRoom = await fetch(`${ROOMS_API}/${roomId}`, {
-                    headers: { "xc-token": NOCODB_KEY }
-                });
-                const roomData = await updatedRoom.json();
-
-                showRoomWaiting(roomData);
-                showNotification('✅ Вы присоединились к комнате!');
-
-            } catch (error) {
-                console.error("Ошибка при присоединении к комнате:", error);
-                showNotification('❌ Ошибка при присоединении к комнате');
-            } finally {
-                isOperationInProgress = false;
-            }
-        }
-
-        // Показ экрана ожидания в комнате
-        function showRoomWaiting(room) {
-            currentRoom = room;
-
-            if (roomsRefreshInterval) {
-                clearInterval(roomsRefreshInterval);
-                roomsRefreshInterval = null;
-            }
-
-            if (roomRefreshInterval) clearInterval(roomRefreshInterval);
-            roomRefreshInterval = setInterval(() => refreshRoom(), 2000);
-
-            document.getElementById('lobby-screen').style.display = 'none';
-            document.getElementById('room-waiting').style.display = 'flex';
-
-            updateRoomDisplay();
-        }
-
-        // Обновление отображения комнаты
-        function updateRoomDisplay() {
-            document.getElementById('room-bet-display').textContent = `Ставка: ${currentRoom.bet} клюшек`;
-            document.getElementById('creator-name').textContent = currentRoom.name_creator || 'Игрок';
-            document.getElementById('creator-avatar').innerHTML = getAvatarDisplay(currentRoom.avatar_creator);
-
-            if (currentRoom.id_joining) {
-                document.getElementById('joiner-name').textContent = currentRoom.name_joining || 'Игрок';
-                document.getElementById('joiner-status').textContent = 'Готов к игре';
-                document.getElementById('joiner-avatar').innerHTML = getAvatarDisplay(currentRoom.avatar_joining);
-
-                if (currentRoom.id_creator == currentUser.id) {
-                    document.getElementById('start-game-btn').style.display = 'flex';
-                }
-            } else {
-                document.getElementById('joiner-name').textContent = 'Ожидание...';
-                document.getElementById('joiner-status').textContent = 'Поиск игрока';
-                document.getElementById('joiner-avatar').innerHTML = '❓';
-                document.getElementById('start-game-btn').style.display = 'none';
-            }
-        }
-
-        // Обновление состояния комнаты
-        async function refreshRoom() {
-            if (isOperationInProgress || !currentRoom) return;
-
-            try {
-                const response = await fetch(`${ROOMS_API}/${currentRoom.Id}`, {
-                    headers: { "xc-token": NOCODB_KEY }
-                });
-
-                if (!response.ok) {
-                    showLobbyScreen();
-                    showNotification('🚪 Комната закрыта');
-                    return;
-                }
-
-                const room = await response.json();
-                if (!room || !room.Id) {
-                    showLobbyScreen();
-                    showNotification('🚪 Комната закрыта');
-                    return;
-                }
-
-                if (room.status === 'playing') {
-                    window.location.href = `game_game.html?room=${room.Id}`;
-                    return;
-                }
-
-                currentRoom = room;
-                updateRoomDisplay();
-
-            } catch (error) {
-                console.error("Ошибка при обновлении комнаты:", error);
-            }
-        }
-
-        // Покидание комнаты
-        async function leaveRoom() {
-            if (isOperationInProgress || !currentRoom) return;
-
-            isOperationInProgress = true;
-
-            try {
-                if (currentRoom.id_creator == currentUser.id) {
-                    await fetch(`${ROOMS_API}/${currentRoom.Id}`, {
-                        method: 'DELETE',
-                        headers: { "xc-token": NOCODB_KEY }
-                    });
-                } else {
-                    await fetch(`${ROOMS_API}/${currentRoom.Id}`, {
-                        method: 'PATCH',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            "xc-token": NOCODB_KEY
-                        },
-                        body: JSON.stringify({
-                            id_joining: null,
-                            name_joining: null,
-                            avatar_joining: null,
-                            status: "open"
-                        })
-                    });
-                }
-
-                showLobbyScreen();
-                showNotification('🚪 Вы покинули комнату');
-
-            } catch (error) {
-                console.error("Ошибка при выходе из комнаты:", error);
-                showNotification('❌ Ошибка при выходе из комнаты');
-            } finally {
-                isOperationInProgress = false;
-            }
-        }
-
-        // Начало игры
-        async function startGame() {
-            if (isOperationInProgress || !currentRoom || !currentRoom.id_joining) {
-                showNotification('❌ Нужно дождаться второго игрока');
-                return;
-            }
-
-            isOperationInProgress = true;
-
-            try {
-                await deductBets();
-
-                await fetch(`${ROOMS_API}/${currentRoom.Id}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        "xc-token": NOCODB_KEY
-                    },
-                    body: JSON.stringify({
-                        status: "playing",
-                        xp_cr: 0,
-                        xp_joi: 0,
-                        sec: 10,
-                        send: null,
-                        block: null
-                    })
-                });
-
-                window.location.href = `game_game.html?room=${currentRoom.Id}`;
-
-            } catch (error) {
-                console.error("Ошибка при начале игры:", error);
-                showNotification('❌ Ошибка при начале игры');
-                isOperationInProgress = false;
-            }
-        }
-
-        // Снятие ставок
-        async function deductBets() {
-            const bet = currentRoom.bet;
-
-            const [creatorResponse, joinerResponse] = await Promise.all([
-                fetch(`${NOCODB_API}?where=(tg_user_id,eq,${currentRoom.id_creator})`, {
-                    headers: { "xc-token": NOCODB_KEY }
-                }),
-                fetch(`${NOCODB_API}?where=(tg_user_id,eq,${currentRoom.id_joining})`, {
-                    headers: { "xc-token": NOCODB_KEY }
-                })
-            ]);
-
-            const creatorData = await creatorResponse.json();
-            const joinerData = await joinerResponse.json();
-
-            const updatePromises = [];
-
-            if (creatorData.list.length > 0) {
-                updatePromises.push(
-                    fetch(`${NOCODB_API}/${creatorData.list[0].Id}`, {
-                        method: 'PATCH',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            "xc-token": NOCODB_KEY
-                        },
-                        body: JSON.stringify({
-                            point: Math.max(0, (creatorData.list[0].point || 0) - bet)
-                        })
-                    })
-                );
-            }
-
-            if (joinerData.list.length > 0) {
-                updatePromises.push(
-                    fetch(`${NOCODB_API}/${joinerData.list[0].Id}`, {
-                        method: 'PATCH',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            "xc-token": NOCODB_KEY
-                        },
-                        body: JSON.stringify({
-                            point: Math.max(0, (joinerData.list[0].point || 0) - bet)
-                        })
-                    })
-                );
-            }
-
-            await Promise.all(updatePromises);
-            await loadUserBalance();
-        }
-
         // Показ уведомлений
         function showNotification(message) {
             const notification = document.getElementById('notification');
             notification.textContent = message;
             notification.style.display = 'block';
-
             setTimeout(() => {
                 notification.style.display = 'none';
             }, 4000);
         }
 
-        // Обработчики событий
-        document.getElementById('create-room-btn').addEventListener('click', createRoom);
-        document.getElementById('leave-room-btn').addEventListener('click', leaveRoom);
-        document.getElementById('start-game-btn').addEventListener('click', startGame);
-
-        // Очистка интервалов при закрытии
+        // Очистка интервала при закрытии
         window.addEventListener('beforeunload', () => {
-            if (balanceRefreshInterval) clearInterval(balanceRefreshInterval);
-            if (roomsRefreshInterval) clearInterval(roomsRefreshInterval);
-            if (roomRefreshInterval) clearInterval(roomRefreshInterval);
+            if (refreshInterval) clearInterval(refreshInterval);
         });
     </script>
 </body>
