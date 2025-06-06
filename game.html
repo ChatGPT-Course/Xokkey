@@ -280,6 +280,68 @@
         .message.info {
             background: #667eea;
         }
+
+        .rooms-container {
+            max-height: 300px;
+            overflow-y: auto;
+            margin: 15px 0;
+        }
+
+        .room-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            margin: 10px 0;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+            border-left: 4px solid #667eea;
+        }
+
+        .room-info {
+            flex: 1;
+        }
+
+        .room-creator {
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .room-time {
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        .join-room-btn {
+            padding: 8px 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+        }
+
+        .join-room-btn:hover {
+            background: #5a67d8;
+            transform: translateY(-1px);
+        }
+
+        .no-rooms {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 30px 20px;
+        }
+
+        .loading {
+            text-align: center;
+            color: #667eea;
+            padding: 20px;
+        }
     </style>
 </head>
 <body>
@@ -294,23 +356,20 @@
             <h3>Выберите режим игры</h3>
 
             <button class="btn primary" onclick="createGame()">
-                🎮 Создать игру
+                🎮 Создать комнату
             </button>
 
-            <button class="btn secondary" onclick="showJoinForm()">
+            <button class="btn secondary" onclick="showRoomsList()">
                 🚪 Присоединиться к игре
             </button>
 
-            <div id="joinForm" class="hidden">
-                <div class="input-group">
-                    <label for="gameCodeInput">Введите код игры:</label>
-                    <input type="text" id="gameCodeInput" placeholder="ABC123" maxlength="6">
+            <div id="roomsList" class="hidden">
+                <h4 style="color: #667eea; margin-bottom: 15px;">Доступные комнаты:</h4>
+                <div id="availableRooms" class="rooms-container">
+                    <div class="loading">Загрузка комнат...</div>
                 </div>
-                <button class="btn primary" onclick="joinGame()">
-                    Присоединиться
-                </button>
-                <button class="btn secondary" onclick="hideJoinForm()">
-                    Отмена
+                <button class="btn secondary" onclick="hideRoomsList()" style="margin-top: 15px;">
+                    Назад
                 </button>
             </div>
         </div>
@@ -319,8 +378,8 @@
         <div id="waitingRoom" class="waiting hidden">
             <h3>Комната создана!</h3>
             <div class="game-code">
-                <h4>Код для присоединения:</h4>
-                <div class="code-display" id="roomCode">------</div>
+                <h4>Ваша комната доступна для присоединения</h4>
+                <p style="color: #667eea; margin: 10px 0;">Другие игроки могут найти вашу комнату в списке доступных игр</p>
             </div>
             <p>Ожидание второго игрока...</p>
             <button class="btn secondary" onclick="cancelGame()">
@@ -517,12 +576,11 @@
                         const whereClause = decodeURIComponent(endpoint.split('where=')[1]);
                         console.log('Processing offline where clause:', whereClause);
 
-                        if (whereClause.includes('game_code,eq,')) {
-                            const gameCode = whereClause.split('game_code,eq,')[1].replace(/[()]/g, '');
-                            console.log('Looking for game code offline:', gameCode);
-                            const game = games.find(g => g.game_code === gameCode);
-                            console.log('Found game offline:', game);
-                            return { list: game ? [game] : [] };
+                        if (whereClause.includes('status,eq,waiting')) {
+                            console.log('Looking for waiting games offline');
+                            const waitingGames = games.filter(g => g.status === 'waiting');
+                            console.log('Found waiting games offline:', waitingGames);
+                            return { list: waitingGames };
                         }
 
                         if (whereClause.includes('Id,eq,')) {
@@ -541,15 +599,6 @@
                 return null;
             }
 
-            generateGameCode() {
-                const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-                let code = '';
-                for (let i = 0; i < 6; i++) {
-                    code += chars.charAt(Math.floor(Math.random() * chars.length));
-                }
-                return code;
-            }
-
             async createGame(gameData) {
                 try {
                     const result = await this.makeRequest(
@@ -565,16 +614,28 @@
                 }
             }
 
-            async findGameByCode(gameCode) {
+            async getAvailableRooms() {
                 try {
-                    console.log('Looking for game with code:', gameCode);
+                    console.log('Getting available rooms...');
                     const response = await this.makeRequest(
-                        `${API_CONFIG.gamesTable}/records?where=(game_code,eq,${gameCode})`
+                        `${API_CONFIG.gamesTable}/records?where=(status,eq,waiting)&sort=-CreatedAt&limit=10`
                     );
-                    console.log('Find game response:', response);
+                    console.log('Available rooms response:', response);
+                    return response.list || [];
+                } catch (error) {
+                    console.error('Failed to get available rooms:', error);
+                    return [];
+                }
+            }
+
+            async joinGameById(gameId) {
+                try {
+                    const response = await this.makeRequest(
+                        `${API_CONFIG.gamesTable}/records?where=(Id,eq,${gameId})`
+                    );
                     return response.list?.[0] || null;
                 } catch (error) {
-                    console.error('Failed to find game by code:', error);
+                    console.error('Failed to get game by ID:', error);
                     return null;
                 }
             }
@@ -593,20 +654,13 @@
 
             async updateGame(gameId, updates) {
                 try {
-                    console.log('=== UPDATE GAME API CALL ===');
-                    console.log('Game ID:', gameId);
-                    console.log('Updates:', JSON.stringify(updates, null, 2));
-                    console.log('API URL:', `${API_CONFIG.baseUrl}/${API_CONFIG.gamesTable}/records/${gameId}`);
-                    console.log('Headers:', this.headers);
-                    
+                    console.log('Updating game:', gameId, 'with data:', updates);
                     const result = await this.makeRequest(
                         `${API_CONFIG.gamesTable}/records/${gameId}`,
                         'PATCH',
                         updates
                     );
-                    
-                    console.log('API Update result:', result);
-                    console.log('===========================');
+                    console.log('Update result:', result);
                     
                     if (result) {
                         // Синхронизируем локальные данные
@@ -615,11 +669,7 @@
                     }
                     return null;
                 } catch (error) {
-                    console.error('Failed to update game - Full error:', error);
-                    console.error('Error details:', {
-                        message: error.message,
-                        stack: error.stack
-                    });
+                    console.error('Failed to update game:', error);
                     throw error;
                 }
             }
@@ -661,23 +711,12 @@
 
             async init() {
                 try {
-                    console.log('=== INITIALIZING GAME MANAGER ===');
-                    
                     // Загружаем данные пользователя из localStorage
                     const savedUserData = localStorage.getItem('hockeyGameCurrentUser');
-                    console.log('Raw localStorage data:', savedUserData);
-                    
                     if (savedUserData) {
                         this.currentUser = JSON.parse(savedUserData);
                         console.log('User data loaded from localStorage:', this.currentUser);
-                        
-                        // Проверяем что telegram_id есть и это число
-                        if (!this.currentUser.telegram_id) {
-                            console.error('ERROR: telegram_id is missing from user data!');
-                            this.currentUser.telegram_id = tgApp.getUserId();
-                        }
                     } else {
-                        console.log('No saved user data found, creating fallback');
                         // Fallback если данных нет
                         const telegramId = tgApp.getUserId();
                         const username = tgApp.getUsername();
@@ -688,10 +727,6 @@
                         };
                         console.log('Using fallback user data:', this.currentUser);
                     }
-                    
-                    console.log('Final current user:', this.currentUser);
-                    console.log('telegram_id type:', typeof this.currentUser.telegram_id);
-                    console.log('================================');
 
                     this.showGameMenu();
                 } catch (error) {
@@ -707,9 +742,7 @@
                         return;
                     }
 
-                    const gameCode = api.generateGameCode();
                     const gameData = {
-                        game_code: gameCode,
                         player1_id: this.currentUser.telegram_id,
                         player1_name: this.currentUser.display_name || this.currentUser.username,
                         player2_id: null,
@@ -729,36 +762,73 @@
                     this.gameId = this.currentGame.Id;
                     this.isPlayer1 = true;
 
-                    this.showWaitingRoom(gameCode);
+                    this.showWaitingRoom();
                     this.startGameLoop();
 
-                    this.showMessage('Игра создана! Поделитесь кодом с другом', 'success');
+                    this.showMessage('Комната создана! Другие игроки могут присоединиться', 'success');
                 } catch (error) {
                     console.error('Failed to create game:', error);
-                    this.showMessage('Не удалось создать игру', 'error');
+                    this.showMessage('Не удалось создать комнату', 'error');
                 }
             }
 
-            async joinGame() {
-                const gameCodeInput = document.getElementById('gameCodeInput');
-                const gameCode = gameCodeInput.value.trim().toUpperCase();
+            async loadAvailableRooms() {
+                try {
+                    const rooms = await api.getAvailableRooms();
+                    this.displayAvailableRooms(rooms);
+                } catch (error) {
+                    console.error('Failed to load rooms:', error);
+                    this.showMessage('Ошибка загрузки комнат', 'error');
+                }
+            }
 
-                if (!gameCode) {
-                    this.showMessage('Введите код игры', 'error');
+            displayAvailableRooms(rooms) {
+                const container = document.getElementById('availableRooms');
+                if (!container) return;
+
+                if (rooms.length === 0) {
+                    container.innerHTML = '<div class="no-rooms">Нет доступных комнат</div>';
                     return;
                 }
 
+                const roomsHTML = rooms.map(room => {
+                    const createdTime = new Date(room.CreatedAt).toLocaleTimeString('ru-RU', {
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    });
+
+                    const isMyRoom = room.player1_id === this.currentUser.telegram_id;
+                    const buttonText = isMyRoom ? 'Моя комната' : 'Присоединиться';
+                    const buttonDisabled = isMyRoom ? 'disabled' : '';
+
+                    return `
+                        <div class="room-item">
+                            <div class="room-info">
+                                <div class="room-creator">${room.player1_name}</div>
+                                <div class="room-time">Создана в ${createdTime}</div>
+                            </div>
+                            <button class="join-room-btn" ${buttonDisabled} onclick="joinRoomById('${room.Id}')">
+                                ${buttonText}
+                            </button>
+                        </div>
+                    `;
+                }).join('');
+
+                container.innerHTML = roomsHTML;
+            }
+
+            async joinRoomById(roomId) {
                 if (!this.currentUser || !this.currentUser.telegram_id) {
                     this.showMessage('Ошибка: данные пользователя не найдены', 'error');
                     return;
                 }
 
                 try {
-                    this.showMessage('Поиск игры...', 'info');
+                    this.showMessage('Присоединение к комнате...', 'info');
                     
-                    const game = await api.findGameByCode(gameCode);
+                    const game = await api.joinGameById(roomId);
                     if (!game) {
-                        this.showMessage('Игра с таким кодом не найдена', 'error');
+                        this.showMessage('Комната не найдена', 'error');
                         return;
                     }
 
@@ -768,12 +838,12 @@
                     }
 
                     if (game.player2_id) {
-                        this.showMessage('В этой игре уже есть второй игрок', 'error');
+                        this.showMessage('В этой комнате уже есть второй игрок', 'error');
                         return;
                     }
 
                     if (game.player1_id === this.currentUser.telegram_id) {
-                        this.showMessage('Вы не можете присоединиться к своей же игре', 'error');
+                        this.showMessage('Вы не можете присоединиться к своей же комнате', 'error');
                         return;
                     }
 
@@ -787,16 +857,10 @@
                         status: 'playing'
                     };
 
-                    console.log('=== JOINING GAME DEBUG ===');
-                    console.log('Game found:', game);
-                    console.log('Game ID:', this.gameId);
-                    console.log('Current user from localStorage:', this.currentUser);
-                    console.log('Player2 ID to set:', this.currentUser.telegram_id);
-                    console.log('Updates to send:', updates);
-                    console.log('========================');
-                    this.showMessage('Присоединение к игре...', 'info');
+                    console.log('Joining game - Game ID:', this.gameId);
+                    console.log('Joining game - Current user:', this.currentUser);
+                    console.log('Joining game - Updates to send:', updates);
 
-                    // Попробуем несколько раз обновить игру
                     let updateResult = null;
                     for (let i = 0; i < this.maxRetries; i++) {
                         try {
@@ -820,8 +884,8 @@
                         throw new Error('Не удалось обновить состояние игры');
                     }
                 } catch (error) {
-                    console.error('Failed to join game:', error);
-                    this.showMessage('Не удалось присоединиться к игре: ' + error.message, 'error');
+                    console.error('Failed to join room:', error);
+                    this.showMessage('Не удалось присоединиться к комнате: ' + error.message, 'error');
                 }
             }
 
@@ -1047,10 +1111,9 @@
                 document.getElementById('gameMenu').classList.remove('hidden');
             }
 
-            showWaitingRoom(gameCode) {
+            showWaitingRoom() {
                 this.hideAllScreens();
                 document.getElementById('waitingRoom').classList.remove('hidden');
-                document.getElementById('roomCode').textContent = gameCode;
             }
 
             showGamePlay() {
@@ -1137,17 +1200,21 @@
             window.gameManager.createGame();
         }
 
-        function showJoinForm() {
-            document.getElementById('joinForm').classList.remove('hidden');
+        function showRoomsList() {
+            document.getElementById('roomsList').classList.remove('hidden');
+            if (window.gameManager) {
+                window.gameManager.loadAvailableRooms();
+            }
         }
 
-        function hideJoinForm() {
-            document.getElementById('joinForm').classList.add('hidden');
-            document.getElementById('gameCodeInput').value = '';
+        function hideRoomsList() {
+            document.getElementById('roomsList').classList.add('hidden');
         }
 
-        function joinGame() {
-            window.gameManager.joinGame();
+        function joinRoomById(roomId) {
+            if (window.gameManager) {
+                window.gameManager.joinRoomById(roomId);
+            }
         }
 
         function selectZone(zoneNumber) {
