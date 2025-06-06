@@ -1,94 +1,365 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Главное меню</title>
+    <title>Игровое меню</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            height: 100vh;
-            margin: 0;
-            background-color: #f5f5f5;
+            padding: 20px;
         }
+
         .container {
+            background: white;
+            padding: 60px 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             text-align: center;
+            min-width: 300px;
+            max-width: 400px;
+            width: 100%;
         }
-        .play-btn {
-            padding: 15px 30px;
-            font-size: 18px;
-            background-color: #4CAF50;
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 40px;
+            font-size: 16px;
+        }
+
+        .play-button {
+            display: block;
+            width: 100%;
+            padding: 20px;
+            background: linear-gradient(45deg, #667eea, #764ba2);
             color: white;
             border: none;
-            border-radius: 5px;
+            border-radius: 15px;
+            font-size: 24px;
+            font-weight: bold;
             cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .play-button:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 12px 30px rgba(102, 126, 234, 0.4);
+        }
+
+        .play-button:active {
+            transform: translateY(-1px);
+        }
+
+        .user-info {
+            margin-top: 30px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .loading {
+            display: none;
+            color: #667eea;
+            margin: 20px 0;
+        }
+
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #ffffff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            opacity: 1;
+            transition: opacity 0.5s ease;
+        }
+
+        .loading-overlay.hide {
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .loader {
+            width: 50px;
+            height: 50px;
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 1rem;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            color: #6c757d;
+            font-size: 1.1rem;
         }
     </style>
 </head>
 <body>
+    <!-- Загрузочная анимация -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="loader"></div>
+        <div class="loading-text">Инициализация...</div>
+    </div>
+
     <div class="container">
-        <button class="play-btn" id="playBtn">Играть</button>
+        <h1>🎮 Игра</h1>
+        <div class="subtitle">Добро пожаловать в увлекательную игру!</div>
+
+        <a href="game.html" class="play-button">
+            🚀 Играть
+        </a>
+
+        <div class="user-info" id="userInfo">
+            <div class="loading" id="loading">Загрузка данных пользователя...</div>
+            <div id="userData" style="display: none;">
+                <strong>Игрок:</strong> <span id="userName">-</span><br>
+                <small>ID: <span id="userId">-</span></small>
+            </div>
+        </div>
     </div>
 
     <script>
-        const tg = window.Telegram.WebApp;
-        tg.expand();
-        
-        // Получаем данные пользователя
-        const user = tg.initDataUnsafe?.user;
-        const userId = user?.id;
-        
-        if (!userId) {
-            alert('Ошибка: ID пользователя не найден');
-            throw new Error('User ID not found');
+        // Конфигурация NocoDB (используем те же параметры, что и в примере)
+        const config = {
+            apiToken: 'PYcOrnVaN8u2Ab5-Jk-IDiyAxWERltZbL1dS8Otc',
+            baseUrl: 'https://app.nocodb.com/api/v2/tables/moziqqm4pwfy04n/records'
+        };
+
+        let tg = window.Telegram.WebApp;
+        let userData = null;
+        let isInitialized = false;
+
+        // Установить cookie
+        function setCookie(name, value, days = 365) {
+            const expires = new Date();
+            expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
+            document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
         }
-        
-        // Сохраняем ID в cookie
-        document.cookie = `tg_id=${userId}; path=/; samesite=lax`;
-        
-        // Проверяем наличие пользователя в базе и добавляем, если нет
-        async function checkAndAddUser() {
+
+        // Получить cookie
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return null;
+        }
+
+        // Получить данные пользователя из Telegram WebApp
+        function getTelegramUserData() {
             try {
-                const response = await fetch('https://app.nocodb.com/api/v2/tables/p27jdsmk69wuimh/records?where=(tg_id,eq,' + userId + ')', {
-                    headers: {
-                        'xc-auth': 'YOUR_NOCODB_API_TOKEN' // Замените на ваш API токен
-                    }
-                });
-                
-                const data = await response.json();
-                
-                if (data.list && data.list.length === 0) {
-                    // Пользователя нет, добавляем
-                    const addResponse = await fetch('https://app.nocodb.com/api/v2/tables/p27jdsmk69wuimh/records', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'xc-auth': 'YOUR_NOCODB_API_TOKEN' // Замените на ваш API токен
-                        },
-                        body: JSON.stringify({
-                            tg_id: userId,
-                            point: 0,
-                            avatar: user.photo_url || ''
-                        })
-                    });
-                    
-                    await addResponse.json();
+                tg.expand();
+
+                if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                    const user = tg.initDataUnsafe.user;
+                    console.log('Получены данные пользователя Telegram:', user);
+
+                    return {
+                        telegram_id: user.id.toString(),
+                        username: user.username || 'user',
+                        display_name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Игрок',
+                        first_name: user.first_name || '',
+                        last_name: user.last_name || '',
+                        language_code: user.language_code || 'ru'
+                    };
                 }
+
+                // Fallback для тестирования
+                const fallbackId = Date.now().toString();
+                return {
+                    telegram_id: fallbackId,
+                    username: 'test_user',
+                    display_name: 'Тестовый игрок',
+                    first_name: 'Тестовый',
+                    last_name: 'Игрок',
+                    language_code: 'ru'
+                };
             } catch (error) {
-                console.error('Ошибка при работе с базой данных:', error);
+                console.log('Ошибка получения данных пользователя:', error);
+                const fallbackId = Date.now().toString();
+                return {
+                    telegram_id: fallbackId,
+                    username: 'test_user',
+                    display_name: 'Тестовый игрок',
+                    first_name: 'Тестовый',
+                    last_name: 'Игрок',
+                    language_code: 'ru'
+                };
             }
         }
-        
-        // Вызываем функцию проверки
-        checkAndAddUser();
-        
-        // Обработчик кнопки "Играть"
-        document.getElementById('playBtn').addEventListener('click', () => {
-            window.location.href = 'game.html';
+
+        // Сохранить данные пользователя в cookies
+        function saveUserData(userData) {
+            setCookie('tg_user_id', userData.telegram_id);
+            setCookie('tg_username', userData.username);
+            setCookie('tg_name', userData.display_name);
+            setCookie('tg_language', userData.language_code);
+            
+            console.log('Данные пользователя сохранены в cookies');
+        }
+
+        // Выполнить запрос к NocoDB API
+        async function makeRequest(url, options = {}) {
+            const defaultOptions = {
+                headers: {
+                    'xc-auth': config.apiToken,
+                    'Content-Type': 'application/json'
+                }
+            };
+            
+            const finalOptions = {
+                ...defaultOptions,
+                ...options,
+                headers: {
+                    ...defaultOptions.headers,
+                    ...options.headers
+                }
+            };
+            
+            const response = await fetch(url, finalOptions);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            return await response.json();
+        }
+
+        // Проверить пользователя в базе данных
+        async function checkUserInDatabase(userData) {
+            console.log('Проверяем пользователя в базе данных:', userData);
+
+            try {
+                // Получаем все записи из таблицы
+                const data = await makeRequest(config.baseUrl);
+                console.log('Получены данные из базы:', data);
+
+                // Ищем пользователя по telegram_id
+                const existingUser = data.list ? data.list.find(user => 
+                    user.telegram_id && user.telegram_id.toString() === userData.telegram_id.toString()
+                ) : null;
+
+                if (existingUser) {
+                    console.log('Пользователь найден в базе данных:', existingUser);
+                    return true;
+                }
+
+                console.log('Пользователь не найден, создаем новую запись...');
+
+                // Создаем нового пользователя
+                const newUserData = {
+                    telegram_id: userData.telegram_id,
+                    username: userData.username,
+                    display_name: userData.display_name,
+                    games_played: 0,
+                    games_won: 0,
+                    created_at: new Date().toISOString()
+                };
+
+                console.log('Данные для создания пользователя:', newUserData);
+
+                const createdUser = await makeRequest(config.baseUrl, {
+                    method: 'POST',
+                    body: JSON.stringify(newUserData)
+                });
+
+                console.log('Пользователь успешно создан:', createdUser);
+                return true;
+
+            } catch (error) {
+                console.log('Ошибка при работе с базой данных:', error);
+                return true; // Позволяем продолжить работу даже с ошибками
+            }
+        }
+
+        // Инициализация приложения
+        async function initApp() {
+            try {
+                console.log('Начинаем инициализацию приложения...');
+
+                if (window.Telegram && window.Telegram.WebApp) {
+                    tg.ready();
+                    console.log('Telegram WebApp инициализирован');
+
+                    userData = getTelegramUserData();
+                    console.log('Полученные данные пользователя:', userData);
+
+                    saveUserData(userData);
+                    
+                    // Отображаем данные пользователя
+                    document.getElementById('userName').textContent = userData.display_name;
+                    document.getElementById('userId').textContent = userData.telegram_id;
+                    document.getElementById('loading').style.display = 'none';
+                    document.getElementById('userData').style.display = 'block';
+
+                    await checkUserInDatabase(userData);
+                }
+
+                console.log('Инициализация завершена успешно');
+                isInitialized = true;
+
+            } catch (error) {
+                console.log('Ошибка инициализации:', error);
+                isInitialized = true;
+                
+                // Показываем тестовые данные при ошибке
+                document.getElementById('userName').textContent = userData?.display_name || 'Тестовый игрок';
+                document.getElementById('userId').textContent = userData?.telegram_id || 'test_id';
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('userData').style.display = 'block';
+            }
+
+            // Скрываем загрузочный экран
+            setTimeout(() => {
+                document.getElementById('loadingOverlay').classList.add('hide');
+                setTimeout(() => {
+                    document.getElementById('loadingOverlay').style.display = 'none';
+                }, 500);
+            }, 1500);
+        }
+
+        // Запускаем инициализацию после загрузки DOM
+        document.addEventListener('DOMContentLoaded', initApp);
+
+        // Дополнительная проверка на случай, если скрипт Telegram не загрузился
+        window.addEventListener('load', function() {
+            setTimeout(() => {
+                if (!isInitialized && window.Telegram && window.Telegram.WebApp) {
+                    console.log('Повторная попытка инициализации...');
+                    initApp();
+                }
+            }, 1000);
         });
     </script>
 </body>
