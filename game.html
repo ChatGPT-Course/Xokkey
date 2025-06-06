@@ -788,10 +788,10 @@
                     clearInterval(this.gameUpdateInterval);
                 }
                 
-                // Проверяем состояние игры каждую секунду
+                // Проверяем состояние игры каждые 2 секунды
                 this.gameUpdateInterval = setInterval(async () => {
                     await this.checkGameStatus();
-                }, 1000);
+                }, 2000);
             }
 
             async checkGameStatus() {
@@ -814,6 +814,8 @@
                     // Сохраняем предыдущие роли для сравнения
                     const prevSender = this.currentGame?.current_sender;
                     const prevProtect = this.currentGame?.current_protect;
+                    const prevAttackerMove = this.currentGame?.attacker_move;
+                    const prevDefenderMove = this.currentGame?.defender_move;
                     
                     this.currentGame = updatedRoom;
 
@@ -833,17 +835,21 @@
                         return;
                     }
 
-                    // Проверяем изменения в ролях
-                    const newSender = this.currentGame.current_sender;
-                    const newProtect = this.currentGame.current_protect;
+                    // Проверяем любые изменения в игровых данных
+                    const dataChanged = (
+                        prevSender !== this.currentGame.current_sender ||
+                        prevProtect !== this.currentGame.current_protect ||
+                        prevAttackerMove !== this.currentGame.attacker_move ||
+                        prevDefenderMove !== this.currentGame.defender_move
+                    );
                     
-                    if (prevSender !== newSender || prevProtect !== newProtect) {
-                        console.log('=== РОЛИ ИЗМЕНИЛИСЬ ===');
-                        console.log('Предыдущий подающий:', prevSender);
-                        console.log('Новый подающий:', newSender);
-                        console.log('Предыдущий защитник:', prevProtect);
-                        console.log('Новый защитник:', newProtect);
-                        console.log('=====================');
+                    if (dataChanged) {
+                        console.log('=== ДАННЫЕ ИГРЫ ИЗМЕНИЛИСЬ ===');
+                        console.log('Предыдущий подающий:', prevSender, '→', this.currentGame.current_sender);
+                        console.log('Предыдущий защитник:', prevProtect, '→', this.currentGame.current_protect);
+                        console.log('Ход подающего:', prevAttackerMove, '→', this.currentGame.attacker_move);
+                        console.log('Ход защитника:', prevDefenderMove, '→', this.currentGame.defender_move);
+                        console.log('===========================');
                     }
 
                     // Проверяем, нужно ли обработать результат раунда
@@ -856,11 +862,11 @@
                         return; // После обработки результата updateGameDisplay вызовется автоматически
                     }
 
-                    // ВСЕГДА обновляем интерфейс если игра идет
+                    // ПРИНУДИТЕЛЬНО обновляем интерфейс если игра идет
                     if (this.currentGame.game_state === 'game' && 
                         !document.getElementById('gamePlay').classList.contains('hidden')) {
-                        console.log('Обновляем игровой интерфейс');
-                        this.updateGameDisplay();
+                        console.log('ПРИНУДИТЕЛЬНОЕ обновление игрового интерфейса');
+                        this.forceUpdateGameDisplay();
                     }
                 } catch (error) {
                     console.error('Failed to check room status:', error);
@@ -874,51 +880,61 @@
             }
 
             updateGameDisplay() {
+                this.forceUpdateGameDisplay();
+            }
+
+            forceUpdateGameDisplay() {
                 if (!this.currentGame) {
                     console.log('Нет данных об игре для обновления');
                     return;
                 }
                 
-                console.log('=== ОБНОВЛЕНИЕ ИНТЕРФЕЙСА ===');
+                console.log('=== ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ ИНТЕРФЕЙСА ===');
                 console.log('Данные игры:', this.currentGame);
                 
+                // Обновляем счет и раунд
                 document.getElementById('player1Name').textContent = 'Игрок 1';
                 document.getElementById('player2Name').textContent = 'Игрок 2';
                 document.getElementById('player1Score').textContent = this.currentGame.player1_score || 0;
                 document.getElementById('player2Score').textContent = this.currentGame.player2_score || 0;
                 document.getElementById('roundNumber').textContent = this.currentGame.current_round || 1;
 
-                // Очищаем предыдущие выборы зон при обновлении
+                // Принудительно очищаем выборы зон
                 this.selectedZones = [];
                 document.querySelectorAll('.zone').forEach(zone => {
                     zone.classList.remove('selected');
                 });
 
-                // НОВАЯ ЛОГИКА: проверяем роли через current_sender и current_protect
+                // Определяем роли игрока
                 const iAmSender = this.currentGame.current_sender === this.currentUser.telegram_id;
                 const iAmProtect = this.currentGame.current_protect === this.currentUser.telegram_id;
                 const attackerMoved = !!this.currentGame.attacker_move;
                 const defenderMoved = !!this.currentGame.defender_move;
                 
-                console.log('=== АНАЛИЗ РОЛЕЙ ===');
-                console.log('Мой ID:', this.currentUser.telegram_id);
-                console.log('Current sender:', this.currentGame.current_sender);
-                console.log('Current protect:', this.currentGame.current_protect);
-                console.log('Я подающий:', iAmSender);
-                console.log('Я защитник:', iAmProtect);
-                console.log('Ход подающего сделан:', attackerMoved);
-                console.log('Ход защитника сделан:', defenderMoved);
-                console.log('===================');
+                console.log('=== ДЕТАЛЬНЫЙ АНАЛИЗ РОЛЕЙ ===');
+                console.log('Мой Telegram ID:', this.currentUser.telegram_id);
+                console.log('Current sender в БД:', this.currentGame.current_sender);
+                console.log('Current protect в БД:', this.currentGame.current_protect);
+                console.log('Я подающий (sender):', iAmSender);
+                console.log('Я защитник (protect):', iAmProtect);
+                console.log('Ход подающего сделан (attacker_move):', attackerMoved, this.currentGame.attacker_move);
+                console.log('Ход защитника сделан (defender_move):', defenderMoved, this.currentGame.defender_move);
+                console.log('=============================');
                 
                 const submitBtn = document.getElementById('submitMove');
                 const roleInfoElement = document.getElementById('roleInfo');
                 
+                // Сброс состояния кнопки и зон
+                this.disableZoneSelection();
+                submitBtn.disabled = true;
+                
                 if (iAmSender && !attackerMoved) {
                     // Я подающий и еще не сделал ход
-                    console.log('Активирую режим подающего');
+                    console.log('>>> АКТИВИРУЮ РЕЖИМ ПОДАЮЩЕГО <<<');
                     roleInfoElement.textContent = '⚽ ВАШ ХОД - выберите 1 зону для броска';
                     roleInfoElement.style.background = '#fff3cd';
                     roleInfoElement.style.borderColor = '#ffeaa7';
+                    roleInfoElement.style.color = '#856404';
                     this.enableZoneSelection();
                     this.maxZoneSelection = 1;
                     submitBtn.textContent = 'Сделать бросок';
@@ -927,10 +943,11 @@
                     
                 } else if (iAmProtect && attackerMoved && !defenderMoved) {
                     // Я защитник и подающий уже сделал ход
-                    console.log('Активирую режим защитника');
+                    console.log('>>> АКТИВИРУЮ РЕЖИМ ЗАЩИТНИКА <<<');
                     roleInfoElement.textContent = '🛡️ ВАШ ХОД - выберите 2 зоны для защиты';
                     roleInfoElement.style.background = '#d1ecf1';
                     roleInfoElement.style.borderColor = '#bee5eb';
+                    roleInfoElement.style.color = '#0c5460';
                     this.enableZoneSelection();
                     this.maxZoneSelection = 2;
                     submitBtn.textContent = 'Поставить защиту';
@@ -939,10 +956,11 @@
                     
                 } else if (attackerMoved && defenderMoved) {
                     // Оба хода сделаны, ожидаем результат
-                    console.log('Оба хода сделаны, ожидание результата');
+                    console.log('>>> РЕЖИМ ОЖИДАНИЯ РЕЗУЛЬТАТА <<<');
                     roleInfoElement.textContent = '⏳ Обработка результата...';
                     roleInfoElement.style.background = '#f8d7da';
                     roleInfoElement.style.borderColor = '#f5c6cb';
+                    roleInfoElement.style.color = '#721c24';
                     this.disableZoneSelection();
                     submitBtn.textContent = 'Ожидание...';
                     submitBtn.disabled = true;
@@ -950,29 +968,31 @@
                     
                 } else if (!iAmSender && !iAmProtect) {
                     // Я в ожидании (нет активной роли)
-                    console.log('Режим ожидания - нет активной роли');
+                    console.log('>>> РЕЖИМ ОЖИДАНИЯ ХОДА <<<');
                     roleInfoElement.textContent = '⏳ Ожидание своей очереди...';
                     roleInfoElement.style.background = '#e2e3e5';
                     roleInfoElement.style.borderColor = '#d6d8db';
+                    roleInfoElement.style.color = '#383d41';
                     this.disableZoneSelection();
                     submitBtn.textContent = 'Ожидание...';
                     submitBtn.disabled = true;
                     submitBtn.style.background = '#6c757d';
                     
                 } else {
-                    // Особые случаи - жду хода противника
-                    console.log('Жду хода противника');
+                    // Особые случаи
+                    console.log('>>> ОСОБЫЙ СЛУЧАЙ <<<');
                     const waitingForRole = iAmSender ? 'защитника' : 'подающего';
                     roleInfoElement.textContent = `⏳ Ожидание хода ${waitingForRole}...`;
                     roleInfoElement.style.background = '#e2e3e5';
                     roleInfoElement.style.borderColor = '#d6d8db';
+                    roleInfoElement.style.color = '#383d41';
                     this.disableZoneSelection();
                     submitBtn.textContent = 'Ожидание...';
                     submitBtn.disabled = true;
                     submitBtn.style.background = '#6c757d';
                 }
                 
-                console.log('Интерфейс обновлен');
+                console.log('=== ИНТЕРФЕЙС ПРИНУДИТЕЛЬНО ОБНОВЛЕН ===');
             }
 
             selectZone(zoneNumber) {
