@@ -305,8 +305,11 @@
     <script>
         // Конфигурация NocoDB 
         const config = {
+            orgs: 'wf52x8bf',
+            projectName: 'pawgl0ouxic497w',
+            tableName: 'mtfr4e3wywjtyua',
             apiToken: '4lZnGEoWEQeBswBHzzp_lPPYDFFkNc7s2BlWClxb',
-            baseUrl: 'https://app.nocodb.com/api/v2/tables/mtfr4e3wywjtyua/records'
+            baseUrl: 'https://app.nocodb.com/api/v1/db/data'
         };
         
         let tg = window.Telegram.WebApp;
@@ -363,31 +366,6 @@
             document.getElementById(popupId).style.display = 'none';
         }
         
-        // Выполнить запрос к NocoDB API
-        async function makeRequest(url, options = {}) {
-            const defaultOptions = {
-                headers: {
-                    'xc-auth': config.apiToken,
-                    'Content-Type': 'application/json'
-                }
-            };
-            
-            const finalOptions = {
-                ...defaultOptions,
-                ...options,
-                headers: {
-                    ...defaultOptions.headers,
-                    ...options.headers
-                }
-            };
-            
-            const response = await fetch(url, finalOptions);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return await response.json();
-        }
-        
         function getCurrentUser() {
             const savedUserId = getCookie('tg_user_id');
             const savedUserName = getCookie('tg_name');
@@ -395,7 +373,7 @@
             
             if (savedUserId) {
                 return {
-                    telegram_id: savedUserId,
+                    id: savedUserId,
                     display_name: savedUserName || 'Игрок',
                     username: savedUsername || 'user'
                 };
@@ -403,7 +381,7 @@
             
             // Fallback
             return {
-                telegram_id: Date.now().toString(),
+                id: Date.now().toString(),
                 display_name: 'Тестовый игрок',
                 username: 'test_user'
             };
@@ -415,19 +393,28 @@
             try {
                 const roomData = {
                     room_name: roomName,
-                    player1: currentUser.telegram_id,
+                    player1: currentUser.id,
                     player1_name: currentUser.display_name,
                     player2: null,
                     player2_name: null,
                     status: 'Ожидание'
                 };
                 
-                const response = await makeRequest(config.baseUrl, {
+                const response = await fetch(`${config.baseUrl}/${config.orgs}/${config.projectName}/${config.tableName}`, {
                     method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'xc-token': config.apiToken
+                    },
                     body: JSON.stringify(roomData)
                 });
                 
-                currentRoom = { ...roomData, Id: response.Id };
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const responseData = await response.json();
+                currentRoom = { ...roomData, Id: responseData.Id };
                 showGameRoom();
                 showSuccess('Комната создана успешно!');
                 startAutoRefresh();
@@ -443,7 +430,19 @@
             
             try {
                 // Поиск комнаты по названию
-                const data = await makeRequest(config.baseUrl);
+                const response = await fetch(`${config.baseUrl}/${config.orgs}/${config.projectName}/${config.tableName}`, {
+                    method: 'GET',
+                    headers: {
+                        'xc-token': config.apiToken,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
                 
                 if (!data.list || data.list.length === 0) {
                     showError('Комнат не найдено');
@@ -467,22 +466,30 @@
                     return;
                 }
                 
-                if (room.player1 === currentUser.telegram_id) {
+                if (room.player1 === currentUser.id) {
                     showError('Вы не можете присоединиться к своей комнате');
                     return;
                 }
                 
                 // Присоединение к комнате
                 const updateData = {
-                    player2: currentUser.telegram_id,
+                    player2: currentUser.id,
                     player2_name: currentUser.display_name,
                     status: 'Игра'
                 };
                 
-                await makeRequest(`${config.baseUrl}/${room.Id}`, {
+                const updateResponse = await fetch(`${config.baseUrl}/${config.orgs}/${config.projectName}/${config.tableName}/${room.Id}`, {
                     method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'xc-token': config.apiToken
+                    },
                     body: JSON.stringify(updateData)
                 });
+                
+                if (!updateResponse.ok) {
+                    throw new Error(`HTTP error! status: ${updateResponse.status}`);
+                }
                 
                 currentRoom = { ...room, ...updateData };
                 showGameRoom();
@@ -499,8 +506,19 @@
             if (!currentRoom || !currentRoom.Id) return;
             
             try {
-                const response = await makeRequest(`${config.baseUrl}/${currentRoom.Id}`);
-                currentRoom = response;
+                const response = await fetch(`${config.baseUrl}/${config.orgs}/${config.projectName}/${config.tableName}/${currentRoom.Id}`, {
+                    method: 'GET',
+                    headers: {
+                        'xc-token': config.apiToken,
+                        'Content-Type': 'application/json'
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                currentRoom = await response.json();
                 updateGameRoomDisplay();
             } catch (error) {
                 console.error('Load room error:', error);
@@ -528,9 +546,9 @@
             
             // Выделяем текущего игрока
             document.getElementById('player1').classList.toggle('current', 
-                currentUser.telegram_id == currentRoom.player1);
+                currentUser.id == currentRoom.player1);
             document.getElementById('player2').classList.toggle('current', 
-                currentUser.telegram_id == currentRoom.player2);
+                currentUser.id == currentRoom.player2);
             
             // Показываем соответствующие сообщения
             const waitingMessage = document.getElementById('waitingMessage');
