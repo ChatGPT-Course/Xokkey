@@ -276,6 +276,20 @@
             font-weight: bold;
         }
 
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
         @media (max-width: 600px) {
             .players-grid {
                 grid-template-columns: 1fr;
@@ -325,7 +339,10 @@
                 <div style="background: rgba(243,156,18,0.1); padding: 10px; border-radius: 10px; margin: 15px 0; border: 1px solid #f39c12;">
                     <strong style="color: #f39c12;">🏒 Ставка: 1 клюшка</strong>
                 </div>
-                <button class="btn" id="action-btn" disabled>Загрузка...</button>
+                <button class="btn" id="action-btn" disabled>
+                    <div class="loading"></div>
+                    <span>Загрузка...</span>
+                </button>
                 <div id="room-status" style="margin-top: 10px; color: #bdc3c7;">Загрузка...</div>
             </div>
         </div>
@@ -453,10 +470,15 @@
         init();
 
         async function init() {
-            await loadUserBalance();
-            await initializeRoom();
-            await loadRoom();
-            refreshInterval = setInterval(loadRoom, 2000);
+            try {
+                await loadUserBalance();
+                await initializeRoom();
+                await loadRoom();
+                refreshInterval = setInterval(loadRoom, 2000);
+            } catch (error) {
+                console.error("Ошибка инициализации:", error);
+                showNotification('❌ Ошибка загрузки');
+            }
         }
 
         // Загрузка баланса
@@ -466,7 +488,7 @@
                     headers: { "xc-token": NOCODB_KEY }
                 });
                 const data = await response.json();
-                if (data.list.length > 0) {
+                if (data.list && data.list.length > 0) {
                     userBalance = data.list[0].point || 0;
                     document.getElementById('balance').textContent = `Клюшек: ${userBalance} 🏒`;
                 }
@@ -483,7 +505,7 @@
                 });
                 const data = await response.json();
 
-                if (data.list.length === 0) {
+                if (data.list && data.list.length === 0) {
                     await fetch(ROOM_API, {
                         method: 'POST',
                         headers: {
@@ -497,7 +519,15 @@
                             xp_p1: 0,
                             xp_p2: 0,
                             sec: 10,
-                            turn: 1
+                            turn: 1,
+                            player1_id: null,
+                            player1_name: null,
+                            player1_avatar: null,
+                            player2_id: null,
+                            player2_name: null,
+                            player2_avatar: null,
+                            send: null,
+                            block: null
                         })
                     });
                 }
@@ -516,7 +546,7 @@
                 });
                 const data = await response.json();
                 
-                if (data.list.length > 0) {
+                if (data.list && data.list.length > 0) {
                     gameRoom = data.list[0];
                     const isPlayer1 = gameRoom.player1_id == currentUser.id;
                     const isPlayer2 = gameRoom.player2_id == currentUser.id;
@@ -537,6 +567,8 @@
 
         // Обновление лобби
         function updateLobbyDisplay() {
+            if (!gameRoom) return;
+
             const statusEl = document.getElementById('room-status');
             const actionBtn = document.getElementById('action-btn');
             
@@ -565,10 +597,14 @@
                         setupJoinButton(actionBtn);
                     } else {
                         statusEl.textContent = 'Игроки готовятся';
-                        actionBtn.innerHTML = 'Ожидание...';
+                        actionBtn.innerHTML = '<span>⏳ Ожидание...</span>';
                         actionBtn.disabled = true;
                     }
                 }
+            } else if (gameRoom.status === 'playing') {
+                statusEl.textContent = 'Игра в процессе';
+                actionBtn.innerHTML = '<span>🎮 Игра идет</span>';
+                actionBtn.disabled = true;
             }
         }
 
@@ -593,32 +629,44 @@
 
         // Настройка кнопок
         function setupJoinButton(btn) {
+            btn.innerHTML = '';
+            btn.disabled = false;
+            btn.onclick = null;
+
             if (userBalance < 1) {
-                btn.innerHTML = '❌ Недостаточно клюшек';
+                btn.innerHTML = '<span>❌ Недостаточно клюшек</span>';
                 btn.disabled = true;
+                btn.className = 'btn btn-secondary';
             } else {
-                btn.innerHTML = '🎮 Присоединиться';
+                btn.innerHTML = '<span>🎮 Присоединиться</span>';
                 btn.disabled = false;
+                btn.className = 'btn';
                 btn.onclick = joinRoom;
             }
         }
 
         function setupLeaveButton(btn) {
-            btn.innerHTML = '🚪 Покинуть комнату';
+            btn.innerHTML = '<span>🚪 Покинуть комнату</span>';
             btn.disabled = false;
+            btn.className = 'btn btn-secondary';
             btn.onclick = leaveRoom;
         }
 
         function setupStartButton(btn) {
-            btn.innerHTML = '🎮 Начать игру';
+            btn.innerHTML = '<span>🎮 Начать игру</span>';
             btn.disabled = false;
+            btn.className = 'btn';
             btn.onclick = startGame;
         }
 
         // Действия лобби
         async function joinRoom() {
             if (isOperationInProgress || userBalance < 1) return;
+            
             isOperationInProgress = true;
+            const btn = document.getElementById('action-btn');
+            btn.innerHTML = '<div class="loading"></div><span>Присоединение...</span>';
+            btn.disabled = true;
 
             try {
                 const fullName = `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim();
@@ -713,7 +761,7 @@
         }
 
         async function startGame() {
-            if (isOperationInProgress) return;
+            if (isOperationInProgress || !gameRoom.player1_id || !gameRoom.player2_id) return;
             isOperationInProgress = true;
 
             try {
@@ -751,7 +799,7 @@
                     headers: { "xc-token": NOCODB_KEY }
                 });
                 const data = await response.json();
-                if (data.list.length > 0) {
+                if (data.list && data.list.length > 0) {
                     promises.push(
                         fetch(`${NOCODB_API}/${data.list[0].Id}`, {
                             method: 'PATCH',
@@ -777,7 +825,7 @@
                     headers: { "xc-token": NOCODB_KEY }
                 });
                 const data = await response.json();
-                return data.list.length > 0 ? (data.list[0].avatar || '') : '';
+                return data.list && data.list.length > 0 ? (data.list[0].avatar || '') : '';
             } catch (error) {
                 return '';
             }
@@ -819,13 +867,13 @@
         function updateGameState() {
             gameState.timeLeft = gameRoom.sec || 10;
 
-            if (gameRoom.send === null && gameRoom.block === null) {
+            if ((gameRoom.send === null || gameRoom.send === '') && (gameRoom.block === null || gameRoom.block === '')) {
                 gameState.phase = 'shoot';
                 gameState.isMyTurn = (gameState.isPlayer1 && gameRoom.turn === 1) || (!gameState.isPlayer1 && gameRoom.turn === 2);
-            } else if (gameRoom.send !== null && gameRoom.block === null) {
+            } else if ((gameRoom.send !== null && gameRoom.send !== '') && (gameRoom.block === null || gameRoom.block === '')) {
                 gameState.phase = 'defend';
                 gameState.isMyTurn = (gameState.isPlayer1 && gameRoom.turn === 2) || (!gameState.isPlayer1 && gameRoom.turn === 1);
-            } else if (gameRoom.send !== null && gameRoom.block !== null) {
+            } else if ((gameRoom.send !== null && gameRoom.send !== '') && (gameRoom.block !== null && gameRoom.block !== '')) {
                 gameState.phase = 'result';
                 showRoundResult();
                 return;
@@ -1082,7 +1130,7 @@
                     headers: { "xc-token": NOCODB_KEY }
                 });
                 const data = await response.json();
-                if (data.list.length > 0) {
+                if (data.list && data.list.length > 0) {
                     await fetch(`${NOCODB_API}/${data.list[0].Id}`, {
                         method: 'PATCH',
                         headers: {
