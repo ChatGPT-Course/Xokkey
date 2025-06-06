@@ -289,6 +289,17 @@
             margin-bottom: 15px;
         }
 
+        .waiting-opponent {
+            text-align: center;
+            padding: 40px 20px;
+        }
+
+        .waiting-text {
+            font-size: 18px;
+            margin-bottom: 20px;
+            color: #bdc3c7;
+        }
+
         @media (max-width: 600px) {
             .players-grid, .score-board {
                 grid-template-columns: 1fr;
@@ -299,8 +310,6 @@
     </style>
 </head>
 <body>
-    <button style="position: fixed; top: 20px; left: 20px; background: rgba(0,0,0,0.4); color: white; border: none; border-radius: 50%; width: 45px; height: 45px; font-size: 20px; cursor: pointer;" onclick="window.location.href='index.html'">←</button>
-    
     <div class="notification" id="notification"></div>
 
     <div class="header">
@@ -333,6 +342,10 @@
                 <span>Загрузка...</span>
             </button>
             <div id="room-status" style="margin-top: 10px; color: #bdc3c7;">Загрузка...</div>
+            
+            <div style="margin-top: 20px;">
+                <button class="btn btn-secondary" onclick="window.location.href='index.html'">Назад в меню</button>
+            </div>
         </div>
 
         <!-- Игра -->
@@ -359,8 +372,8 @@
                 <div id="phase-status" style="color: #bdc3c7;"></div>
             </div>
 
-            <!-- Игровое поле -->
-            <div id="game-field">
+            <!-- Игровое поле для активного игрока -->
+            <div id="active-field" style="display: none;">
                 <div class="phase-title" id="phase-title">Выберите область</div>
                 <div class="defend-counter" id="defend-counter" style="display: none;">Выбрано: <span id="selected-count">0</span>/2</div>
                 <div class="areas-grid" id="areas-grid">
@@ -371,8 +384,12 @@
                 </div>
             </div>
 
-            <div style="text-align: center; margin-top: 20px;">
-                <button class="btn btn-secondary" onclick="backToLobby()">Вернуться в лобби</button>
+            <!-- Ожидание хода противника -->
+            <div id="waiting-field" style="display: none;">
+                <div class="waiting-opponent">
+                    <div class="loading"></div>
+                    <div class="waiting-text" id="waiting-message">Противник делает ход...</div>
+                </div>
             </div>
         </div>
     </div>
@@ -842,88 +859,94 @@
             gameState.timeLeft = gameRoom.sec || 10;
             gameState.round = Math.floor((gameRoom.xp_p1 + gameRoom.xp_p2) / 2) + 1;
 
-            // Логика фаз
+            // Логика фаз - только player1 управляет, player2 только наблюдает
             const isPlayer1Turn = gameRoom.turn === 1;
 
             if (gameRoom.send === null && gameRoom.block === null) {
                 // Фаза стрельбы
                 gameState.phase = 'shoot';
-                gameState.isMyTurn = (gameState.isPlayer1 && isPlayer1Turn) || (!gameState.isPlayer1 && !isPlayer1Turn);
-                
-                updateShootPhase();
+                if (gameState.isPlayer1) {
+                    gameState.isMyTurn = isPlayer1Turn;
+                    if (isPlayer1Turn) {
+                        showActiveField('⚽ Выберите область для удара');
+                        document.getElementById('turn-info').textContent = `Раунд ${gameState.round} - Ваш удар`;
+                        document.getElementById('phase-status').textContent = 'Выберите область атаки';
+                    } else {
+                        showWaitingField('Противник подает...');
+                        document.getElementById('turn-info').textContent = `Раунд ${gameState.round} - Удар противника`;
+                        document.getElementById('phase-status').textContent = 'Соперник атакует';
+                    }
+                } else {
+                    // Player2 всегда ждет
+                    gameState.isMyTurn = !isPlayer1Turn;
+                    if (isPlayer1Turn) {
+                        showWaitingField('Противник подает...');
+                        document.getElementById('turn-info').textContent = `Раунд ${gameState.round} - Удар противника`;
+                        document.getElementById('phase-status').textContent = 'Соперник атакует';
+                    } else {
+                        showActiveField('⚽ Выберите область для удара');
+                        document.getElementById('turn-info').textContent = `Раунд ${gameState.round} - Ваш удар`;
+                        document.getElementById('phase-status').textContent = 'Выберите область атаки';
+                    }
+                }
             } else if (gameRoom.send !== null && gameRoom.block === null) {
                 // Фаза защиты
                 gameState.phase = 'defend';
-                gameState.isMyTurn = (gameState.isPlayer1 && !isPlayer1Turn) || (!gameState.isPlayer1 && isPlayer1Turn);
-                
-                updateDefendPhase();
+                if (gameState.isPlayer1) {
+                    gameState.isMyTurn = !isPlayer1Turn;
+                    if (!isPlayer1Turn) {
+                        showActiveField('🛡️ Выберите 2 области для защиты', true);
+                        document.getElementById('turn-info').textContent = `Раунд ${gameState.round} - Ваша защита`;
+                        document.getElementById('phase-status').textContent = 'Выберите защиту';
+                    } else {
+                        showWaitingField('Противник защищается...');
+                        document.getElementById('turn-info').textContent = `Раунд ${gameState.round} - Защита противника`;
+                        document.getElementById('phase-status').textContent = 'Соперник защищается';
+                    }
+                } else {
+                    gameState.isMyTurn = isPlayer1Turn;
+                    if (isPlayer1Turn) {
+                        showActiveField('🛡️ Выберите 2 области для защиты', true);
+                        document.getElementById('turn-info').textContent = `Раунд ${gameState.round} - Ваша защита`;
+                        document.getElementById('phase-status').textContent = 'Выберите защиту';
+                    } else {
+                        showWaitingField('Противник защищается...');
+                        document.getElementById('turn-info').textContent = `Раунд ${gameState.round} - Защита противника`;
+                        document.getElementById('phase-status').textContent = 'Соперник защищается';
+                    }
+                }
             } else if (gameRoom.send !== null && gameRoom.block !== null) {
                 // Показать результат
                 showRoundResult();
                 return;
             }
 
-            startTimer();
-        }
-
-        function updateShootPhase() {
-            const shooterName = gameRoom.turn === 1 ? gameRoom.player1_name : gameRoom.player2_name;
-            
-            document.getElementById('turn-info').textContent = `Раунд ${gameState.round} - Атака`;
-            document.getElementById('phase-status').textContent = `Подает: ${shooterName}`;
-            document.getElementById('timer-display').textContent = gameState.timeLeft;
-            
-            if (gameState.isMyTurn) {
-                document.getElementById('phase-title').textContent = '⚽ Выберите область для удара';
-                enableAreas();
+            // Запуск таймера только если это ход игрока1 (он управляет всем)
+            if (gameState.isPlayer1) {
+                startTimer();
             } else {
-                document.getElementById('phase-title').textContent = '⏳ Соперник выбирает область';
-                disableAreas();
+                document.getElementById('timer-display').textContent = gameState.timeLeft;
             }
-
-            document.getElementById('defend-counter').style.display = 'none';
-            clearSelections();
         }
 
-        function updateDefendPhase() {
-            const defenderName = gameRoom.turn === 1 ? gameRoom.player2_name : gameRoom.player1_name;
+        function showActiveField(title, isDefend = false) {
+            document.getElementById('active-field').style.display = 'block';
+            document.getElementById('waiting-field').style.display = 'none';
+            document.getElementById('phase-title').textContent = title;
             
-            document.getElementById('turn-info').textContent = `Раунд ${gameState.round} - Защита`;
-            document.getElementById('phase-status').textContent = `Защищается: ${defenderName}`;
-            document.getElementById('timer-display').textContent = gameState.timeLeft;
-            
-            if (gameState.isMyTurn) {
-                document.getElementById('phase-title').textContent = '🛡️ Выберите 2 области для защиты';
+            if (isDefend) {
                 document.getElementById('defend-counter').style.display = 'block';
-                enableAreas();
             } else {
-                document.getElementById('phase-title').textContent = '⏳ Соперник выбирает защиту';
                 document.getElementById('defend-counter').style.display = 'none';
-                disableAreas();
             }
-
+            
             clearSelections();
         }
 
-        function enableAreas() {
-            document.querySelectorAll('.area').forEach(area => {
-                area.classList.remove('disabled');
-            });
-        }
-
-        function disableAreas() {
-            document.querySelectorAll('.area').forEach(area => {
-                area.classList.add('disabled');
-            });
-        }
-
-        function clearSelections() {
-            document.querySelectorAll('.area').forEach(area => {
-                area.classList.remove('selected', 'goal', 'blocked');
-            });
-            gameState.selectedShoot = null;
-            gameState.selectedDefend = [];
-            document.getElementById('selected-count').textContent = '0';
+        function showWaitingField(message) {
+            document.getElementById('active-field').style.display = 'none';
+            document.getElementById('waiting-field').style.display = 'block';
+            document.getElementById('waiting-message').textContent = message;
         }
 
         function startTimer() {
@@ -994,7 +1017,7 @@
             areaElement.classList.add('selected');
             
             // Автоотправка удара
-            setTimeout(() => submitShoot(), 500);
+            setTimeout(() => submitShoot(), 1000);
         }
 
         function selectDefendArea(area) {
@@ -1014,8 +1037,17 @@
             
             // Автоотправка при выборе 2 областей
             if (gameState.selectedDefend.length === 2) {
-                setTimeout(() => submitDefend(), 500);
+                setTimeout(() => submitDefend(), 1000);
             }
+        }
+
+        function clearSelections() {
+            document.querySelectorAll('.area').forEach(area => {
+                area.classList.remove('selected', 'goal', 'blocked');
+            });
+            gameState.selectedShoot = null;
+            gameState.selectedDefend = [];
+            document.getElementById('selected-count').textContent = '0';
         }
 
         async function submitShoot() {
@@ -1033,7 +1065,7 @@
                 });
 
                 gameState.isMyTurn = false;
-                disableAreas();
+                showWaitingField('Ожидание защиты...');
             } catch (error) {
                 console.error("Ошибка при отправке удара:", error);
             }
@@ -1056,7 +1088,7 @@
                 });
 
                 gameState.isMyTurn = false;
-                disableAreas();
+                showWaitingField('Ожидание результата...');
             } catch (error) {
                 console.error("Ошибка при отправке защиты:", error);
             }
@@ -1185,13 +1217,6 @@
             modal.style.display = 'flex';
         }
 
-        function backToLobby() {
-            gameState.inGame = false;
-            document.getElementById('game-section').style.display = 'none';
-            document.getElementById('lobby-section').style.display = 'block';
-            if (timerInterval) clearInterval(timerInterval);
-        }
-
         function showNotification(message) {
             const notification = document.getElementById('notification');
             notification.textContent = message;
@@ -1205,47 +1230,53 @@
         document.getElementById('result-ok-btn').addEventListener('click', async () => {
             document.getElementById('result-modal').style.display = 'none';
             
-            const shooterWon = !gameRoom.block.toString().split('').map(n => parseInt(n)).includes(gameRoom.send);
-            const isPlayer1Shooter = gameRoom.turn === 1;
-            
-            let updateData = {
-                send: null,
-                block: null,
-                sec: 10,
-                turn: gameRoom.turn === 1 ? 2 : 1 // Смена сторон
-            };
+            // Только player1 управляет переходом к следующему раунду
+            if (gameState.isPlayer1) {
+                const shooterWon = !gameRoom.block.toString().split('').map(n => parseInt(n)).includes(gameRoom.send);
+                const isPlayer1Shooter = gameRoom.turn === 1;
+                
+                let updateData = {
+                    send: null,
+                    block: null,
+                    sec: 10,
+                    turn: gameRoom.turn === 1 ? 2 : 1 // Смена сторон
+                };
 
-            if (shooterWon) {
-                if (isPlayer1Shooter) {
-                    updateData.xp_p1 = (gameRoom.xp_p1 || 0) + 1;
+                if (shooterWon) {
+                    if (isPlayer1Shooter) {
+                        updateData.xp_p1 = (gameRoom.xp_p1 || 0) + 1;
+                    } else {
+                        updateData.xp_p2 = (gameRoom.xp_p2 || 0) + 1;
+                    }
                 } else {
-                    updateData.xp_p2 = (gameRoom.xp_p2 || 0) + 1;
+                    if (isPlayer1Shooter) {
+                        updateData.xp_p2 = (gameRoom.xp_p2 || 0) + 1;
+                    } else {
+                        updateData.xp_p1 = (gameRoom.xp_p1 || 0) + 1;
+                    }
                 }
-            } else {
-                if (isPlayer1Shooter) {
-                    updateData.xp_p2 = (gameRoom.xp_p2 || 0) + 1;
-                } else {
-                    updateData.xp_p1 = (gameRoom.xp_p1 || 0) + 1;
-                }
-            }
 
-            try {
-                await fetch(`${ROOM_API}/${gameRoom.Id}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        "xc-token": NOCODB_KEY
-                    },
-                    body: JSON.stringify(updateData)
-                });
-            } catch (error) {
-                console.error("Ошибка при сбросе раунда:", error);
+                try {
+                    await fetch(`${ROOM_API}/${gameRoom.Id}`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            "xc-token": NOCODB_KEY
+                        },
+                        body: JSON.stringify(updateData)
+                    });
+                } catch (error) {
+                    console.error("Ошибка при сбросе раунда:", error);
+                }
             }
         });
 
         document.getElementById('final-ok-btn').addEventListener('click', () => {
-            backToLobby();
+            gameState.inGame = false;
+            document.getElementById('game-section').style.display = 'none';
+            document.getElementById('lobby-section').style.display = 'block';
             document.getElementById('final-modal').style.display = 'none';
+            if (timerInterval) clearInterval(timerInterval);
         });
 
         window.addEventListener('beforeunload', () => {
