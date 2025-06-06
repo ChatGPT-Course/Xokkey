@@ -1,437 +1,69 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Профиль - Hockey Shootouts</title>
+    <title>Профиль - Хоккейная Битва</title>
+    <link href="style.css" rel="stylesheet">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        :root {
-            --primary: #1a2a3a;
-            --secondary: #2d3e50;
-            --accent: #e74c3c;
-            --accent-light: #ff6b5b;
-            --text: #ffffff;
-            --text-secondary: #bdc3c7;
-            --card-bg: rgba(255, 255, 255, 0.1);
-        }
-
-        body {
-            font-family: 'Arial', sans-serif;
-            margin: 0;
-            padding: 0;
-            background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
-            color: var(--text);
-            display: flex;
-            flex-direction: column;
-            min-height: 100vh;
-        }
-
-        .header {
-            width: 100%;
-            height: 70px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-sizing: border-box;
-            background-color: rgba(0, 0, 0, 0.2);
-            padding: 0 20px;
-            backdrop-filter: blur(10px);
-            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .app-title {
-            font-size: 24px;
-            font-weight: bold;
-            background: linear-gradient(to right, #fff, #e74c3c);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
-        .balance {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-weight: bold;
-            background: rgba(0, 0, 0, 0.3);
-            padding: 8px 15px;
-            border-radius: 20px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .profile-container {
-            flex-grow: 1;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 20px;
-        }
-
-        .profile-card {
-            width: 100%;
-            max-width: 400px;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 15px;
-            padding: 20px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
-        }
-
-        .profile-header {
-            display: flex;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-
-        .avatar {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            background: rgba(255, 255, 255, 0.1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-            margin-right: 15px;
-            border: 3px solid var(--accent);
-        }
-
-        .avatar img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }
-
-        .user-info {
-            flex: 1;
-        }
-
-        .username {
-            font-size: 20px;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .userid {
-            font-size: 14px;
-            color: var(--text-secondary);
-        }
-
-        .stats {
-            display: flex;
-            justify-content: space-between;
-            margin-top: 20px;
-        }
-
-        .stat-item {
-            text-align: center;
-        }
-
-        .stat-value {
-            font-size: 24px;
-            font-weight: bold;
-            color: var(--accent);
-        }
-
-        .stat-label {
-            font-size: 12px;
-            color: var(--text-secondary);
-        }
-
-        .inventory {
-            width: 100%;
-            max-width: 400px;
-            background: rgba(0, 0, 0, 0.2);
-            border-radius: 15px;
-            padding: 20px;
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-        }
-
-        .section-title {
-            font-size: 20px;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .cards-grid {
-            display: grid;
-            grid-template-columns: repeat(2, 1fr);
-            gap: 15px;
-        }
-
-        .card {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 10px;
-            padding: 15px;
-            text-align: center;
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
-        }
-
-        .card-common {
-            background: linear-gradient(135deg, rgba(52, 152, 219, 0.2), rgba(41, 128, 185, 0.2));
-        }
-
-        .card-epic {
-            background: linear-gradient(135deg, rgba(155, 89, 182, 0.2), rgba(142, 68, 173, 0.2));
-        }
-
-        .card-mythic {
-            background: linear-gradient(135deg, rgba(231, 76, 60, 0.2), rgba(192, 57, 43, 0.2));
-        }
-
-        .card-legendary {
-            background: linear-gradient(135deg, rgba(241, 196, 15, 0.2), rgba(243, 156, 18, 0.2));
-            box-shadow: 0 0 20px rgba(241, 196, 15, 0.3);
-        }
-
-        .card-image {
-            width: 100%;
-            height: 80px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 40px;
-            margin-bottom: 10px;
-        }
-
-        .card-name {
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .card-rarity {
-            font-size: 12px;
-            color: var(--text-secondary);
-            font-style: italic;
-        }
-
-        .no-cards {
-            text-align: center;
-            color: var(--text-secondary);
-            font-style: italic;
-            padding: 20px;
-            grid-column: span 2;
-        }
-
-        .back-btn {
-            padding: 15px;
-            font-size: 18px;
-            font-weight: bold;
-            background: linear-gradient(to right, var(--accent), var(--accent-light));
-            color: white;
-            border: none;
-            border-radius: 12px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            width: 100%;
-            max-width: 400px;
-            margin-top: 20px;
-            box-shadow: 0 5px 15px rgba(231, 76, 60, 0.4);
-        }
-
-        .back-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 8px 20px rgba(231, 76, 60, 0.6);
-        }
-    </style>
 </head>
 <body>
-    <div class="header">
-        <div class="app-title">Hockey Shootouts</div>
-        <div class="balance" id="balance">
-            Клюшек: 0 🏒
+    <div class="container">
+        <div class="header">
+            <button class="btn-back" onclick="goHome()">← Назад</button>
+            <h2>👤 Профиль</h2>
         </div>
-    </div>
-
-    <div class="profile-container" id="profile-page">
+        
         <div class="profile-card">
-            <div class="profile-header">
-                <div class="avatar" id="user-avatar">
-                    <!-- Аватар будет загружен через JS -->
-                </div>
-                <div class="user-info">
-                    <div class="username" id="profile-username">Пользователь</div>
-                    <div class="userid">ID: <span id="profile-userid"></span></div>
-                </div>
+            <div class="profile-info">
+                <h3 id="profileName">Загрузка...</h3>
+                <p id="profileId">ID: ---</p>
             </div>
-
+            
             <div class="stats">
                 <div class="stat-item">
-                    <div class="stat-value" id="games-played">0</div>
-                    <div class="stat-label">Игр</div>
+                    <span class="stat-value" id="totalGames">0</span>
+                    <span class="stat-label">Всего игр</span>
                 </div>
+                
                 <div class="stat-item">
-                    <div class="stat-value" id="cards-count">0</div>
-                    <div class="stat-label">Карточек</div>
+                    <span class="stat-value" id="wins">0</span>
+                    <span class="stat-label">Побед</span>
                 </div>
+                
                 <div class="stat-item">
-                    <div class="stat-value" id="profile-balance">0</div>
-                    <div class="stat-label">Клюшек</div>
+                    <span class="stat-value" id="losses">0</span>
+                    <span class="stat-label">Поражений</span>
+                </div>
+                
+                <div class="stat-item">
+                    <span class="stat-value" id="winRate">0%</span>
+                    <span class="stat-label">Процент побед</span>
                 </div>
             </div>
         </div>
-
-        <div class="inventory">
-            <h3 class="section-title">
-                <span>Инвентарь</span>
-            </h3>
-            <div class="cards-grid" id="cards-container">
-                <!-- Карточки будут загружены через JS -->
+        
+        <div class="profile-actions">
+            <button class="btn primary" onclick="resetStats()">
+                🔄 Сбросить статистику
+            </button>
+            
+            <button class="btn secondary" onclick="shareProfile()">
+                📤 Поделиться профилем
+            </button>
+        </div>
+        
+        <div class="recent-games">
+            <h4>Последние игры:</h4>
+            <div id="recentGamesList" class="games-list">
+                <p>Загрузка...</p>
             </div>
         </div>
-
-        <button class="back-btn" id="back-btn">Назад в меню</button>
     </div>
-
-    <script>
-        // Конфигурация Nocodb
-        const NOCODB_API = "https://app.nocodb.com/api/v1/db/data/weamcfo6/p27jdsmk69wuimh/meefo7wdwoh5mtv";
-        const NOCODB_KEY = "bocQfycJpJsTG_tbwEf8ma8E5rhoig0njMDXFWtJ";
-
-        // Порядок сортировки редкостей
-        const rarityOrder = {
-            'Легендарная': 4,
-            'Мифическая': 3,
-            'Эпическая': 2,
-            'Простая': 1
-        };
-
-        // Инициализация Telegram WebApp
-        const tg = window.Telegram.WebApp;
-        let currentUser = null;
-
-        // Проверяем, запущено ли в Telegram WebApp
-        if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
-            currentUser = tg.initDataUnsafe.user;
-
-            // Сохраняем данные пользователя в cookie
-            document.cookie = `tg_user_id=${currentUser.id}; path=/; max-age=604800`;
-            document.cookie = `tg_name=${encodeURIComponent(currentUser.first_name || '')} ${encodeURIComponent(currentUser.last_name || '')}; path=/; max-age=604800`;
-            document.cookie = `tg_username=${currentUser.username || ''}; path=/; max-age=604800`;
-        } else {
-            // Если не в Telegram WebApp, используем данные из cookie
-            currentUser = {
-                id: localStorage.getItem('tg_user_id') || '12345',
-                first_name: localStorage.getItem('tg_name')?.split(' ')[0] || 'Тестовый',
-                last_name: localStorage.getItem('tg_name')?.split(' ')[1] || 'Пользователь',
-                username: localStorage.getItem('tg_username') || 'test_user'
-            };
-        }
-
-        // Устанавливаем информацию о пользователе
-        document.getElementById('profile-username').textContent = 
-            `${currentUser.first_name || ''} ${currentUser.last_name || ''}`;
-        document.getElementById('profile-userid').textContent = currentUser.id;
-
-        // Загружаем аватар пользователя
-        const avatar = document.getElementById('user-avatar');
-        if (currentUser.photo_url) {
-            avatar.innerHTML = `<img src="${currentUser.photo_url}" alt="Аватар">`;
-        } else {
-            const initials = (currentUser.first_name ? currentUser.first_name[0] : '') + 
-                          (currentUser.last_name ? currentUser.last_name[0] : '');
-            avatar.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:30px;color:#fff;font-weight:bold;">${initials || '?'}</div>`;
-        }
-
-        // Загружаем данные пользователя
-        loadUserData(currentUser.id);
-
-        // Функция для загрузки данных пользователя
-        async function loadUserData(userId) {
-            try {
-                const response = await fetch(`${NOCODB_API}?where=(tg_user_id,eq,${userId})`, {
-                    headers: {
-                        "xc-token": NOCODB_KEY
-                    }
-                });
-
-                const data = await response.json();
-
-                if (data.list.length > 0) {
-                    const userData = data.list[0];
-
-                    // Устанавливаем баланс и статистику
-                    document.getElementById('profile-balance').textContent = userData.point || 0;
-                    document.getElementById('balance').textContent = `Клюшек: ${userData.point || 0} 🏒`;
-
-                    // Загружаем карточки
-                    loadUserCards(userData.card);
-
-                    // Обновляем счетчик карточек
-                    if (userData.card) {
-                        const cardsCount = userData.card.split(',').filter(c => c.trim() !== '').length;
-                        document.getElementById('cards-count').textContent = cardsCount;
-                    }
-                }
-            } catch (error) {
-                console.error("Ошибка при загрузке данных пользователя:", error);
-            }
-        }
-
-        // Функция для загрузки карточек пользователя
-        function loadUserCards(cardsString) {
-            const cardsContainer = document.getElementById('cards-container');
-            cardsContainer.innerHTML = '';
-
-            if (!cardsString || cardsString.trim() === '') {
-                cardsContainer.innerHTML = '<div class="no-cards">Карточек нет</div>';
-                return;
-            }
-
-            const cards = cardsString.split(',').map(c => c.trim()).filter(c => c !== '');
-
-            if (cards.length === 0) {
-                cardsContainer.innerHTML = '<div class="no-cards">Карточек нет</div>';
-                return;
-            }
-
-            // Сортируем карточки по редкости
-            const sortedCards = cards.map(card => {
-                const cardParts = card.match(/(.*?)\((.*?)\)/);
-                if (cardParts) {
-                    return {
-                        name: cardParts[1],
-                        rarity: cardParts[2],
-                        fullName: card,
-                        rarityOrder: rarityOrder[cardParts[2]] || 0
-                    };
-                }
-                return null;
-            }).filter(card => card !== null)
-              .sort((a, b) => b.rarityOrder - a.rarityOrder);
-
-            // Отображаем отсортированные карточки
-            sortedCards.forEach((card, index) => {
-                const cardElement = document.createElement('div');
-                cardElement.className = `card card-${card.rarity.toLowerCase()}`;
-
-                cardElement.innerHTML = `
-                    <div class="card-image">🏒</div>
-                    <div class="card-name">${card.name}</div>
-                    <div class="card-rarity">${card.rarity}</div>
-                `;
-
-                cardsContainer.appendChild(cardElement);
-            });
-        }
-
-        // Обработчик кнопки "Назад"
-        document.getElementById('back-btn').addEventListener('click', () => {
-            window.location.href = "index.html";
-        });
-    </script>
+    
+    <script src="telegram.js"></script>
+    <script src="api.js"></script>
+    <script src="profile.js"></script>
 </body>
 </html>
