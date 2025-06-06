@@ -5,8 +5,200 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Игра - Хоккейная Битва</title>
-    <link href="style.css" rel="stylesheet">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 10px;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+            overflow: hidden;
+            min-height: 90vh;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .header h2 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        .btn-back {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .btn-back:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .game-container {
+            padding: 20px;
+        }
+
+        .score {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding: 15px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+
+        .score-item {
+            text-align: center;
+        }
+
+        .player-name {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .player-score {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .vs {
+            font-size: 1.2rem;
+            color: #666;
+            font-weight: bold;
+        }
+
+        .role-info {
+            text-align: center;
+            padding: 15px;
+            margin: 15px 0;
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 10px;
+            color: #856404;
+        }
+
+        .zones {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .zone {
+            aspect-ratio: 1;
+            border: 2px solid #2196f3;
+            border-radius: 10px;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        .zone:hover {
+            background: #f0f8ff;
+            transform: scale(1.02);
+        }
+
+        .zone.selected {
+            background: #667eea;
+            color: white;
+            border-color: #5a67d8;
+        }
+
+        .btn {
+            padding: 15px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            width: 100%;
+            margin: 10px 0;
+        }
+
+        .btn.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn.secondary {
+            background: #f8f9fa;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .waiting {
+            text-align: center;
+            padding: 40px 20px;
+            color: #666;
+        }
+
+        .game-end {
+            text-align: center;
+            padding: 30px 20px;
+        }
+
+        .final-stats {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .final-stats p {
+            margin: 5px 0;
+            font-size: 1.1rem;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -15,66 +207,42 @@
             <h2>🏒 Хоккейная Битва</h2>
         </div>
         
-        <div id="gameSearch" class="game-search">
-            <h3>Поиск игры...</h3>
-            <div class="loader"></div>
-            <button class="btn secondary" onclick="cancelSearch()">Отменить</button>
+        <div id="waitingRoom" class="waiting">
+            <h3>Поиск соперника...</h3>
+            <p>Ожидание подключения второго игрока</p>
         </div>
         
-        <div id="gameArea" class="game-area hidden">
-            <div class="game-info">
-                <div class="players">
-                    <div class="player">
-                        <span id="player1Name">Игрок 1</span>
-                        <span id="player1Score" class="score">0</span>
-                    </div>
-                    <div class="vs">VS</div>
-                    <div class="player">
-                        <span id="player2Name">Игрок 2</span>
-                        <span id="player2Score" class="score">0</span>
-                    </div>
+        <div id="gamePlay" class="game-container hidden">
+            <div class="score">
+                <div class="score-item">
+                    <div class="player-name" id="player1Name">Игрок 1</div>
+                    <div class="player-score" id="player1Score">0</div>
                 </div>
-                
-                <div class="round-info">
-                    <p id="roleText">Вы нападающий</p>
-                    <p id="roundText">Раунд 1</p>
+                <div class="vs">VS</div>
+                <div class="score-item">
+                    <div class="player-name" id="player2Name">Игрок 2</div>
+                    <div class="player-score" id="player2Score">0</div>
                 </div>
             </div>
             
-            <div class="hockey-field">
-                <div class="field-title">
-                    <h4 id="actionTitle">Выберите зону для броска:</h4>
-                </div>
-                
-                <div class="goal-zones">
-                    <div class="zone" data-zone="1" onclick="selectZone(1)">
-                        <span>1</span>
-                    </div>
-                    <div class="zone" data-zone="2" onclick="selectZone(2)">
-                        <span>2</span>
-                    </div>
-                    <div class="zone" data-zone="3" onclick="selectZone(3)">
-                        <span>3</span>
-                    </div>
-                    <div class="zone" data-zone="4" onclick="selectZone(4)">
-                        <span>4</span>
-                    </div>
-                </div>
-                
-                <button id="confirmBtn" class="btn primary hidden" onclick="confirmAction()">
-                    Подтвердить выбор
-                </button>
+            <div class="role-info" id="roleInfo">
+                Ваша роль
             </div>
             
-            <div id="waitingArea" class="waiting hidden">
-                <h4>Ожидание хода соперника...</h4>
-                <div class="loader"></div>
+            <div class="zones">
+                <div class="zone" id="zone1" onclick="selectZone(1)">1</div>
+                <div class="zone" id="zone2" onclick="selectZone(2)">2</div>
+                <div class="zone" id="zone3" onclick="selectZone(3)">3</div>
+                <div class="zone" id="zone4" onclick="selectZone(4)">4</div>
             </div>
             
-            <div id="resultArea" class="result hidden">
-                <h4 id="resultText">Результат раунда</h4>
-                <button class="btn primary" onclick="nextRound()">Следующий раунд</button>
-            </div>
+            <button id="submitMove" class="btn primary" onclick="submitMove()" disabled>
+                Подтвердить выбор
+            </button>
+            
+            <p style="text-align: center; margin-top: 10px;">
+                Раунд <span id="roundNumber">1</span>
+            </p>
         </div>
         
         <div id="gameEnd" class="game-end hidden">
@@ -89,8 +257,355 @@
         </div>
     </div>
     
-    <script src="telegram.js"></script>
-    <script src="api.js"></script>
-    <script src="game.js"></script>
+    <script>
+        // Telegram Web App integration
+        class TelegramApp {
+            constructor() {
+                this.tg = window.Telegram?.WebApp;
+                this.user = null;
+                this.init();
+            }
+
+            init() {
+                if (this.tg) {
+                    this.tg.ready();
+                    this.tg.expand();
+                    this.user = this.tg.initDataUnsafe?.user;
+                    
+                    if (!this.user) {
+                        this.user = {
+                            id: Date.now(),
+                            username: 'test_user',
+                            first_name: 'Test'
+                        };
+                    }
+                } else {
+                    this.user = {
+                        id: Date.now(),
+                        username: 'test_user',
+                        first_name: 'Test'
+                    };
+                }
+            }
+
+            getUserId() {
+                return this.user?.id || Date.now();
+            }
+
+            getUsername() {
+                return this.user?.username || 'unknown';
+            }
+        }
+
+        // NocoDB API
+        const API_CONFIG = {
+            baseUrl: 'https://app.nocodb.com/api/v2/tables',
+            token: 'bocQfycJpJsTG_tbwEf8ma8E5rhoig0njMDXFWtJ',
+            usersTable: 'mx65bowvjsniy3y',
+            gamesTable: 'mxqqwifh3hv5tdb'
+        };
+
+        class NocoDBAPI {
+            constructor() {
+                this.headers = {
+                    'Content-Type': 'application/json',
+                    'xc-token': API_CONFIG.token
+                };
+            }
+
+            async makeRequest(endpoint, method = 'GET', data = null) {
+                const url = `${API_CONFIG.baseUrl}/${endpoint}`;
+                
+                const options = {
+                    method,
+                    headers: this.headers
+                };
+
+                if (data && (method === 'POST' || method === 'PATCH')) {
+                    options.body = JSON.stringify(data);
+                }
+
+                try {
+                    const response = await fetch(url, options);
+                    if (!response.ok) {
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+                    return await response.json();
+                } catch (error) {
+                    console.error('API Request failed:', error);
+                    throw error;
+                }
+            }
+
+            async getOrCreateUser(telegramId, username) {
+                return {
+                    Id: 'mock_' + telegramId,
+                    telegram_id: telegramId,
+                    username: username || 'unknown',
+                    wins: 0,
+                    losses: 0,
+                    total_games: 0
+                };
+            }
+
+            async createGame(gameData) {
+                console.log('Creating game:', gameData);
+                return { Id: 'mock_game_' + Date.now(), ...gameData };
+            }
+
+            async getGame(gameId) {
+                return this.mockGame;
+            }
+
+            async updateGame(gameId, updates) {
+                console.log('Updating game:', gameId, updates);
+                if (this.mockGame) {
+                    Object.assign(this.mockGame, updates);
+                }
+                return this.mockGame;
+            }
+
+            async findWaitingGame() {
+                return null; // Always create new game for demo
+            }
+        }
+
+        // Game logic
+        class HockeyGame {
+            constructor() {
+                this.currentUser = null;
+                this.currentGame = null;
+                this.gameId = null;
+                this.isAttacker = true;
+                this.currentRound = 1;
+                this.selectedZones = [];
+                this.init();
+            }
+
+            async init() {
+                try {
+                    const telegramId = tgApp.getUserId();
+                    const username = tgApp.getUsername();
+                    this.currentUser = await api.getOrCreateUser(telegramId, username);
+                    
+                    await this.findOrCreateGame();
+                    this.startGameLoop();
+                } catch (error) {
+                    console.error('Failed to initialize game:', error);
+                }
+            }
+
+            async findOrCreateGame() {
+                this.gameId = 'game_' + Date.now();
+                this.currentGame = {
+                    game_id: this.gameId,
+                    player1_id: this.currentUser.telegram_id,
+                    player1_name: this.currentUser.username,
+                    player2_id: 'bot_' + Date.now(),
+                    player2_name: 'Бот',
+                    status: 'playing',
+                    score1: 0,
+                    score2: 0,
+                    current_round: 1,
+                    attacker: this.currentUser.telegram_id
+                };
+                
+                api.mockGame = this.currentGame;
+                await this.updateGameDisplay();
+            }
+
+            async startGameLoop() {
+                setInterval(async () => {
+                    await this.checkGameStatus();
+                }, 2000);
+            }
+
+            async checkGameStatus() {
+                if (this.currentGame && this.currentGame.status === 'finished') {
+                    this.endGame();
+                }
+            }
+
+            async updateGameDisplay() {
+                if (!this.currentGame) return;
+
+                document.getElementById('player1Name').textContent = this.currentGame.player1_name || 'Игрок 1';
+                document.getElementById('player2Name').textContent = this.currentGame.player2_name || 'Игрок 2';
+                document.getElementById('player1Score').textContent = this.currentGame.score1 || 0;
+                document.getElementById('player2Score').textContent = this.currentGame.score2 || 0;
+                document.getElementById('roundNumber').textContent = this.currentGame.current_round || 1;
+
+                const roleText = this.isAttacker ? '🏒 Вы нападающий - выберите 1 зону для броска' : '🥅 Вы защитник - выберите 2 зоны для защиты';
+                document.getElementById('roleInfo').textContent = roleText;
+
+                if (this.currentGame.status === 'waiting') {
+                    this.showElement('waitingRoom');
+                    this.hideElement('gamePlay');
+                    this.hideElement('gameEnd');
+                } else if (this.currentGame.status === 'playing') {
+                    this.hideElement('waitingRoom');
+                    this.showElement('gamePlay');
+                    this.hideElement('gameEnd');
+                }
+            }
+
+            selectZone(zoneNumber) {
+                const zone = document.getElementById(`zone${zoneNumber}`);
+                const maxSelections = this.isAttacker ? 1 : 2;
+
+                if (zone.classList.contains('selected')) {
+                    zone.classList.remove('selected');
+                    this.selectedZones = this.selectedZones.filter(z => z !== zoneNumber);
+                } else if (this.selectedZones.length < maxSelections) {
+                    zone.classList.add('selected');
+                    this.selectedZones.push(zoneNumber);
+                }
+
+                const submitBtn = document.getElementById('submitMove');
+                if (submitBtn) {
+                    submitBtn.disabled = this.selectedZones.length !== maxSelections;
+                }
+            }
+
+            async submitMove() {
+                if (this.selectedZones.length === 0) return;
+
+                // Simulate bot move
+                const botZones = this.isAttacker ? 
+                    [Math.floor(Math.random() * 4) + 1, Math.floor(Math.random() * 4) + 1] : 
+                    [Math.floor(Math.random() * 4) + 1];
+
+                // Check if goal was scored
+                const attackerZone = this.isAttacker ? this.selectedZones[0] : botZones[0];
+                const defenderZones = this.isAttacker ? botZones : this.selectedZones;
+                const goalScored = !defenderZones.includes(attackerZone);
+
+                let newScore1 = this.currentGame.score1;
+                let newScore2 = this.currentGame.score2;
+
+                if (goalScored) {
+                    if (this.isAttacker) {
+                        newScore1++;
+                        this.showMessage('⚽ ГОЛ! Вы забили!', 'success');
+                    } else {
+                        newScore2++;
+                        this.showMessage('⚽ ГОЛ против вас!', 'error');
+                    }
+                } else {
+                    if (this.isAttacker) {
+                        newScore2++;
+                        this.showMessage('🥅 Ваш бросок отбит!', 'info');
+                    } else {
+                        newScore1++;
+                        this.showMessage('🥅 Отличная защита!', 'success');
+                    }
+                }
+
+                // Update game
+                const gameFinished = newScore1 >= 3 || newScore2 >= 3;
+                this.currentGame.score1 = newScore1;
+                this.currentGame.score2 = newScore2;
+                this.currentGame.current_round++;
+                this.currentGame.status = gameFinished ? 'finished' : 'playing';
+
+                // Clear selections
+                this.selectedZones = [];
+                document.querySelectorAll('.zone').forEach(zone => {
+                    zone.classList.remove('selected');
+                });
+
+                // Switch roles
+                this.isAttacker = !this.isAttacker;
+
+                await this.updateGameDisplay();
+
+                if (gameFinished) {
+                    setTimeout(() => this.endGame(), 2000);
+                }
+            }
+
+            endGame() {
+                this.hideElement('gamePlay');
+                this.showElement('gameEnd');
+
+                const myScore = this.currentGame.score1;
+                const opponentScore = this.currentGame.score2;
+                const won = myScore > opponentScore;
+
+                document.getElementById('finalResult').textContent = won ? '🎉 ПОБЕДА!' : '😔 ПОРАЖЕНИЕ';
+                document.getElementById('finalPlayer1').textContent = this.currentGame.player1_name;
+                document.getElementById('finalPlayer2').textContent = this.currentGame.player2_name;
+                document.getElementById('finalScore1').textContent = this.currentGame.score1;
+                document.getElementById('finalScore2').textContent = this.currentGame.score2;
+            }
+
+            showMessage(message, type = 'info') {
+                const messageDiv = document.createElement('div');
+                messageDiv.textContent = message;
+                messageDiv.style.cssText = `
+                    position: fixed;
+                    top: 20px;
+                    left: 50%;
+                    transform: translateX(-50%);
+                    background: ${type === 'error' ? '#ff4757' : type === 'success' ? '#2ed573' : '#667eea'};
+                    color: white;
+                    padding: 15px 20px;
+                    border-radius: 10px;
+                    z-index: 1000;
+                `;
+
+                document.body.appendChild(messageDiv);
+                setTimeout(() => {
+                    if (document.body.contains(messageDiv)) {
+                        document.body.removeChild(messageDiv);
+                    }
+                }, 3000);
+            }
+
+            showElement(id) {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.classList.remove('hidden');
+                }
+            }
+
+            hideElement(id) {
+                const element = document.getElementById(id);
+                if (element) {
+                    element.classList.add('hidden');
+                }
+            }
+        }
+
+        // Initialize
+        const tgApp = new TelegramApp();
+        const api = new NocoDBAPI();
+
+        // Global functions
+        function selectZone(zoneNumber) {
+            if (window.hockeyGame) {
+                window.hockeyGame.selectZone(zoneNumber);
+            }
+        }
+
+        function submitMove() {
+            if (window.hockeyGame) {
+                window.hockeyGame.submitMove();
+            }
+        }
+
+        function playAgain() {
+            window.location.reload();
+        }
+
+        function goHome() {
+            window.location.href = 'index.html';
+        }
+
+        // Initialize game when page loads
+        document.addEventListener('DOMContentLoaded', () => {
+            window.hockeyGame = new HockeyGame();
+        });
+    </script>
 </body>
 </html>
