@@ -4,379 +4,307 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Хоккейная Битва</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <title>Игровое меню</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-
+        
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Arial', sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: #333;
             min-height: 100vh;
-            padding: 10px;
-        }
-
-        .container {
-            max-width: 400px;
-            margin: 0 auto;
-            background: white;
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            overflow: hidden;
-            min-height: 90vh;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 20px;
-            text-align: center;
-        }
-
-        .header h1 {
-            font-size: 1.8rem;
-            margin-bottom: 5px;
-        }
-
-        .subtitle {
-            opacity: 0.9;
-            font-size: 0.9rem;
-        }
-
-        .menu {
-            padding: 30px 20px;
             display: flex;
-            flex-direction: column;
-            gap: 15px;
+            justify-content: center;
+            align-items: center;
         }
-
-        .btn {
-            padding: 15px 20px;
+        
+        .container {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            text-align: center;
+            min-width: 350px;
+        }
+        
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+        }
+        
+        .button {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            margin: 15px 0;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
             border: none;
             border-radius: 10px;
-            font-size: 1rem;
-            font-weight: 600;
+            font-size: 18px;
             cursor: pointer;
-            transition: all 0.3s ease;
-            text-decoration: none;
-            display: inline-block;
-            text-align: center;
+            transition: transform 0.2s, box-shadow 0.2s;
         }
-
-        .btn.primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .btn.primary:hover {
+        
+        .button:hover {
             transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 10px 20px rgba(0,0,0,0.2);
         }
-
-        .btn.secondary {
-            background: #f8f9fa;
+        
+        .button:active {
+            transform: translateY(0);
+        }
+        
+        .input-group {
+            margin: 20px 0;
+        }
+        
+        input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            margin: 10px 0;
+        }
+        
+        input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        
+        .loading {
+            display: none;
             color: #667eea;
-            border: 2px solid #667eea;
+            margin: 10px 0;
         }
-
-        .btn.secondary:hover {
-            background: #667eea;
-            color: white;
-        }
-
-        .rules {
-            margin: 20px;
-            padding: 20px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            border-left: 4px solid #667eea;
-        }
-
-        .rules.hidden {
+        
+        .error {
+            color: #e74c3c;
+            margin: 10px 0;
             display: none;
         }
-
-        .rules h3 {
-            color: #667eea;
-            margin-bottom: 15px;
-        }
-
-        .rules ul {
-            padding-left: 20px;
-        }
-
-        .rules li {
-            margin-bottom: 8px;
-            line-height: 1.4;
-        }
-
-        .footer {
-            text-align: center;
-            padding: 20px;
-            color: #666;
-            font-size: 0.9rem;
+        
+        .success {
+            color: #27ae60;
+            margin: 10px 0;
+            display: none;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>🏒 Хоккейная Битва</h1>
-            <p class="subtitle">Онлайн хоккейная дуэль</p>
+        <h1>🎮 Игровое меню</h1>
+        
+        <div class="input-group">
+            <input type="text" id="playerId" placeholder="Введите ваш ID игрока">
         </div>
         
-        <div class="menu">
-            <button class="btn primary" onclick="startGame()">
-                🎮 Играть
-            </button>
-            
-            <button class="btn secondary" onclick="goToProfile()">
-                👤 Профиль
-            </button>
-            
-            <button class="btn secondary" onclick="showRules()">
-                📋 Правила
-            </button>
+        <button class="button" id="createRoomBtn">Создать комнату</button>
+        
+        <div class="input-group">
+            <input type="text" id="roomCode" placeholder="Код комнаты для присоединения">
         </div>
         
-        <div id="rules" class="rules hidden">
-            <h3>Правила игры:</h3>
-            <ul>
-                <li>Игра до 3 очков</li>
-                <li>Нападающий выбирает 1 из 4 зон для броска</li>
-                <li>Защитник выбирает 2 из 4 зон для защиты</li>
-                <li>Гол засчитывается, если защитник не закрыл зону броска</li>
-                <li>После каждого раунда игроки меняются ролями</li>
-            </ul>
-        </div>
+        <button class="button" id="joinRoomBtn">Присоединиться к комнате</button>
         
-        <div class="footer">
-            <p>Добро пожаловать, <span id="username">Игрок</span>!</p>
-        </div>
+        <div class="loading" id="loading">⏳ Загрузка...</div>
+        <div class="error" id="error"></div>
+        <div class="success" id="success"></div>
     </div>
-    
+
     <script>
-        // Telegram Web App integration
-        class TelegramApp {
-            constructor() {
-                this.tg = window.Telegram?.WebApp;
-                this.user = null;
-                this.init();
-            }
-
-            init() {
-                if (this.tg) {
-                    this.tg.ready();
-                    this.tg.expand();
-                    this.user = this.tg.initDataUnsafe?.user;
-                    
-                    if (this.user) {
-                        this.displayUserInfo();
-                    } else {
-                        this.user = {
-                            id: Date.now(),
-                            username: 'test_user',
-                            first_name: 'Test',
-                            last_name: 'User'
-                        };
-                        this.displayUserInfo();
-                    }
-                } else {
-                    this.user = {
-                        id: Date.now(),
-                        username: 'test_user',
-                        first_name: 'Test',
-                        last_name: 'User'
-                    };
-                    this.displayUserInfo();
-                }
-            }
-
-            displayUserInfo() {
-                const usernameEl = document.getElementById('username');
-                if (usernameEl && this.user) {
-                    const displayName = this.user.first_name || this.user.username || 'Игрок';
-                    usernameEl.textContent = displayName;
-                }
-            }
-
-            getUserId() {
-                return this.user?.id || Date.now();
-            }
-
-            getUsername() {
-                return this.user?.username || 'unknown';
-            }
-
-            getDisplayName() {
-                return this.user?.first_name || this.user?.username || 'Игрок';
-            }
-
-            hapticFeedback(type = 'impact') {
-                if (this.tg?.HapticFeedback) {
-                    this.tg.HapticFeedback.impactOccurred('medium');
-                }
-            }
+        const API_BASE = 'https://app.nocodb.com/api/v2/tables/moziqqm4pwfy04n/records';
+        const API_TOKEN = 'PYcOrnVaN8u2Ab5-Jk-IDiyAxWERltZbL1dS8Otc';
+        
+        function showLoading() {
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('error').style.display = 'none';
+            document.getElementById('success').style.display = 'none';
         }
-
-        // NocoDB API
-        const API_CONFIG = {
-            baseUrl: 'https://app.nocodb.com/api/v2/tables',
-            token: 'bocQfycJpJsTG_tbwEf8ma8E5rhoig0njMDXFWtJ',
-            usersTable: 'mx65bowvjsniy3y',
-            gamesTable: 'mxqqwifh3hv5tdb'
-        };
-
-        class NocoDBAPI {
-            constructor() {
-                this.headers = {
-                    'Content-Type': 'application/json',
-                    'xc-token': API_CONFIG.token
-                };
-            }
-
-            async makeRequest(endpoint, method = 'GET', data = null) {
-                const url = `${API_CONFIG.baseUrl}/${endpoint}`;
-                
-                const options = {
-                    method,
-                    headers: this.headers
-                };
-
-                if (data && (method === 'POST' || method === 'PATCH')) {
-                    options.body = JSON.stringify(data);
-                }
-
-                try {
-                    const response = await fetch(url, options);
-                    if (!response.ok) {
-                        throw new Error(`HTTP error! status: ${response.status}`);
-                    }
-                    return await response.json();
-                } catch (error) {
-                    console.error('API Request failed:', error);
-                    throw error;
-                }
-            }
-
-            async getUser(telegramId) {
-                try {
-                    const response = await this.makeRequest(
-                        `${API_CONFIG.usersTable}/records?where=(telegram_id,eq,${telegramId})`
-                    );
-                    return response.list?.[0] || null;
-                } catch (error) {
-                    console.error('Failed to get user:', error);
-                    return null;
-                }
-            }
-
-            async createUser(userData) {
-                try {
-                    const response = await this.makeRequest(
-                        `${API_CONFIG.usersTable}/records`,
-                        'POST',
-                        userData
-                    );
-                    return response;
-                } catch (error) {
-                    console.error('Failed to create user:', error);
-                    throw error;
-                }
-            }
-
-            async getOrCreateUser(telegramId, username) {
-                let user = await this.getUser(telegramId);
-                
-                if (!user) {
-                    const userData = {
-                        telegram_id: telegramId,
-                        username: username || 'unknown',
-                        wins: 0,
-                        losses: 0,
-                        total_games: 0
-                    };
-                    
-                    try {
-                        const response = await this.createUser(userData);
-                        user = { Id: response.Id, ...userData };
-                    } catch (error) {
-                        console.error('Failed to create user:', error);
-                        user = {
-                            Id: 'mock_' + telegramId,
-                            telegram_id: telegramId,
-                            username: username || 'unknown',
-                            wins: 0,
-                            losses: 0,
-                            total_games: 0
-                        };
-                    }
-                }
-                
-                return user;
-            }
+        
+        function hideLoading() {
+            document.getElementById('loading').style.display = 'none';
         }
-
-        // Initialize
-        const tgApp = new TelegramApp();
-        const api = new NocoDBAPI();
-        let currentUser = null;
-
-        // Main menu functionality
-        document.addEventListener('DOMContentLoaded', async () => {
-            await initializeUser();
-        });
-
-        async function initializeUser() {
+        
+        function showError(message) {
+            hideLoading();
+            const errorDiv = document.getElementById('error');
+            errorDiv.textContent = message;
+            errorDiv.style.display = 'block';
+        }
+        
+        function showSuccess(message) {
+            hideLoading();
+            const successDiv = document.getElementById('success');
+            successDiv.textContent = message;
+            successDiv.style.display = 'block';
+        }
+        
+        function generateRoomCode() {
+            return Math.random().toString(36).substring(2, 8).toUpperCase();
+        }
+        
+        async function makeRequest(url, options = {}) {
+            const defaultOptions = {
+                headers: {
+                    'xc-auth': API_TOKEN,
+                    'Content-Type': 'application/json'
+                }
+            };
+            
+            const finalOptions = {
+                ...defaultOptions,
+                ...options,
+                headers: {
+                    ...defaultOptions.headers,
+                    ...options.headers
+                }
+            };
+            
             try {
-                const telegramId = tgApp.getUserId();
-                const username = tgApp.getUsername();
-                const displayName = tgApp.getDisplayName();
-                
-                currentUser = await api.getOrCreateUser(telegramId, username);
-                console.log('Current user:', currentUser);
-                
-                // Сохраняем данные пользователя в localStorage
-                const userData = {
-                    telegram_id: telegramId,
-                    username: username,
-                    display_name: displayName,
-                    user_id: currentUser.Id
-                };
-                localStorage.setItem('hockeyGameCurrentUser', JSON.stringify(userData));
-                console.log('User data saved to localStorage:', userData);
-                
-                const usernameEl = document.getElementById('username');
-                if (usernameEl) {
-                    usernameEl.textContent = displayName;
+                const response = await fetch(url, finalOptions);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
+                return await response.json();
             } catch (error) {
-                console.error('Failed to initialize user:', error);
+                console.error('Request failed:', error);
+                throw error;
             }
         }
-
-        function startGame() {
-            tgApp.hapticFeedback('medium');
-            window.location.href = 'game.html';
-        }
-
-        function goToProfile() {
-            tgApp.hapticFeedback('light');
-            window.location.href = 'profile.html';
-        }
-
-        function showRules() {
-            tgApp.hapticFeedback('light');
-            const rulesEl = document.getElementById('rules');
-            if (rulesEl) {
-                rulesEl.classList.toggle('hidden');
+        
+        async function createRoom() {
+            const playerId = document.getElementById('playerId').value.trim();
+            
+            if (!playerId) {
+                showError('Пожалуйста, введите ваш ID игрока');
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                const roomCode = generateRoomCode();
+                const roomData = {
+                    player1: playerId,
+                    player2: null,
+                    status: 'Ожидание',
+                    room_code: roomCode
+                };
+                
+                const response = await makeRequest(API_BASE, {
+                    method: 'POST',
+                    body: JSON.stringify(roomData)
+                });
+                
+                showSuccess(`Комната создана! Код: ${roomCode}`);
+                
+                // Сохраняем данные в localStorage для передачи на страницу игры
+                localStorage.setItem('gameData', JSON.stringify({
+                    roomId: response.Id,
+                    roomCode: roomCode,
+                    playerId: playerId,
+                    isCreator: true
+                }));
+                
+                setTimeout(() => {
+                    window.location.href = 'game.html';
+                }, 2000);
+                
+            } catch (error) {
+                showError('Ошибка при создании комнаты. Попробуйте снова.');
+                console.error('Create room error:', error);
             }
         }
+        
+        async function joinRoom() {
+            const playerId = document.getElementById('playerId').value.trim();
+            const roomCode = document.getElementById('roomCode').value.trim();
+            
+            if (!playerId) {
+                showError('Пожалуйста, введите ваш ID игрока');
+                return;
+            }
+            
+            if (!roomCode) {
+                showError('Пожалуйста, введите код комнаты');
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                // Поиск комнаты по коду
+                const searchResponse = await makeRequest(`${API_BASE}?where=(room_code,eq,${roomCode})`);
+                
+                if (!searchResponse.list || searchResponse.list.length === 0) {
+                    showError('Комната с таким кодом не найдена');
+                    return;
+                }
+                
+                const room = searchResponse.list[0];
+                
+                if (room.status !== 'Ожидание') {
+                    showError('Комната уже занята или игра уже началась');
+                    return;
+                }
+                
+                if (room.player2) {
+                    showError('В комнате уже есть второй игрок');
+                    return;
+                }
+                
+                // Присоединение к комнате
+                const updateData = {
+                    player2: playerId,
+                    status: 'Игра'
+                };
+                
+                await makeRequest(`${API_BASE}/${room.Id}`, {
+                    method: 'PATCH',
+                    body: JSON.stringify(updateData)
+                });
+                
+                showSuccess('Успешно присоединились к комнате!');
+                
+                // Сохраняем данные в localStorage для передачи на страницу игры
+                localStorage.setItem('gameData', JSON.stringify({
+                    roomId: room.Id,
+                    roomCode: roomCode,
+                    playerId: playerId,
+                    isCreator: false
+                }));
+                
+                setTimeout(() => {
+                    window.location.href = 'game.html';
+                }, 2000);
+                
+            } catch (error) {
+                showError('Ошибка при присоединении к комнате. Попробуйте снова.');
+                console.error('Join room error:', error);
+            }
+        }
+        
+        document.getElementById('createRoomBtn').addEventListener('click', createRoom);
+        document.getElementById('joinRoomBtn').addEventListener('click', joinRoom);
+        
+        // Обработка Enter в полях ввода
+        document.getElementById('playerId').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                createRoom();
+            }
+        });
+        
+        document.getElementById('roomCode').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                joinRoom();
+            }
+        });
     </script>
 </body>
 </html>
