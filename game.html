@@ -72,6 +72,7 @@
             font-size: 20px;
             margin-bottom: 10px;
             color: var(--accent-light);
+            text-align: center;
         }
 
         .btn {
@@ -113,6 +114,17 @@
 
         .btn-secondary:hover:not(:disabled) {
             background: rgba(255, 255, 255, 0.2);
+        }
+
+        .create-room-container {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 20px;
+        }
+
+        .create-room-btn {
+            width: 100%;
+            max-width: 300px;
         }
 
         .rooms-list {
@@ -330,6 +342,156 @@
         .back-to-menu-btn:hover {
             background: rgba(0, 0, 0, 0.5);
         }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Игровые стили */
+        .game-view {
+            display: none;
+            flex-direction: column;
+            gap: 20px;
+            padding: 20px;
+            background: var(--card-bg);
+            border-radius: 12px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .game-info {
+            text-align: center;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+
+        .game-score {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin: 20px 0;
+        }
+
+        .player-score {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .score-number {
+            font-size: 36px;
+            font-weight: bold;
+            color: var(--accent-light);
+        }
+
+        .game-field {
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .goal-areas {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 10px;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+
+        .goal-area {
+            width: 100px;
+            height: 80px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .goal-area:hover {
+            border-color: var(--accent-light);
+            background: rgba(231, 76, 60, 0.2);
+        }
+
+        .goal-area.selected {
+            background: var(--accent);
+            border-color: var(--accent-light);
+        }
+
+        .goal-area.goal {
+            background: rgba(76, 175, 80, 0.5);
+            border-color: #4CAF50;
+        }
+
+        .goal-area.save {
+            background: rgba(231, 76, 60, 0.5);
+            border-color: var(--accent);
+        }
+
+        .defense-areas {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            gap: 10px;
+            max-width: 300px;
+            margin: 0 auto;
+        }
+
+        .defense-area {
+            width: 100px;
+            height: 80px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .defense-area:hover {
+            border-color: var(--accent-light);
+            background: rgba(231, 76, 60, 0.2);
+        }
+
+        .defense-area.selected {
+            background: var(--accent);
+            border-color: var(--accent-light);
+        }
+
+        .game-actions {
+            display: flex;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .result-display {
+            text-align: center;
+            font-size: 18px;
+            margin: 20px 0;
+            padding: 15px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
     </style>
 </head>
 <body>
@@ -340,8 +502,7 @@
     <div class="header">
         <div class="app-title">Hockey Shootouts</div>
         <div class="balance" id="balance">
-            <span>Клюшек: 0</span> 
-            <span>🏒</span>
+            Клюшек: 0 🏒
         </div>
     </div>
 
@@ -350,19 +511,20 @@
         <div id="rooms-screen">
             <div class="section-title">Доступные комнаты</div>
 
-            <div class="rooms-list" id="rooms-list">
-                <!-- Список комнат будет здесь -->
-                <div class="empty-message">Загрузка комнат...</div>
+            <div class="create-room-container">
+                <button class="btn btn-primary create-room-btn" id="create-room-btn">
+                    <span>Создать комнату</span>
+                </button>
             </div>
 
-            <button class="btn btn-primary" id="create-room-btn">
-                <span>Создать комнату</span>
-            </button>
+            <div class="rooms-list" id="rooms-list">
+                <div class="empty-message"><div class="loading"></div> Загрузка комнат...</div>
+            </div>
         </div>
 
         <!-- Экран просмотра комнаты -->
         <div class="room-view" id="room-view">
-            <div class="room-bet-display" id="room-bet-display">Ставка: 10 клюшек</div>
+            <div class="room-bet-display" id="room-bet-display">Ставка: 1 клюшка</div>
 
             <div class="room-players">
                 <div class="player-card">
@@ -383,6 +545,61 @@
                 <button class="btn btn-primary" id="start-game-btn" style="display: none;">Начать игру</button>
             </div>
         </div>
+
+        <!-- Экран игры -->
+        <div class="game-view" id="game-view">
+            <div class="game-info">
+                <div id="game-status">Ожидание начала игры...</div>
+                <div id="current-turn"></div>
+            </div>
+
+            <div class="game-score">
+                <div class="player-score">
+                    <div class="player-name" id="game-player1-name">Игрок 1</div>
+                    <div class="score-number" id="game-player1-score">0</div>
+                </div>
+                <div style="font-size: 24px;">:</div>
+                <div class="player-score">
+                    <div class="player-name" id="game-player2-name">Игрок 2</div>
+                    <div class="score-number" id="game-player2-score">0</div>
+                </div>
+            </div>
+
+            <div class="game-field">
+                <div id="shoot-phase" style="display: none;">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <h3>Выберите область для удара:</h3>
+                    </div>
+                    <div class="goal-areas" id="goal-areas">
+                        <div class="goal-area" data-area="1">Верх<br>лево</div>
+                        <div class="goal-area" data-area="2">Верх<br>право</div>
+                        <div class="goal-area" data-area="3">Низ<br>лево</div>
+                        <div class="goal-area" data-area="4">Низ<br>право</div>
+                    </div>
+                </div>
+
+                <div id="defend-phase" style="display: none;">
+                    <div style="text-align: center; margin-bottom: 20px;">
+                        <h3>Выберите 2 области для защиты:</h3>
+                        <div style="font-size: 14px; color: var(--text-secondary);">
+                            Выбрано: <span id="selected-count">0</span>/2
+                        </div>
+                    </div>
+                    <div class="defense-areas" id="defense-areas">
+                        <div class="defense-area" data-area="1">Верх<br>лево</div>
+                        <div class="defense-area" data-area="2">Верх<br>право</div>
+                        <div class="defense-area" data-area="3">Низ<br>лево</div>
+                        <div class="defense-area" data-area="4">Низ<br>право</div>
+                    </div>
+                </div>
+
+                <div class="result-display" id="result-display" style="display: none;"></div>
+            </div>
+
+            <div class="game-actions">
+                <button class="btn btn-primary" id="confirm-action-btn" style="display: none;">Подтвердить</button>
+            </div>
+        </div>
     </div>
 
     <!-- Модальное окно создания комнаты -->
@@ -392,12 +609,14 @@
 
             <div class="input-group">
                 <label for="room-bet">Ставка (клюшек)</label>
-                <input type="number" id="room-bet" min="1" value="10">
+                <input type="number" id="room-bet" min="1" value="1">
             </div>
 
             <div class="modal-buttons">
                 <button class="btn btn-secondary" id="cancel-create-btn">Отмена</button>
-                <button class="btn btn-primary" id="confirm-create-btn">Создать</button>
+                <button class="btn btn-primary" id="confirm-create-btn">
+                    <span class="btn-text">Создать</span>
+                </button>
             </div>
         </div>
     </div>
@@ -418,14 +637,27 @@
         let currentRoom = null;
         let roomsRefreshInterval = null;
         let roomRefreshInterval = null;
+        let gameRefreshInterval = null;
         let userBalance = 0;
         let isLeaving = false;
+        let isCreatingRoom = false;
+
+        // Игровые переменные
+        let gameState = {
+            player1: { id: null, name: '', score: 0 },
+            player2: { id: null, name: '', score: 0 },
+            currentTurn: 1, // 1 или 2
+            phase: 'shoot', // 'shoot' или 'defend'
+            selectedShootArea: null,
+            selectedDefenseAreas: [],
+            isMyTurn: false,
+            gameStarted: false
+        };
 
         // Проверяем, запущено ли в Telegram WebApp
         if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
             currentUser = tg.initDataUnsafe.user;
         } else {
-            // Если не в Telegram WebApp, показываем тестовые данные
             currentUser = {
                 id: 12345,
                 first_name: "Тестовый",
@@ -438,19 +670,11 @@
         init();
 
         async function init() {
-            // Загружаем баланс пользователя
             userBalance = await loadUserBalance(currentUser.id);
-
-            // Очищаем старые комнаты пользователя при загрузке
             await cleanupUserRooms();
-
-            // Проверяем, есть ли у пользователя активная комната
             await checkActiveRoom();
-
-            // Загружаем список комнат
             await loadRooms();
 
-            // Настройка интервала для обновления списка комнат
             if (!currentRoom) {
                 roomsRefreshInterval = setInterval(loadRooms, 3000);
             }
@@ -461,6 +685,18 @@
         document.getElementById('cancel-create-btn').addEventListener('click', hideCreateRoomModal);
         document.getElementById('confirm-create-btn').addEventListener('click', createRoom);
         document.getElementById('leave-room-btn').addEventListener('click', leaveRoom);
+        document.getElementById('start-game-btn').addEventListener('click', startGame);
+        document.getElementById('confirm-action-btn').addEventListener('click', confirmAction);
+
+        // Обработчики игровых областей
+        document.addEventListener('click', function(e) {
+            if (e.target.classList.contains('goal-area')) {
+                selectGoalArea(e.target);
+            }
+            if (e.target.classList.contains('defense-area')) {
+                selectDefenseArea(e.target);
+            }
+        });
 
         // Функция для загрузки баланса пользователя
         async function loadUserBalance(userId) {
@@ -474,7 +710,7 @@
                 const data = await response.json();
                 if (data.list.length > 0) {
                     const balance = data.list[0].point || 0;
-                    document.getElementById('balance').innerHTML = `<span>Клюшек: ${balance}</span> <span>🏒</span>`;
+                    document.getElementById('balance').textContent = `Клюшек: ${balance} 🏒`;
                     return balance;
                 }
                 return 0;
@@ -487,7 +723,6 @@
         // Функция для очистки старых комнат пользователя
         async function cleanupUserRooms() {
             try {
-                // Удаляем комнаты где пользователь создатель
                 const creatorRooms = await fetch(`${ROOMS_API}?where=(id_creator,eq,${currentUser.id})`, {
                     headers: {
                         "xc-token": NOCODB_KEY
@@ -504,7 +739,6 @@
                     });
                 }
 
-                // Очищаем комнаты где пользователь присоединился
                 const joinerRooms = await fetch(`${ROOMS_API}?where=(id_joining,eq,${currentUser.id})`, {
                     headers: {
                         "xc-token": NOCODB_KEY
@@ -552,7 +786,6 @@
                 roomsList.innerHTML = '';
 
                 data.list.forEach(room => {
-                    // Пропускаем комнаты, созданные текущим пользователем
                     if (room.id_creator == currentUser.id) return;
 
                     const roomCard = document.createElement('div');
@@ -571,7 +804,6 @@
                     roomsList.appendChild(roomCard);
                 });
 
-                // Добавляем обработчики для кнопок присоединения
                 document.querySelectorAll('.join-room-btn').forEach(btn => {
                     btn.addEventListener('click', joinRoom);
                 });
@@ -585,7 +817,6 @@
         // Функция для проверки активной комнаты пользователя
         async function checkActiveRoom() {
             try {
-                // Проверяем, есть ли комната, где пользователь создатель
                 const creatorResponse = await fetch(`${ROOMS_API}?where=(id_creator,eq,${currentUser.id})`, {
                     headers: {
                         "xc-token": NOCODB_KEY
@@ -599,7 +830,6 @@
                     return;
                 }
 
-                // Проверяем, есть ли комната, где пользователь присоединившийся
                 const joinerResponse = await fetch(`${ROOMS_API}?where=(id_joining,eq,${currentUser.id})`, {
                     headers: {
                         "xc-token": NOCODB_KEY
@@ -624,11 +854,14 @@
 
         // Функция для скрытия модального окна создания комнаты
         function hideCreateRoomModal() {
+            if (isCreatingRoom) return;
             document.getElementById('create-room-modal').style.display = 'none';
         }
 
         // Функция для создания комнаты
         async function createRoom() {
+            if (isCreatingRoom) return;
+
             const bet = parseInt(document.getElementById('room-bet').value);
 
             if (isNaN(bet) || bet <= 0) {
@@ -636,7 +869,6 @@
                 return;
             }
 
-            // Проверяем баланс пользователя
             userBalance = await loadUserBalance(currentUser.id);
 
             if (userBalance < bet) {
@@ -644,10 +876,16 @@
                 return;
             }
 
+            isCreatingRoom = true;
+            const confirmBtn = document.getElementById('confirm-create-btn');
+            const cancelBtn = document.getElementById('cancel-create-btn');
+            
+            confirmBtn.innerHTML = '<div class="loading"></div> Создание...';
+            confirmBtn.disabled = true;
+            cancelBtn.disabled = true;
+
             try {
                 const fullName = `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim();
-                
-                // Получаем аватар пользователя
                 const userAvatar = await getUserAvatar(currentUser.id);
 
                 const response = await fetch(ROOMS_API, {
@@ -666,18 +904,18 @@
                 });
 
                 const data = await response.json();
-
-                // Показываем созданную комнату
                 showRoom(data);
-
-                // Скрываем модальное окно
                 hideCreateRoomModal();
-
                 showNotification('Комната создана! Ожидание второго игрока...');
 
             } catch (error) {
                 console.error("Ошибка при создании комнаты:", error);
                 showNotification('Ошибка при создании комнаты');
+            } finally {
+                isCreatingRoom = false;
+                confirmBtn.innerHTML = '<span class="btn-text">Создать</span>';
+                confirmBtn.disabled = false;
+                cancelBtn.disabled = false;
             }
         }
 
@@ -706,7 +944,6 @@
             const roomId = event.target.getAttribute('data-room-id');
 
             try {
-                // Получаем информацию о комнате
                 const roomResponse = await fetch(`${ROOMS_API}/${roomId}`, {
                     headers: {
                         "xc-token": NOCODB_KEY
@@ -715,7 +952,6 @@
 
                 const room = await roomResponse.json();
 
-                // Проверяем баланс пользователя
                 userBalance = await loadUserBalance(currentUser.id);
 
                 if (userBalance < room.bet) {
@@ -723,7 +959,6 @@
                     return;
                 }
 
-                // Обновляем комнату
                 const fullName = `${currentUser.first_name || ''} ${currentUser.last_name || ''}`.trim();
                 const userAvatar = await getUserAvatar(currentUser.id);
 
@@ -742,10 +977,7 @@
                 });
 
                 const updatedRoom = await updateResponse.json();
-
-                // Показываем комнату
                 showRoom(updatedRoom);
-
                 showNotification('Вы присоединились к комнате!');
 
             } catch (error) {
@@ -758,8 +990,14 @@
         async function leaveRoom() {
             if (!currentRoom) return;
 
-            // Если в комнате два игрока - блокируем выход
-            if (currentRoom.id_joining && currentRoom.id_creator) {
+            if (currentRoom.status === 'playing') {
+                if (confirm('Вы уверены, что хотите покинуть игру? Ставка будет возвращена сопернику.')) {
+                    await endGameDueToLeave();
+                }
+                return;
+            }
+
+            if (currentRoom.id_joining && currentRoom.id_creator && currentRoom.status === 'waiting') {
                 showNotification('Нельзя покинуть комнату когда присоединился второй игрок!');
                 return;
             }
@@ -767,7 +1005,6 @@
             isLeaving = true;
 
             try {
-                // Если пользователь создатель - удаляем комнату
                 if (currentRoom.id_creator == currentUser.id) {
                     await fetch(`${ROOMS_API}/${currentRoom.Id}`, {
                         method: 'DELETE',
@@ -776,7 +1013,6 @@
                         }
                     });
                 } else {
-                    // Если пользователь присоединившийся - обновляем комнату
                     await fetch(`${ROOMS_API}/${currentRoom.Id}`, {
                         method: 'PATCH',
                         headers: {
@@ -792,9 +1028,7 @@
                     });
                 }
 
-                // Возвращаемся к списку комнат
                 hideRoom();
-
                 showNotification('Вы покинули комнату');
 
             } catch (error) {
@@ -809,40 +1043,38 @@
         function showRoom(room) {
             currentRoom = room;
 
-            // Останавливаем обновление списка комнат
             if (roomsRefreshInterval) {
                 clearInterval(roomsRefreshInterval);
                 roomsRefreshInterval = null;
             }
 
-            // Настраиваем интервал для обновления состояния комнаты
+            if (room.status === 'playing') {
+                initializeGame(room);
+                return;
+            }
+
             if (roomRefreshInterval) clearInterval(roomRefreshInterval);
             roomRefreshInterval = setInterval(() => refreshRoom(room.Id), 2000);
 
-            // Обновляем UI
             document.getElementById('rooms-screen').style.display = 'none';
             document.getElementById('room-view').style.display = 'flex';
+            document.getElementById('game-view').style.display = 'none';
 
-            // Заполняем данные комнаты
             document.getElementById('room-bet-display').textContent = `Ставка: ${room.bet} клюшек`;
             document.getElementById('creator-name').textContent = room.name_creator || 'Игрок';
 
-            // Устанавливаем аватар создателя
             setPlayerAvatar('creator-avatar', room.avatar_creator);
 
             if (room.id_joining) {
                 document.getElementById('joiner-name').textContent = room.name_joining || 'Игрок';
                 document.getElementById('joiner-status').textContent = 'Присоединился';
 
-                // Устанавливаем аватар присоединившегося
                 setPlayerAvatar('joiner-avatar', room.avatar_joining);
 
-                // Блокируем кнопку выхода когда оба игрока в комнате
                 const leaveBtn = document.getElementById('leave-room-btn');
                 leaveBtn.disabled = true;
                 leaveBtn.textContent = 'Выход заблокирован';
 
-                // Если текущий пользователь создатель комнаты и есть второй игрок - показываем кнопку начала игры
                 if (room.id_creator == currentUser.id) {
                     document.getElementById('start-game-btn').style.display = 'flex';
                 }
@@ -851,7 +1083,6 @@
                 document.getElementById('joiner-status').textContent = 'Свободно';
                 document.getElementById('joiner-avatar').innerHTML = '👤';
                 
-                // Разблокируем кнопку выхода
                 const leaveBtn = document.getElementById('leave-room-btn');
                 leaveBtn.disabled = false;
                 leaveBtn.textContent = 'Покинуть комнату';
@@ -877,15 +1108,17 @@
                 clearInterval(roomRefreshInterval);
                 roomRefreshInterval = null;
             }
+            if (gameRefreshInterval) {
+                clearInterval(gameRefreshInterval);
+                gameRefreshInterval = null;
+            }
 
-            // Возобновляем обновление списка комнат
             roomsRefreshInterval = setInterval(loadRooms, 3000);
 
-            // Обновляем UI
             document.getElementById('rooms-screen').style.display = 'flex';
             document.getElementById('room-view').style.display = 'none';
+            document.getElementById('game-view').style.display = 'none';
 
-            // Перезагружаем список комнат
             loadRooms();
         }
 
@@ -898,7 +1131,6 @@
                     }
                 });
 
-                // Если комнаты нет (удалена) - возвращаемся к списку
                 if (!response.ok) {
                     showNotification('Соперник покинул игру. Комната закрыта.');
                     hideRoom();
@@ -907,14 +1139,17 @@
 
                 const room = await response.json();
 
-                // Если комнаты нет - возвращаемся к списку
                 if (!room || !room.Id) {
                     showNotification('Соперник покинул игру. Комната закрыта.');
                     hideRoom();
                     return;
                 }
 
-                // Проверяем, не вышел ли соперник
+                if (room.status === 'playing') {
+                    initializeGame(room);
+                    return;
+                }
+
                 const wasOpponentInRoom = currentRoom.id_joining;
                 const isOpponentInRoom = room.id_joining;
 
@@ -922,23 +1157,18 @@
                     showNotification('Соперник покинул игру!');
                 }
 
-                // Обновляем данные комнаты
                 currentRoom = room;
 
-                // Обновляем UI
                 if (room.id_joining) {
                     document.getElementById('joiner-name').textContent = room.name_joining || 'Игрок';
                     document.getElementById('joiner-status').textContent = 'Присоединился';
 
-                    // Устанавливаем аватар присоединившегося
                     setPlayerAvatar('joiner-avatar', room.avatar_joining);
 
-                    // Блокируем кнопку выхода когда оба игрока в комнате
                     const leaveBtn = document.getElementById('leave-room-btn');
                     leaveBtn.disabled = true;
                     leaveBtn.textContent = 'Выход заблокирован';
 
-                    // Если текущий пользователь создатель комнаты и есть второй игрок - показываем кнопку начала игры
                     if (room.id_creator == currentUser.id) {
                         document.getElementById('start-game-btn').style.display = 'flex';
                     }
@@ -947,7 +1177,6 @@
                     document.getElementById('joiner-status').textContent = 'Свободно';
                     document.getElementById('joiner-avatar').innerHTML = '👤';
                     
-                    // Разблокируем кнопку выхода
                     const leaveBtn = document.getElementById('leave-room-btn');
                     leaveBtn.disabled = false;
                     leaveBtn.textContent = 'Покинуть комнату';
@@ -958,6 +1187,425 @@
             } catch (error) {
                 console.error("Ошибка при обновлении комнаты:", error);
                 showNotification('Ошибка соединения. Возвращение к списку комнат...');
+                hideRoom();
+            }
+        }
+
+        // Функция для начала игры
+        async function startGame() {
+            if (!currentRoom || !currentRoom.id_joining) {
+                showNotification('Нужно дождаться второго игрока');
+                return;
+            }
+
+            try {
+                // Снимаем ставки с игроков
+                await deductBets();
+
+                // Обновляем статус комнаты
+                await fetch(`${ROOMS_API}/${currentRoom.Id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        "xc-token": NOCODB_KEY
+                    },
+                    body: JSON.stringify({
+                        status: "playing",
+                        game_data: JSON.stringify({
+                            player1: { id: currentRoom.id_creator, name: currentRoom.name_creator, score: 0 },
+                            player2: { id: currentRoom.id_joining, name: currentRoom.name_joining, score: 0 },
+                            currentTurn: 1,
+                            phase: 'shoot',
+                            selectedShootArea: null,
+                            selectedDefenseAreas: [],
+                            gameStarted: true
+                        })
+                    })
+                });
+
+                const updatedRoom = await fetch(`${ROOMS_API}/${currentRoom.Id}`, {
+                    headers: {
+                        "xc-token": NOCODB_KEY
+                    }
+                });
+
+                const roomData = await updatedRoom.json();
+                initializeGame(roomData);
+
+            } catch (error) {
+                console.error("Ошибка при начале игры:", error);
+                showNotification('Ошибка при начале игры');
+            }
+        }
+
+        // Функция для снятия ставок
+        async function deductBets() {
+            const bet = currentRoom.bet;
+
+            // Снимаем ставку с создателя
+            const creatorResponse = await fetch(`${NOCODB_API}?where=(tg_user_id,eq,${currentRoom.id_creator})`, {
+                headers: {
+                    "xc-token": NOCODB_KEY
+                }
+            });
+            const creatorData = await creatorResponse.json();
+            if (creatorData.list.length > 0) {
+                await fetch(`${NOCODB_API}/${creatorData.list[0].Id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        "xc-token": NOCODB_KEY
+                    },
+                    body: JSON.stringify({
+                        point: Math.max(0, (creatorData.list[0].point || 0) - bet)
+                    })
+                });
+            }
+
+            // Снимаем ставку с присоединившегося
+            const joinerResponse = await fetch(`${NOCODB_API}?where=(tg_user_id,eq,${currentRoom.id_joining})`, {
+                headers: {
+                    "xc-token": NOCODB_KEY
+                }
+            });
+            const joinerData = await joinerResponse.json();
+            if (joinerData.list.length > 0) {
+                await fetch(`${NOCODB_API}/${joinerData.list[0].Id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        "xc-token": NOCODB_KEY
+                    },
+                    body: JSON.stringify({
+                        point: Math.max(0, (joinerData.list[0].point || 0) - bet)
+                    })
+                });
+            }
+
+            // Обновляем баланс текущего пользователя
+            userBalance = await loadUserBalance(currentUser.id);
+        }
+
+        // Функция для инициализации игры
+        function initializeGame(room) {
+            currentRoom = room;
+            
+            if (roomRefreshInterval) {
+                clearInterval(roomRefreshInterval);
+                roomRefreshInterval = null;
+            }
+
+            if (gameRefreshInterval) clearInterval(gameRefreshInterval);
+            gameRefreshInterval = setInterval(() => refreshGame(room.Id), 2000);
+
+            // Парсим игровые данные
+            if (room.game_data) {
+                gameState = JSON.parse(room.game_data);
+            }
+
+            document.getElementById('rooms-screen').style.display = 'none';
+            document.getElementById('room-view').style.display = 'none';
+            document.getElementById('game-view').style.display = 'flex';
+
+            updateGameUI();
+        }
+
+        // Функция для обновления UI игры
+        function updateGameUI() {
+            document.getElementById('game-player1-name').textContent = gameState.player1.name || 'Игрок 1';
+            document.getElementById('game-player2-name').textContent = gameState.player2.name || 'Игрок 2';
+            document.getElementById('game-player1-score').textContent = gameState.player1.score;
+            document.getElementById('game-player2-score').textContent = gameState.player2.score;
+
+            const currentPlayerId = gameState.currentTurn === 1 ? gameState.player1.id : gameState.player2.id;
+            const isMyTurn = currentPlayerId == currentUser.id;
+
+            if (gameState.phase === 'shoot') {
+                if (isMyTurn) {
+                    document.getElementById('game-status').textContent = 'Ваш ход - выберите область для удара';
+                    document.getElementById('current-turn').textContent = '';
+                } else {
+                    document.getElementById('game-status').textContent = 'Ход соперника';
+                    document.getElementById('current-turn').textContent = 'Соперник выбирает область для удара...';
+                }
+
+                document.getElementById('shoot-phase').style.display = isMyTurn ? 'block' : 'none';
+                document.getElementById('defend-phase').style.display = 'none';
+            } else {
+                if (isMyTurn) {
+                    document.getElementById('game-status').textContent = 'Ваш ход - выберите области для защиты';
+                    document.getElementById('current-turn').textContent = '';
+                } else {
+                    document.getElementById('game-status').textContent = 'Ход соперника';
+                    document.getElementById('current-turn').textContent = 'Соперник выбирает области для защиты...';
+                }
+
+                document.getElementById('shoot-phase').style.display = 'none';
+                document.getElementById('defend-phase').style.display = isMyTurn ? 'block' : 'none';
+            }
+
+            document.getElementById('result-display').style.display = 'none';
+            document.getElementById('confirm-action-btn').style.display = isMyTurn ? 'block' : 'none';
+
+            // Очищаем выбранные области
+            clearSelections();
+        }
+
+        // Функция для выбора области удара
+        function selectGoalArea(element) {
+            clearSelections();
+            element.classList.add('selected');
+            gameState.selectedShootArea = parseInt(element.getAttribute('data-area'));
+            document.getElementById('confirm-action-btn').style.display = 'block';
+        }
+
+        // Функция для выбора области защиты
+        function selectDefenseArea(element) {
+            const area = parseInt(element.getAttribute('data-area'));
+            
+            if (element.classList.contains('selected')) {
+                element.classList.remove('selected');
+                gameState.selectedDefenseAreas = gameState.selectedDefenseAreas.filter(a => a !== area);
+            } else {
+                if (gameState.selectedDefenseAreas.length < 2) {
+                    element.classList.add('selected');
+                    gameState.selectedDefenseAreas.push(area);
+                }
+            }
+
+            document.getElementById('selected-count').textContent = gameState.selectedDefenseAreas.length;
+            
+            if (gameState.selectedDefenseAreas.length === 2) {
+                document.getElementById('confirm-action-btn').style.display = 'block';
+            } else {
+                document.getElementById('confirm-action-btn').style.display = 'none';
+            }
+        }
+
+        // Функция для очистки выбранных областей
+        function clearSelections() {
+            document.querySelectorAll('.goal-area.selected, .defense-area.selected').forEach(el => {
+                el.classList.remove('selected');
+            });
+            gameState.selectedShootArea = null;
+            gameState.selectedDefenseAreas = [];
+            document.getElementById('selected-count').textContent = '0';
+        }
+
+        // Функция для подтверждения действия
+        async function confirmAction() {
+            if (gameState.phase === 'shoot' && gameState.selectedShootArea) {
+                await submitShootAction();
+            } else if (gameState.phase === 'defend' && gameState.selectedDefenseAreas.length === 2) {
+                await submitDefendAction();
+            }
+        }
+
+        // Функция для отправки действия удара
+        async function submitShootAction() {
+            try {
+                const updatedGameState = { ...gameState };
+                updatedGameState.phase = 'defend';
+
+                await fetch(`${ROOMS_API}/${currentRoom.Id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        "xc-token": NOCODB_KEY
+                    },
+                    body: JSON.stringify({
+                        game_data: JSON.stringify(updatedGameState)
+                    })
+                });
+
+                document.getElementById('confirm-action-btn').style.display = 'none';
+                document.getElementById('shoot-phase').style.display = 'none';
+                document.getElementById('game-status').textContent = 'Ожидание защиты соперника...';
+
+            } catch (error) {
+                console.error("Ошибка при отправке удара:", error);
+            }
+        }
+
+        // Функция для отправки действия защиты
+        async function submitDefendAction() {
+            try {
+                const updatedGameState = { ...gameState };
+                
+                // Определяем результат
+                const isGoal = !updatedGameState.selectedDefenseAreas.includes(updatedGameState.selectedShootArea);
+                
+                if (isGoal) {
+                    if (updatedGameState.currentTurn === 1) {
+                        updatedGameState.player1.score++;
+                    } else {
+                        updatedGameState.player2.score++;
+                    }
+                } else {
+                    // Очко получает защитник
+                    if (updatedGameState.currentTurn === 1) {
+                        updatedGameState.player2.score++;
+                    } else {
+                        updatedGameState.player1.score++;
+                    }
+                }
+
+                // Проверяем завершение игры
+                if (updatedGameState.player1.score >= 3 || updatedGameState.player2.score >= 3) {
+                    await endGame(updatedGameState);
+                    return;
+                }
+
+                // Меняем ход
+                updatedGameState.currentTurn = updatedGameState.currentTurn === 1 ? 2 : 1;
+                updatedGameState.phase = 'shoot';
+                updatedGameState.selectedShootArea = null;
+                updatedGameState.selectedDefenseAreas = [];
+
+                await fetch(`${ROOMS_API}/${currentRoom.Id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        "xc-token": NOCODB_KEY
+                    },
+                    body: JSON.stringify({
+                        game_data: JSON.stringify(updatedGameState)
+                    })
+                });
+
+                // Показываем результат раунда
+                const resultText = isGoal ? 'ГОЛ!' : 'СЕЙВ!';
+                document.getElementById('result-display').textContent = resultText;
+                document.getElementById('result-display').style.display = 'block';
+
+                setTimeout(() => {
+                    document.getElementById('result-display').style.display = 'none';
+                }, 2000);
+
+            } catch (error) {
+                console.error("Ошибка при отправке защиты:", error);
+            }
+        }
+
+        // Функция для завершения игры
+        async function endGame(finalGameState) {
+            const winner = finalGameState.player1.score >= 3 ? finalGameState.player1 : finalGameState.player2;
+            const prize = currentRoom.bet * 2;
+
+            // Начисляем выигрыш
+            const winnerResponse = await fetch(`${NOCODB_API}?where=(tg_user_id,eq,${winner.id})`, {
+                headers: {
+                    "xc-token": NOCODB_KEY
+                }
+            });
+            const winnerData = await winnerResponse.json();
+            if (winnerData.list.length > 0) {
+                await fetch(`${NOCODB_API}/${winnerData.list[0].Id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        "xc-token": NOCODB_KEY
+                    },
+                    body: JSON.stringify({
+                        point: (winnerData.list[0].point || 0) + prize
+                    })
+                });
+            }
+
+            // Удаляем комнату
+            await fetch(`${ROOMS_API}/${currentRoom.Id}`, {
+                method: 'DELETE',
+                headers: {
+                    "xc-token": NOCODB_KEY
+                }
+            });
+
+            // Показываем результат
+            const isWinner = winner.id == currentUser.id;
+            const resultMessage = isWinner ? 
+                `Поздравляем! Вы выиграли ${prize} клюшек!` : 
+                `Вы проиграли. Победитель: ${winner.name}`;
+
+            showNotification(resultMessage);
+
+            // Обновляем баланс
+            userBalance = await loadUserBalance(currentUser.id);
+
+            // Возвращаемся к списку комнат
+            setTimeout(() => {
+                hideRoom();
+            }, 3000);
+        }
+
+        // Функция для завершения игры при выходе игрока
+        async function endGameDueToLeave() {
+            if (!currentRoom) return;
+
+            const opponentId = currentRoom.id_creator == currentUser.id ? currentRoom.id_joining : currentRoom.id_creator;
+            const refund = currentRoom.bet * 2;
+
+            // Возвращаем ставку сопернику
+            const opponentResponse = await fetch(`${NOCODB_API}?where=(tg_user_id,eq,${opponentId})`, {
+                headers: {
+                    "xc-token": NOCODB_KEY
+                }
+            });
+            const opponentData = await opponentResponse.json();
+            if (opponentData.list.length > 0) {
+                await fetch(`${NOCODB_API}/${opponentData.list[0].Id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        "xc-token": NOCODB_KEY
+                    },
+                    body: JSON.stringify({
+                        point: (opponentData.list[0].point || 0) + refund
+                    })
+                });
+            }
+
+            // Удаляем комнату
+            await fetch(`${ROOMS_API}/${currentRoom.Id}`, {
+                method: 'DELETE',
+                headers: {
+                    "xc-token": NOCODB_KEY
+                }
+            });
+
+            hideRoom();
+        }
+
+        // Функция для обновления игры
+        async function refreshGame(roomId) {
+            try {
+                const response = await fetch(`${ROOMS_API}/${roomId}`, {
+                    headers: {
+                        "xc-token": NOCODB_KEY
+                    }
+                });
+
+                if (!response.ok) {
+                    showNotification('Соперник вышел, комната расформирована');
+                    hideRoom();
+                    return;
+                }
+
+                const room = await response.json();
+
+                if (!room || !room.Id) {
+                    showNotification('Соперник вышел, комната расформирована');
+                    hideRoom();
+                    return;
+                }
+
+                if (room.game_data) {
+                    gameState = JSON.parse(room.game_data);
+                    updateGameUI();
+                }
+
+            } catch (error) {
+                console.error("Ошибка при обновлении игры:", error);
+                showNotification('Соперник вышел, комната расформирована');
                 hideRoom();
             }
         }
@@ -976,16 +1624,22 @@
         // Обработчик закрытия страницы
         window.addEventListener('beforeunload', async function(e) {
             if (currentRoom && !isLeaving) {
-                // Выходим из комнаты при закрытии страницы
-                await leaveRoom();
+                if (currentRoom.status === 'playing') {
+                    await endGameDueToLeave();
+                } else {
+                    await leaveRoom();
+                }
             }
         });
 
         // Обработчик изменения видимости страницы
         document.addEventListener('visibilitychange', function() {
             if (document.hidden && currentRoom && !isLeaving) {
-                // Пользователь свернул/закрыл вкладку
-                leaveRoom();
+                if (currentRoom.status === 'playing') {
+                    endGameDueToLeave();
+                } else {
+                    leaveRoom();
+                }
             }
         });
     </script>
