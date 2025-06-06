@@ -106,28 +106,33 @@
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'xc-auth': 'PYcOrnVaN8u2Ab5-Jk-IDiyAxWERltZbL1dS8Otc' // Замените на ваш API токен
+                        'xc-auth': 'YOUR_NOCODB_API_TOKEN' // Замените на ваш API токен
                     },
                     body: JSON.stringify({
                         room_id: roomCode,
                         player1: userId,
-                        status: 'Ожидание'
+                        status: 'Ожидание',
+                        player2: null // Явно указываем player2 как null
                     })
                 });
                 
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('Ошибка API:', errorData);
+                    throw new Error('Ошибка при создании комнаты');
+                }
+                
                 const data = await response.json();
+                console.log('Комната создана:', data);
                 
                 // Показываем код комнаты
                 document.getElementById('roomCodeDisplay').textContent = `Код комнаты: ${roomCode}`;
                 document.getElementById('roomCodeDisplay').style.display = 'block';
                 document.getElementById('createBtn').disabled = true;
                 
-                // Опционально: проверяем, когда появится второй игрок
-                // Это можно реализовать через WebSocket или периодические запросы
-                
             } catch (error) {
                 console.error('Ошибка при создании комнаты:', error);
-                alert('Не удалось создать комнату');
+                alert('Не удалось создать комнату: ' + error.message);
             }
         });
         
@@ -146,6 +151,10 @@
                         'xc-auth': 'YOUR_NOCODB_API_TOKEN' // Замените на ваш API токен
                     }
                 });
+                
+                if (!checkResponse.ok) {
+                    throw new Error('Ошибка при проверке комнаты');
+                }
                 
                 const checkData = await checkResponse.json();
                 
@@ -166,7 +175,7 @@
                     method: 'PATCH',
                     headers: {
                         'Content-Type': 'application/json',
-                        'xc-auth': 'YOUR_NOCODB_API_TOKEN' // Замените на ваш API токен
+                        'xc-auth': 'bocQfycJpJsTG_tbwEf8ma8E5rhoig0njMDXFWtJ' // Замените на ваш API токен
                     },
                     body: JSON.stringify({
                         player2: userId,
@@ -174,14 +183,19 @@
                     })
                 });
                 
-                await updateResponse.json();
+                if (!updateResponse.ok) {
+                    throw new Error('Ошибка при обновлении комнаты');
+                }
+                
+                const updateData = await updateResponse.json();
+                console.log('Комната обновлена:', updateData);
                 
                 alert('Вы успешно присоединились к комнате!');
                 // Здесь можно перейти на экран игры
                 
             } catch (error) {
                 console.error('Ошибка при присоединении к комнате:', error);
-                alert('Не удалось присоединиться к комнате');
+                alert('Не удалось присоединиться к комнате: ' + error.message);
             }
         });
     </script>
