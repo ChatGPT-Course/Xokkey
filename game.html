@@ -593,13 +593,20 @@
 
             async updateGame(gameId, updates) {
                 try {
-                    console.log('Updating game:', gameId, 'with data:', updates);
+                    console.log('=== UPDATE GAME API CALL ===');
+                    console.log('Game ID:', gameId);
+                    console.log('Updates:', JSON.stringify(updates, null, 2));
+                    console.log('API URL:', `${API_CONFIG.baseUrl}/${API_CONFIG.gamesTable}/records/${gameId}`);
+                    console.log('Headers:', this.headers);
+                    
                     const result = await this.makeRequest(
                         `${API_CONFIG.gamesTable}/records/${gameId}`,
                         'PATCH',
                         updates
                     );
-                    console.log('Update result:', result);
+                    
+                    console.log('API Update result:', result);
+                    console.log('===========================');
                     
                     if (result) {
                         // Синхронизируем локальные данные
@@ -608,7 +615,11 @@
                     }
                     return null;
                 } catch (error) {
-                    console.error('Failed to update game:', error);
+                    console.error('Failed to update game - Full error:', error);
+                    console.error('Error details:', {
+                        message: error.message,
+                        stack: error.stack
+                    });
                     throw error;
                 }
             }
@@ -650,12 +661,23 @@
 
             async init() {
                 try {
+                    console.log('=== INITIALIZING GAME MANAGER ===');
+                    
                     // Загружаем данные пользователя из localStorage
                     const savedUserData = localStorage.getItem('hockeyGameCurrentUser');
+                    console.log('Raw localStorage data:', savedUserData);
+                    
                     if (savedUserData) {
                         this.currentUser = JSON.parse(savedUserData);
                         console.log('User data loaded from localStorage:', this.currentUser);
+                        
+                        // Проверяем что telegram_id есть и это число
+                        if (!this.currentUser.telegram_id) {
+                            console.error('ERROR: telegram_id is missing from user data!');
+                            this.currentUser.telegram_id = tgApp.getUserId();
+                        }
                     } else {
+                        console.log('No saved user data found, creating fallback');
                         // Fallback если данных нет
                         const telegramId = tgApp.getUserId();
                         const username = tgApp.getUsername();
@@ -666,6 +688,10 @@
                         };
                         console.log('Using fallback user data:', this.currentUser);
                     }
+                    
+                    console.log('Final current user:', this.currentUser);
+                    console.log('telegram_id type:', typeof this.currentUser.telegram_id);
+                    console.log('================================');
 
                     this.showGameMenu();
                 } catch (error) {
@@ -761,9 +787,13 @@
                         status: 'playing'
                     };
 
-                    console.log('Joining game - Game ID:', this.gameId);
-                    console.log('Joining game - Current user:', this.currentUser);
-                    console.log('Joining game - Updates to send:', updates);
+                    console.log('=== JOINING GAME DEBUG ===');
+                    console.log('Game found:', game);
+                    console.log('Game ID:', this.gameId);
+                    console.log('Current user from localStorage:', this.currentUser);
+                    console.log('Player2 ID to set:', this.currentUser.telegram_id);
+                    console.log('Updates to send:', updates);
+                    console.log('========================');
                     this.showMessage('Присоединение к игре...', 'info');
 
                     // Попробуем несколько раз обновить игру
