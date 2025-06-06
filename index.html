@@ -85,13 +85,9 @@
             color: #667eea;
             margin: 20px 0;
         }
-
-        
     </style>
 </head>
 <body>
-    
-
     <div class="container">
         <h1>🎮 Игра</h1>
         <div class="subtitle">Добро пожаловать в увлекательную игру!</div>
@@ -111,8 +107,11 @@
     <script>
         // Конфигурация NocoDB 
         const config = {
+            orgs: 'wf52x8bf',
+            projectName: 'pawgl0ouxic497w',
+            tableName: 'mtfr4e3wywjtyua',
             apiToken: '4lZnGEoWEQeBswBHzzp_lPPYDFFkNc7s2BlWClxb',
-            baseUrl: 'https://app.nocodb.com/api/v2/tables/mtfr4e3wywjtyua/records'
+            baseUrl: 'https://app.nocodb.com/api/v1/db/data'
         };
 
         let tg = window.Telegram.WebApp;
@@ -144,11 +143,11 @@
                     console.log('Получены данные пользователя Telegram:', user);
 
                     return {
-                        telegram_id: user.id.toString(),
-                        username: user.username || 'user',
-                        display_name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Игрок',
+                        id: user.id.toString(),
+                        username: user.username || '',
                         first_name: user.first_name || '',
                         last_name: user.last_name || '',
+                        display_name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Игрок',
                         language_code: user.language_code || 'ru'
                     };
                 }
@@ -156,22 +155,22 @@
                 // Fallback для тестирования
                 const fallbackId = Date.now().toString();
                 return {
-                    telegram_id: fallbackId,
+                    id: fallbackId,
                     username: 'test_user',
-                    display_name: 'Тестовый игрок',
                     first_name: 'Тестовый',
                     last_name: 'Игрок',
+                    display_name: 'Тестовый игрок',
                     language_code: 'ru'
                 };
             } catch (error) {
                 console.log('Ошибка получения данных пользователя:', error);
                 const fallbackId = Date.now().toString();
                 return {
-                    telegram_id: fallbackId,
+                    id: fallbackId,
                     username: 'test_user',
-                    display_name: 'Тестовый игрок',
                     first_name: 'Тестовый',
                     last_name: 'Игрок',
+                    display_name: 'Тестовый игрок',
                     language_code: 'ru'
                 };
             }
@@ -179,37 +178,12 @@
 
         // Сохранить данные пользователя в cookies
         function saveUserData(userData) {
-            setCookie('tg_user_id', userData.telegram_id);
+            setCookie('tg_user_id', userData.id);
             setCookie('tg_username', userData.username);
             setCookie('tg_name', userData.display_name);
             setCookie('tg_language', userData.language_code);
             
             console.log('Данные пользователя сохранены в cookies');
-        }
-
-        // Выполнить запрос к NocoDB API
-        async function makeRequest(url, options = {}) {
-            const defaultOptions = {
-                headers: {
-                    'xc-auth': config.apiToken,
-                    'Content-Type': 'application/json'
-                }
-            };
-            
-            const finalOptions = {
-                ...defaultOptions,
-                ...options,
-                headers: {
-                    ...defaultOptions.headers,
-                    ...options.headers
-                }
-            };
-            
-            const response = await fetch(url, finalOptions);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            return await response.json();
         }
 
         // Проверить пользователя в базе данных
@@ -218,12 +192,24 @@
 
             try {
                 // Получаем все записи из таблицы
-                const data = await makeRequest(config.baseUrl);
+                const listResponse = await fetch(`${config.baseUrl}/${config.orgs}/${config.projectName}/${config.tableName}`, {
+                    method: 'GET',
+                    headers: {
+                        'xc-token': config.apiToken,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!listResponse.ok) {
+                    throw new Error(`Ошибка получения данных: ${listResponse.status} ${listResponse.statusText}`);
+                }
+
+                const data = await listResponse.json();
                 console.log('Получены данные из базы:', data);
 
                 // Ищем пользователя по user_id
                 const existingUser = data.list ? data.list.find(user => 
-                    user.user_id && user.user_id.toString() === userData.telegram_id.toString()
+                    user.user_id && user.user_id.toString() === userData.id.toString()
                 ) : null;
 
                 if (existingUser) {
@@ -235,7 +221,7 @@
 
                 // Создаем нового пользователя согласно структуре таблицы
                 const newUserData = {
-                    user_id: userData.telegram_id,
+                    user_id: userData.id,
                     user_name: userData.display_name,
                     user_username: userData.username,
                     money: 0
@@ -243,11 +229,21 @@
 
                 console.log('Данные для создания пользователя:', newUserData);
 
-                const createdUser = await makeRequest(config.baseUrl, {
+                const createResponse = await fetch(`${config.baseUrl}/${config.orgs}/${config.projectName}/${config.tableName}`, {
                     method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'xc-token': config.apiToken
+                    },
                     body: JSON.stringify(newUserData)
                 });
 
+                if (!createResponse.ok) {
+                    const errorText = await createResponse.text();
+                    throw new Error(`Ошибка создания пользователя: ${createResponse.status} ${createResponse.statusText} - ${errorText}`);
+                }
+
+                const createdUser = await createResponse.json();
                 console.log('Пользователь успешно создан:', createdUser);
                 return true;
 
@@ -273,7 +269,7 @@
                     
                     // Отображаем данные пользователя
                     document.getElementById('userName').textContent = userData.display_name;
-                    document.getElementById('userId').textContent = userData.telegram_id;
+                    document.getElementById('userId').textContent = userData.id;
 
                     await checkUserInDatabase(userData);
                 }
@@ -287,10 +283,8 @@
                 
                 // Показываем тестовые данные при ошибке
                 document.getElementById('userName').textContent = userData?.display_name || 'Тестовый игрок';
-                document.getElementById('userId').textContent = userData?.telegram_id || 'test_id';
+                document.getElementById('userId').textContent = userData?.id || 'test_id';
             }
-
-            
         }
 
         // Запускаем инициализацию после загрузки DOM
