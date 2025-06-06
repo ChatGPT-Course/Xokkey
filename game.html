@@ -483,6 +483,7 @@
                         localStorage.setItem(storageKey, JSON.stringify(games));
                         return games[gameIndex];
                     }
+                    return null;
                 }
 
                 if (method === 'GET') {
@@ -499,7 +500,7 @@
                         if (whereClause && whereClause.includes('Id,eq,')) {
                             const gameId = whereClause.split('Id,eq,')[1].replace(/[()]/g, '');
                             const game = games.find(g => g.Id === gameId);
-                            return game || null;
+                            return { list: game ? [game] : [] };
                         }
                     }
                     
@@ -668,8 +669,16 @@
                         status: 'playing'
                     };
                     
-                    this.currentGame = await api.updateGame(this.gameId, updates);
+                    // Обновляем игру в базе данных
+                    const updatedGame = await api.updateGame(this.gameId, updates);
+                    this.currentGame = { ...game, ...updates };
                     
+                    console.log('Game updated after joining:', this.currentGame);
+                    
+                    // Скрываем форму присоединения
+                    this.hideJoinForm();
+                    
+                    // Запускаем игровой цикл и показываем игру
                     this.startGameLoop();
                     this.showGamePlay();
                     
@@ -693,6 +702,11 @@
                     const updatedGame = await api.getGame(this.gameId);
                     if (!updatedGame) return;
                     
+                    console.log('Checking game status:', updatedGame);
+                    
+                    const wasWaiting = this.currentGame?.status === 'waiting' || 
+                                     !document.getElementById('waitingRoom').classList.contains('hidden');
+                    
                     this.currentGame = updatedGame;
                     
                     // Если игра завершена
@@ -701,14 +715,16 @@
                         return;
                     }
                     
-                    // Если ожидали игрока и он присоединился
-                    if (this.currentGame.status === 'playing' && 
-                        !document.getElementById('waitingRoom').classList.contains('hidden')) {
+                    // Если ожидали игрока и он присоединился (для создателя)
+                    if (this.currentGame.status === 'playing' && wasWaiting) {
+                        console.log('Second player joined, starting game!');
                         this.showGamePlay();
                         this.showMessage('Второй игрок присоединился! Игра началась!', 'success');
                     }
                     
-                    if (this.currentGame.status === 'playing') {
+                    // Обновляем интерфейс если игра идет
+                    if (this.currentGame.status === 'playing' && 
+                        !document.getElementById('gamePlay').classList.contains('hidden')) {
                         this.updateGameDisplay();
                         await this.checkRoundResults();
                     }
@@ -919,6 +935,11 @@
                 document.getElementById('waitingRoom').classList.add('hidden');
                 document.getElementById('gamePlay').classList.add('hidden');
                 document.getElementById('gameEnd').classList.add('hidden');
+            }
+
+            hideJoinForm() {
+                document.getElementById('joinForm').classList.add('hidden');
+                document.getElementById('gameCodeInput').value = '';
             }
 
             showMessage(message, type = 'info') {
