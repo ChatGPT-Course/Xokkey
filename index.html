@@ -17,55 +17,47 @@
             font-family: 'Arial', sans-serif;
             background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
             min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
             color: white;
-        }
-
-        .container {
-            background: rgba(44, 62, 80, 0.9);
-            padding: 40px 30px;
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
-            text-align: center;
-            min-width: 320px;
-            max-width: 400px;
-            width: 100%;
-            backdrop-filter: blur(10px);
+            padding-top: 70px;
         }
 
         .header {
-            margin-bottom: 30px;
-        }
-
-        .title {
-            font-size: 2rem;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #ecf0f1;
-        }
-
-        .currency-display {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: rgba(44, 62, 80, 0.95);
+            backdrop-filter: blur(10px);
             display: flex;
             align-items: center;
             justify-content: center;
-            background: rgba(52, 73, 94, 0.8);
-            padding: 10px 20px;
-            border-radius: 25px;
-            margin: 20px auto;
-            width: fit-content;
-            font-size: 1.1rem;
-            font-weight: 600;
+            z-index: 1000;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.3);
         }
 
-        .currency-display .stick-icon {
-            margin-left: 8px;
-            font-size: 1.3rem;
+        .header-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
         }
 
-        .game-icon {
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: calc(100vh - 70px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .user-avatar {
             width: 120px;
             height: 120px;
             background: linear-gradient(45deg, #e74c3c, #c0392b);
@@ -74,13 +66,34 @@
             align-items: center;
             justify-content: center;
             margin: 20px auto;
-            font-size: 3rem;
+            font-size: 4rem;
             box-shadow: 0 10px 30px rgba(231, 76, 60, 0.3);
+            color: white;
+        }
+
+        .currency-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(52, 73, 94, 0.8);
+            padding: 12px 20px;
+            border-radius: 25px;
+            margin: 20px auto;
+            width: fit-content;
+            font-size: 1.2rem;
+            font-weight: 600;
+            backdrop-filter: blur(5px);
+        }
+
+        .currency-display .stick-icon {
+            margin-left: 8px;
+            font-size: 1.4rem;
         }
 
         .btn {
             display: block;
             width: 100%;
+            max-width: 300px;
             padding: 15px 20px;
             border: none;
             border-radius: 15px;
@@ -108,6 +121,7 @@
             background: rgba(52, 73, 94, 0.8);
             color: #ecf0f1;
             border: 2px solid rgba(236, 240, 241, 0.3);
+            backdrop-filter: blur(5px);
         }
 
         .btn-secondary:hover {
@@ -121,39 +135,36 @@
             grid-template-columns: 1fr 1fr;
             gap: 12px;
             margin-top: 20px;
+            width: 100%;
+            max-width: 300px;
         }
 
         .version {
             margin-top: 30px;
             font-size: 0.9rem;
             color: rgba(236, 240, 241, 0.6);
-        }
-
-        .loading {
-            display: none;
-            color: #3498db;
-            margin: 20px 0;
+            text-align: center;
         }
 
         .user-info {
             margin-top: 20px;
             font-size: 0.9rem;
             color: rgba(236, 240, 241, 0.8);
+            text-align: center;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <div class="title">Hockey Shootouts</div>
-            <div class="currency-display">
-                <span>Клюшек: <span id="userMoney">0</span></span>
-                <span class="stick-icon">🏒</span>
-            </div>
-        </div>
+    <div class="header">
+        <div class="header-title">Hockey Shootouts</div>
+    </div>
 
-        <div class="game-icon">
-            🏒🏒
+    <div class="container">
+        <div class="user-avatar" id="userAvatar">👤</div>
+        
+        <div class="currency-display">
+            <span>Клюшек: <span id="userMoney">0</span></span>
+            <span class="stick-icon">🏒</span>
         </div>
 
         <a href="game.html" class="btn btn-primary">
@@ -290,6 +301,14 @@
             }
         }
 
+        // Получить аватар пользователя
+        function getUserAvatar(userData) {
+            if (userData.first_name) {
+                return userData.first_name.charAt(0).toUpperCase();
+            }
+            return '👤';
+        }
+
         // Проверить пользователя в базе данных
         async function checkUserInDatabase(userData) {
             console.log('Проверяем пользователя в базе данных:', userData);
@@ -362,6 +381,7 @@
                     // Отображаем данные пользователя
                     document.getElementById('userName').textContent = userData.display_name;
                     document.getElementById('userId').textContent = userData.id;
+                    document.getElementById('userAvatar').textContent = getUserAvatar(userData);
 
                     await checkUserInDatabase(userData);
                 }
@@ -377,6 +397,7 @@
                 document.getElementById('userName').textContent = userData?.display_name || 'Тестовый игрок';
                 document.getElementById('userId').textContent = userData?.id || 'test_id';
                 document.getElementById('userMoney').textContent = 0;
+                document.getElementById('userAvatar').textContent = getUserAvatar(userData || {});
             }
         }
 
