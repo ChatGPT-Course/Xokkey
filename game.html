@@ -1,11 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Игра - Хоккейная Битва</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * {
             margin: 0;
@@ -188,6 +186,28 @@
             font-weight: bold;
         }
 
+        .timer-display {
+            text-align: center;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #ff4757;
+            margin: 15px 0;
+            padding: 10px;
+            background: #fff;
+            border-radius: 10px;
+            border: 2px solid #ff4757;
+        }
+
+        .timer-display.warning {
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
         .role-info {
             text-align: center;
             padding: 15px;
@@ -228,6 +248,11 @@
             background: #667eea;
             color: white;
             border-color: #5a67d8;
+        }
+
+        .zone:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
         }
 
         .hidden {
@@ -279,20 +304,6 @@
 
         .message.info {
             background: #667eea;
-        }
-
-        .debug-info {
-            position: fixed;
-            bottom: 10px;
-            right: 10px;
-            background: rgba(0,0,0,0.8);
-            color: white;
-            padding: 10px;
-            border-radius: 5px;
-            font-size: 12px;
-            max-width: 300px;
-            word-wrap: break-word;
-            z-index: 1000;
         }
     </style>
 </head>
@@ -346,15 +357,17 @@
         <div id="gamePlay" class="game-container hidden">
             <div class="score">
                 <div class="score-item">
-                    <div class="player-name" id="player1Name">Игрок 1</div>
+                    <div class="player-name">Подающий</div>
                     <div class="player-score" id="player1Score">0</div>
                 </div>
                 <div class="vs">VS</div>
                 <div class="score-item">
-                    <div class="player-name" id="player2Name">Игрок 2</div>
+                    <div class="player-name">Вратарь</div>
                     <div class="player-score" id="player2Score">0</div>
                 </div>
             </div>
+
+            <div class="timer-display" id="timerDisplay">10</div>
 
             <div class="role-info" id="roleInfo">
                 Ваша роль
@@ -372,7 +385,7 @@
             </button>
 
             <p style="text-align: center; margin-top: 10px;">
-                Раунд <span id="roundNumber">1</span>
+                Раунд <span id="roundNumber">1</span> из 3
             </p>
         </div>
 
@@ -381,16 +394,13 @@
             <h3 id="finalResult">Игра окончена!</h3>
             <div class="final-stats">
                 <p>Финальный счет:</p>
-                <p><span id="finalPlayer1"></span>: <span id="finalScore1"></span></p>
-                <p><span id="finalPlayer2"></span>: <span id="finalScore2"></span></p>
+                <p>Подающий: <span id="finalScore1"></span></p>
+                <p>Вратарь: <span id="finalScore2"></span></p>
             </div>
             <button class="btn primary" onclick="playAgain()">Играть снова</button>
             <button class="btn secondary" onclick="goHome()">В меню</button>
         </div>
     </div>
-
-    <!-- Отладочная информация -->
-    <div id="debugInfo" class="debug-info" style="display: none;"></div>
 
     <script>
         // Telegram Web App integration
@@ -436,7 +446,7 @@
             }
         }
 
-        // NocoDB API конфигурация для новой таблицы rooms
+        // NocoDB API конфигурация
         const API_CONFIG = {
             baseUrl: 'https://app.nocodb.com/api/v1/db/data',
             orgs: 'wf52x8bf',
@@ -451,7 +461,6 @@
                     'Content-Type': 'application/json',
                     'xc-token': API_CONFIG.token
                 };
-                this.isOnline = true;
             }
 
             async makeRequest(endpoint, method = 'GET', data = null) {
@@ -466,208 +475,49 @@
                     options.body = JSON.stringify(data);
                 }
 
-                this.logDebug(`Making ${method} request to: ${url}`, data);
-
                 try {
                     const response = await fetch(url, options);
-                    
+
                     if (!response.ok) {
                         const errorText = await response.text();
                         console.error(`HTTP error! status: ${response.status}, response:`, errorText);
-                        
-                        // Если ошибка API, переходим в оффлайн режим
-                        this.isOnline = false;
-                        return this.handleOfflineRequest(endpoint, method, data);
+                        return null;
                     }
-                    
+
                     const result = await response.json();
-                    this.logDebug('API Response:', result);
-                    this.isOnline = true;
                     return result;
                 } catch (error) {
                     console.error('API Request failed:', error);
-                    this.isOnline = false;
-                    return this.handleOfflineRequest(endpoint, method, data);
+                    return null;
                 }
-            }
-
-            logDebug(message, data = null) {
-                console.log(message, data);
-                const debugElement = document.getElementById('debugInfo');
-                if (debugElement) {
-                    const timestamp = new Date().toLocaleTimeString();
-                    const logMessage = `[${timestamp}] ${message}${data ? ': ' + JSON.stringify(data, null, 2) : ''}`;
-                    debugElement.innerHTML = logMessage + '<br>' + debugElement.innerHTML;
-                    debugElement.style.display = 'block';
-                }
-            }
-
-            handleOfflineRequest(endpoint, method, data) {
-                this.logDebug('Handling offline request:', { method, endpoint, data });
-                const storageKey = 'hockey_games';
-                let games = JSON.parse(localStorage.getItem(storageKey) || '[]');
-
-                if (method === 'POST' && endpoint.includes('records')) {
-                    const newGame = {
-                        Id: 'game_' + Date.now(),
-                        created_at: new Date().toISOString(),
-                        updated_at: new Date().toISOString(),
-                        ...data
-                    };
-                    games.push(newGame);
-                    localStorage.setItem(storageKey, JSON.stringify(games));
-                    this.logDebug('Game created offline:', newGame);
-                    return newGame;
-                }
-
-                if (method === 'PATCH' && endpoint.includes('records')) {
-                    const gameId = endpoint.split('/').pop();
-                    this.logDebug('Updating game offline - ID:', { gameId, data });
-                    
-                    const gameIndex = games.findIndex(g => g.Id === gameId);
-                    if (gameIndex !== -1) {
-                        games[gameIndex] = { 
-                            ...games[gameIndex], 
-                            ...data, 
-                            updated_at: new Date().toISOString() 
-                        };
-                        localStorage.setItem(storageKey, JSON.stringify(games));
-                        this.logDebug('Game updated offline:', games[gameIndex]);
-                        return games[gameIndex];
-                    } else {
-                        this.logDebug('Game not found for offline update:', gameId);
-                        return null;
-                    }
-                }
-
-                if (method === 'GET') {
-                    if (endpoint.includes('where=')) {
-                        const whereClause = decodeURIComponent(endpoint.split('where=')[1]);
-                        this.logDebug('Processing offline where clause:', whereClause);
-
-                        if (whereClause.includes('room_name,eq,')) {
-                            const roomName = whereClause.split('room_name,eq,')[1].replace(/[()]/g, '');
-                            this.logDebug('Looking for room name offline:', roomName);
-                            const game = games.find(g => g.room_name === roomName);
-                            this.logDebug('Found game offline:', game);
-                            return { list: game ? [game] : [] };
-                        }
-
-                        if (whereClause.includes('Id,eq,')) {
-                            const gameId = whereClause.split('Id,eq,')[1].replace(/[()]/g, '');
-                            this.logDebug('Looking for game ID offline:', gameId);
-                            const game = games.find(g => g.Id === gameId);
-                            this.logDebug('Found game offline:', game);
-                            return { list: game ? [game] : [] };
-                        }
-                    }
-
-                    return { list: games };
-                }
-
-                this.logDebug('Unhandled offline request:', { method, endpoint });
-                return null;
             }
 
             async createGame(roomData) {
-                try {
-                    const result = await this.makeRequest(
-                        '',
-                        'POST',
-                        roomData
-                    );
-                    this.logDebug('Room created:', result);
-                    return result;
-                } catch (error) {
-                    console.error('Failed to create room:', error);
-                    throw error;
-                }
+                return await this.makeRequest('', 'POST', roomData);
             }
 
             async findRoomByName(roomName) {
-                try {
-                    this.logDebug('Looking for room with name:', roomName);
-                    const response = await this.makeRequest(`?where=(room_name,eq,${roomName})`);
-                    this.logDebug('Find room response:', response);
-                    
-                    if (response && response.list && response.list.length > 0) {
-                        return response.list[0];
-                    }
-                    return null;
-                } catch (error) {
-                    console.error('Failed to find room by name:', error);
-                    return null;
+                const response = await this.makeRequest(`?where=(room_name,eq,${roomName})`);
+                if (response && response.list && response.list.length > 0) {
+                    return response.list[0];
                 }
+                return null;
             }
 
             async getRoom(roomId) {
-                try {
-                    const response = await this.makeRequest(`/${roomId}`);
-                    return response || null;
-                } catch (error) {
-                    console.error('Failed to get room:', error);
-                    return null;
-                }
+                return await this.makeRequest(`/${roomId}`);
             }
 
             async updateRoom(roomId, updates) {
-                try {
-                    this.logDebug('Updating room:', { roomId, updates });
-                    const result = await this.makeRequest(
-                        `/${roomId}`,
-                        'PATCH',
-                        updates
-                    );
-                    this.logDebug('Update result:', result);
-                    
-                    if (result) {
-                        this.syncLocalData(roomId, updates);
-                        return result;
-                    }
-                    return null;
-                } catch (error) {
-                    console.error('Failed to update room:', error);
-                    throw error;
-                }
+                return await this.makeRequest(`/${roomId}`, 'PATCH', updates);
             }
 
             async deleteRoom(roomId) {
-                try {
-                    this.logDebug('Deleting room:', roomId);
-                    const result = await this.makeRequest(
-                        `/${roomId}`,
-                        'DELETE'
-                    );
-                    this.logDebug('Delete result:', result);
-                    return result;
-                } catch (error) {
-                    console.error('Failed to delete room:', error);
-                    throw error;
-                }
-            }
-
-            syncLocalData(gameId, updates) {
-                try {
-                    const storageKey = 'hockey_games';
-                    let games = JSON.parse(localStorage.getItem(storageKey) || '[]');
-                    const gameIndex = games.findIndex(g => g.Id === gameId);
-                    
-                    if (gameIndex !== -1) {
-                        games[gameIndex] = { 
-                            ...games[gameIndex], 
-                            ...updates, 
-                            updated_at: new Date().toISOString() 
-                        };
-                        localStorage.setItem(storageKey, JSON.stringify(games));
-                        this.logDebug('Local data synced for game:', gameId);
-                    }
-                } catch (error) {
-                    console.error('Failed to sync local data:', error);
-                }
+                return await this.makeRequest(`/${roomId}`, 'DELETE');
             }
         }
 
-        // Game Manager с упрощенной логикой одновременных ходов
+        // Game Manager с новой логикой
         class HockeyGameManager {
             constructor() {
                 this.currentUser = null;
@@ -675,11 +525,9 @@
                 this.gameId = null;
                 this.isPlayer1 = false;
                 this.selectedZones = [];
-                this.maxZoneSelection = 1;
                 this.gameUpdateInterval = null;
-                this.maxRetries = 3;
-                this.retryCount = 0;
-                this.myRole = null; // 'sender' или 'protector'
+                this.timerInterval = null;
+                this.currentTimer = 10;
                 this.init();
             }
 
@@ -691,10 +539,8 @@
                         username: tgApp.getUsername(),
                         display_name: tgApp.getDisplayName()
                     };
-                    
-                    this.showGameMenu();
-                    api.logDebug('Текущий пользователь:', this.currentUser);
 
+                    this.showGameMenu();
                 } catch (error) {
                     console.error('Failed to initialize game:', error);
                     this.showMessage('Ошибка инициализации игры', 'error');
@@ -708,8 +554,7 @@
             async createGame() {
                 try {
                     const roomCode = this.generateRoomCode();
-                    
-                    // Новая упрощенная структура таблицы
+
                     const roomData = {
                         room_name: roomCode,
                         player1: this.currentUser.telegram_id,
@@ -721,19 +566,18 @@
                         winner: null,
                         attacker_move: null,
                         defender_move: null,
-                        sender_hod: 0,    // 1 если подающий сделал ход, 0 если нет
-                        protect_hod: 0    // 1 если защитник сделал ход, 0 если нет
+                        sender_hod: 0,
+                        protect_hod: 0,
+                        sec: 10
                     };
 
-                    api.logDebug('Creating room with data:', roomData);
                     const createdRoom = await api.createGame(roomData);
-                    
+
                     if (createdRoom) {
                         this.currentGame = createdRoom;
                         this.gameId = createdRoom.Id;
                         this.isPlayer1 = true;
-                        this.myRole = 'sender'; // Создатель всегда подающий
-                        
+
                         this.showWaitingRoom(roomCode);
                         this.startGameLoop();
                         this.showMessage('Комната создана!', 'success');
@@ -749,16 +593,15 @@
             async joinGame() {
                 const gameCodeInput = document.getElementById('gameCodeInput');
                 const roomCode = gameCodeInput.value.trim();
-                
+
                 if (!roomCode) {
                     this.showMessage('Введите код комнаты', 'error');
                     return;
                 }
 
                 try {
-                    api.logDebug('Looking for room with code:', roomCode);
                     const room = await api.findRoomByName(roomCode);
-                    
+
                     if (!room) {
                         this.showMessage('Комната не найдена', 'error');
                         return;
@@ -774,21 +617,19 @@
                         return;
                     }
 
-                    // Присоединяемся к комнате
                     const updateData = {
                         player2: this.currentUser.telegram_id,
-                        game_state: 'game'
+                        game_state: 'game',
+                        sec: 10
                     };
 
-                    api.logDebug('Joining room with updates:', updateData);
                     const updatedRoom = await api.updateRoom(room.Id, updateData);
-                    
+
                     if (updatedRoom) {
                         this.currentGame = updatedRoom;
                         this.gameId = room.Id;
                         this.isPlayer1 = false;
-                        this.myRole = 'protector'; // Присоединившийся всегда защитник
-                        
+
                         this.hideJoinForm();
                         this.showGamePlay();
                         this.startGameLoop();
@@ -806,11 +647,10 @@
                 if (this.gameUpdateInterval) {
                     clearInterval(this.gameUpdateInterval);
                 }
-                
-                // Проверяем состояние игры каждые 2 секунды
+
                 this.gameUpdateInterval = setInterval(async () => {
                     await this.checkGameStatus();
-                }, 2000);
+                }, 1000);
             }
 
             async checkGameStatus() {
@@ -820,16 +660,7 @@
                     const updatedRoom = await api.getRoom(this.gameId);
                     if (!updatedRoom) return;
 
-                    api.logDebug('=== ПРОВЕРКА СТАТУСА КОМНАТЫ ===', {
-                        room: updatedRoom,
-                        myId: this.currentUser.telegram_id,
-                        myRole: this.myRole
-                    });
-
-                    const wasWaiting = this.currentGame?.game_state === 'waiting' || 
-                                     !document.getElementById('waitingRoom').classList.contains('hidden');
-
-                    const previousStatus = this.currentGame?.game_state;
+                    const wasWaiting = this.currentGame?.game_state === 'waiting';
                     this.currentGame = updatedRoom;
 
                     // Если игра завершена
@@ -838,148 +669,141 @@
                         return;
                     }
 
-                    // Если ожидали игрока и он присоединился (для создателя)
-                    if (this.currentGame.game_state === 'game' && 
-                        (previousStatus === 'waiting' || wasWaiting) &&
-                        this.currentGame.player2) {
-                        api.logDebug('Second player joined, starting game!');
+                    // Если ожидали игрока и он присоединился
+                    if (this.currentGame.game_state === 'game' && wasWaiting && this.currentGame.player2) {
                         this.showGamePlay();
                         this.showMessage('Второй игрок присоединился! Игра началась!', 'success');
+                        this.startTimer();
                         return;
                     }
 
-                    // Проверяем, нужно ли обработать результат раунда
-                    if (this.currentGame.game_state === 'game' && 
-                        this.currentGame.sender_hod === 1 && 
-                        this.currentGame.protect_hod === 1) {
-                        api.logDebug('Оба игрока сделали ходы, обрабатываем результат');
-                        await this.processRoundResult();
-                        return;
-                    }
-
-                    // Обновляем интерфейс если игра идет
+                    // Обновляем таймер
                     if (this.currentGame.game_state === 'game' && 
                         !document.getElementById('gamePlay').classList.contains('hidden')) {
-                        api.logDebug('Обновление игрового интерфейса');
+                        this.updateTimer();
+
+                        // Проверяем, нужно ли обработать результат раунда
+                        if (this.currentGame.sender_hod === 1 && this.currentGame.protect_hod === 1) {
+                            await this.processRoundResult();
+                            return;
+                        }
+
                         this.updateGameDisplay();
                     }
                 } catch (error) {
                     console.error('Failed to check room status:', error);
-                    this.retryCount++;
-                    
-                    if (this.retryCount > 5) {
-                        this.showMessage('Проблемы с подключением к серверу', 'error');
-                        this.retryCount = 0;
+                }
+            }
+
+            async startTimer() {
+                if (this.timerInterval) {
+                    clearInterval(this.timerInterval);
+                }
+
+                this.timerInterval = setInterval(async () => {
+                    if (this.currentGame && this.currentGame.sec > 0) {
+                        const newSec = this.currentGame.sec - 1;
+                        await api.updateRoom(this.gameId, { sec: newSec });
+                    } else if (this.currentGame && this.currentGame.sec <= 0) {
+                        // Время вышло - автоматически завершаем ходы
+                        await this.handleTimeUp();
+                    }
+                }, 1000);
+            }
+
+            async handleTimeUp() {
+                if (this.timerInterval) {
+                    clearInterval(this.timerInterval);
+                }
+
+                // Автоматически делаем случайные ходы для тех, кто не успел
+                let updates = {};
+
+                if (this.currentGame.sender_hod === 0) {
+                    updates.attacker_move = JSON.stringify([Math.floor(Math.random() * 4) + 1]);
+                    updates.sender_hod = 1;
+                }
+
+                if (this.currentGame.protect_hod === 0) {
+                    const zones = [1, 2, 3, 4];
+                    const shuffled = zones.sort(() => 0.5 - Math.random());
+                    updates.defender_move = JSON.stringify(shuffled.slice(0, 2));
+                    updates.protect_hod = 1;
+                }
+
+                if (Object.keys(updates).length > 0) {
+                    await api.updateRoom(this.gameId, updates);
+                }
+
+                this.showMessage('Время вышло! Автоматические ходы сделаны.', 'info');
+            }
+
+            updateTimer() {
+                const timerElement = document.getElementById('timerDisplay');
+                if (timerElement && this.currentGame) {
+                    timerElement.textContent = this.currentGame.sec || 0;
+
+                    if (this.currentGame.sec <= 3) {
+                        timerElement.classList.add('warning');
+                    } else {
+                        timerElement.classList.remove('warning');
                     }
                 }
             }
 
             updateGameDisplay() {
-                if (!this.currentGame) {
-                    api.logDebug('Нет данных об игре для обновления');
-                    return;
-                }
-                
-                api.logDebug('=== ОБНОВЛЕНИЕ ИНТЕРФЕЙСА ===', {
-                    game: this.currentGame,
-                    myRole: this.myRole,
-                    myId: this.currentUser.telegram_id
-                });
-                
+                if (!this.currentGame) return;
+
                 // Обновляем счет и раунд
-                document.getElementById('player1Name').textContent = 'Игрок 1 (Подающий)';
-                document.getElementById('player2Name').textContent = 'Игрок 2 (Вратарь)';
                 document.getElementById('player1Score').textContent = this.currentGame.player1_score || 0;
                 document.getElementById('player2Score').textContent = this.currentGame.player2_score || 0;
                 document.getElementById('roundNumber').textContent = this.currentGame.current_round || 1;
 
-                // Очищаем выборы зон
-                this.selectedZones = [];
-                document.querySelectorAll('.zone').forEach(zone => {
-                    zone.classList.remove('selected');
-                });
-
                 const roleInfoElement = document.getElementById('roleInfo');
                 const submitBtn = document.getElementById('submitMove');
-                
-                // Определяем состояние игрока
-                const iAmSender = this.myRole === 'sender';
-                const iAmProtector = this.myRole === 'protector';
+
+                const iAmSender = this.isPlayer1; // Player1 всегда подающий
                 const senderMoved = this.currentGame.sender_hod === 1;
                 const protectorMoved = this.currentGame.protect_hod === 1;
-                const iMoved = (iAmSender && senderMoved) || (iAmProtector && protectorMoved);
-                
-                api.logDebug('=== ДЕТАЛЬНЫЙ АНАЛИЗ ===', {
-                    iAmSender,
-                    iAmProtector,
-                    senderMoved,
-                    protectorMoved,
-                    iMoved
-                });
+                const iMoved = (iAmSender && senderMoved) || (!iAmSender && protectorMoved);
 
-                // Сброс состояния кнопки и зон
-                this.disableZoneSelection();
-                submitBtn.disabled = true;
-                
                 if (senderMoved && protectorMoved) {
-                    // Оба хода сделаны, ожидаем результат
                     roleInfoElement.textContent = '⏳ Обработка результата...';
-                    roleInfoElement.style.background = '#f8d7da';
-                    roleInfoElement.style.borderColor = '#f5c6cb';
-                    roleInfoElement.style.color = '#721c24';
                     submitBtn.textContent = 'Ожидание...';
-                    submitBtn.style.background = '#6c757d';
-                    
+                    submitBtn.disabled = true;
+                    this.disableZoneSelection();
+
                 } else if (iMoved) {
-                    // Я уже сделал ход, жду противника
                     const waitingFor = iAmSender ? 'вратаря' : 'подающего';
                     roleInfoElement.textContent = `✅ Ваш ход сделан. Ожидание хода ${waitingFor}...`;
-                    roleInfoElement.style.background = '#d1ecf1';
-                    roleInfoElement.style.borderColor = '#bee5eb';
-                    roleInfoElement.style.color = '#0c5460';
                     submitBtn.textContent = 'Ожидание...';
-                    submitBtn.style.background = '#6c757d';
-                    
+                    submitBtn.disabled = true;
+                    this.disableZoneSelection();
+
                 } else if (iAmSender) {
-                    // Я подающий и еще не сделал ход
-                    roleInfoElement.textContent = '⚽ ВАШ ХОД - выберите 1 зону для броска';
-                    roleInfoElement.style.background = '#fff3cd';
-                    roleInfoElement.style.borderColor = '#ffeaa7';
-                    roleInfoElement.style.color = '#856404';
+                    roleInfoElement.textContent = '⚽ ВЫ - ПОДАЮЩИЙ: выберите 1 зону для броска';
                     this.enableZoneSelection();
-                    this.maxZoneSelection = 1;
                     submitBtn.textContent = 'Сделать бросок';
                     submitBtn.disabled = this.selectedZones.length !== 1;
-                    submitBtn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
-                    
-                } else if (iAmProtector) {
-                    // Я защитник и еще не сделал ход
-                    roleInfoElement.textContent = '🛡️ ВАШ ХОД - выберите 2 зоны для защиты';
-                    roleInfoElement.style.background = '#d4edda';
-                    roleInfoElement.style.borderColor = '#c3e6cb';
-                    roleInfoElement.style.color = '#155724';
+
+                } else {
+                    roleInfoElement.textContent = '🛡️ ВЫ - ВРАТАРЬ: выберите 2 зоны для защиты';
                     this.enableZoneSelection();
-                    this.maxZoneSelection = 2;
                     submitBtn.textContent = 'Поставить защиту';
                     submitBtn.disabled = this.selectedZones.length !== 2;
-                    submitBtn.style.background = 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)';
                 }
-                
-                api.logDebug('=== ИНТЕРФЕЙС ОБНОВЛЕН ===');
             }
 
             selectZone(zoneNumber) {
-                // Можно выбирать зоны только если я еще не сделал ход
-                const iAmSender = this.myRole === 'sender';
-                const iAmProtector = this.myRole === 'protector';
+                const iAmSender = this.isPlayer1;
                 const senderMoved = this.currentGame.sender_hod === 1;
                 const protectorMoved = this.currentGame.protect_hod === 1;
-                const iMoved = (iAmSender && senderMoved) || (iAmProtector && protectorMoved);
-                
+                const iMoved = (iAmSender && senderMoved) || (!iAmSender && protectorMoved);
+
                 if (iMoved) return;
 
                 const zone = document.getElementById(`zone${zoneNumber}`);
-                const maxSelections = this.maxZoneSelection || 1;
+                const maxSelections = iAmSender ? 1 : 2;
 
                 if (zone.classList.contains('selected')) {
                     zone.classList.remove('selected');
@@ -999,45 +823,41 @@
                 if (this.selectedZones.length === 0) return;
 
                 try {
-                    const iAmSender = this.myRole === 'sender';
-                    const iAmProtector = this.myRole === 'protector';
+                    const iAmSender = this.isPlayer1;
                     const senderMoved = this.currentGame.sender_hod === 1;
                     const protectorMoved = this.currentGame.protect_hod === 1;
-                    
+
                     let moveData = {};
-                    
+
                     if (iAmSender && !senderMoved) {
-                        // Я подающий - делаю бросок (1 зона)
                         if (this.selectedZones.length !== 1) {
                             this.showMessage('Выберите ровно 1 зону для броска!', 'error');
                             return;
                         }
-                        
+
                         moveData = {
                             attacker_move: JSON.stringify(this.selectedZones),
                             sender_hod: 1
                         };
                         this.showMessage('Бросок сделан!', 'success');
-                        
-                    } else if (iAmProtector && !protectorMoved) {
-                        // Я защитник - ставлю защиту (2 зоны)
+
+                    } else if (!iAmSender && !protectorMoved) {
                         if (this.selectedZones.length !== 2) {
                             this.showMessage('Выберите ровно 2 зоны для защиты!', 'error');
                             return;
                         }
-                        
+
                         moveData = {
                             defender_move: JSON.stringify(this.selectedZones),
                             protect_hod: 1
                         };
                         this.showMessage('Защита поставлена!', 'success');
-                        
+
                     } else {
                         this.showMessage('Вы уже сделали ход!', 'error');
                         return;
                     }
 
-                    api.logDebug('Отправляем ход:', moveData);
                     await api.updateRoom(this.gameId, moveData);
 
                     this.selectedZones = [];
@@ -1059,29 +879,24 @@
             async processRoundResult() {
                 try {
                     if (!this.currentGame.attacker_move || !this.currentGame.defender_move) {
-                        api.logDebug('Недостаточно данных для обработки результата');
                         return;
                     }
 
-                    const attackerMove = JSON.parse(this.currentGame.attacker_move)[0]; // Подающий выбирает 1 зону
-                    const defenderMoves = JSON.parse(this.currentGame.defender_move); // Защитник выбирает 2 зоны
+                    const attackerMove = JSON.parse(this.currentGame.attacker_move)[0];
+                    const defenderMoves = JSON.parse(this.currentGame.defender_move);
 
                     const goalScored = !defenderMoves.includes(attackerMove);
-                    
+
                     let newPlayer1Score = this.currentGame.player1_score || 0;
                     let newPlayer2Score = this.currentGame.player2_score || 0;
 
-                    // Player1 всегда подающий, Player2 всегда защитник
                     if (goalScored) {
-                        // Гол - очко подающему (Player1)
-                        newPlayer1Score++;
+                        newPlayer1Score++; // Подающий забил
                     } else {
-                        // Отбил - очко защитнику (Player2)
-                        newPlayer2Score++;
+                        newPlayer2Score++; // Вратарь отбил
                     }
 
-                    // Показываем результат
-                    const amIAttacker = this.myRole === 'sender';
+                    const amIAttacker = this.isPlayer1;
                     const didIScore = (goalScored && amIAttacker) || (!goalScored && !amIAttacker);
 
                     if (goalScored) {
@@ -1092,8 +907,8 @@
                                        didIScore ? 'success' : 'info');
                     }
 
-                    // Проверяем окончание игры
-                    const gameFinished = newPlayer1Score >= 3 || newPlayer2Score >= 3;
+                    // Проверяем окончание игры (3 раунда)
+                    const gameFinished = this.currentGame.current_round >= 3;
                     const nextRound = (this.currentGame.current_round || 1) + 1;
 
                     const updates = {
@@ -1102,20 +917,26 @@
                         current_round: nextRound,
                         attacker_move: null,
                         defender_move: null,
-                        sender_hod: 0, // Сбрасываем ходы для нового раунда
+                        sender_hod: 0,
                         protect_hod: 0,
+                        sec: 10,
                         game_state: gameFinished ? 'finished' : 'game'
                     };
 
                     if (gameFinished) {
                         updates.winner = newPlayer1Score > newPlayer2Score ? this.currentGame.player1 : this.currentGame.player2;
+                        if (this.timerInterval) {
+                            clearInterval(this.timerInterval);
+                        }
                     }
 
-                    api.logDebug('Обновляем игру с данными:', updates);
                     await api.updateRoom(this.gameId, updates);
 
                     if (gameFinished) {
                         setTimeout(() => this.endGame(), 3000);
+                    } else {
+                        // Начинаем новый раунд с таймером
+                        setTimeout(() => this.startTimer(), 2000);
                     }
                 } catch (error) {
                     console.error('Failed to process round results:', error);
@@ -1157,7 +978,9 @@
             endGame() {
                 if (this.gameUpdateInterval) {
                     clearInterval(this.gameUpdateInterval);
-                    this.gameUpdateInterval = null;
+                }
+                if (this.timerInterval) {
+                    clearInterval(this.timerInterval);
                 }
 
                 this.hideAllScreens();
@@ -1168,8 +991,6 @@
                 const won = myScore > opponentScore;
 
                 document.getElementById('finalResult').textContent = won ? '🎉 ПОБЕДА!' : '😔 ПОРАЖЕНИЕ';
-                document.getElementById('finalPlayer1').textContent = 'Player1 (Подающий)';
-                document.getElementById('finalPlayer2').textContent = 'Player2 (Вратарь)';
                 document.getElementById('finalScore1').textContent = this.currentGame.player1_score;
                 document.getElementById('finalScore2').textContent = this.currentGame.player2_score;
             }
@@ -1202,14 +1023,14 @@
                         document.body.removeChild(messageDiv);
                     }
                 }, 3000);
-
-                api.logDebug(`Message [${type}]:`, message);
             }
 
             async cancelGame() {
                 if (this.gameUpdateInterval) {
                     clearInterval(this.gameUpdateInterval);
-                    this.gameUpdateInterval = null;
+                }
+                if (this.timerInterval) {
+                    clearInterval(this.timerInterval);
                 }
 
                 if (this.currentGame?.player2) {
