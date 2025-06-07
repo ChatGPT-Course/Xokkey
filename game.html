@@ -404,7 +404,7 @@
             </button>
 
             <p style="text-align: center; margin-top: 10px;">
-                Раунд <span id="roundNumber">1</span> из 2
+                Раунд <span id="roundNumber">1</span> из 1
             </p>
 
             
@@ -1181,63 +1181,48 @@
                         newPlayer2Score++; // Вратарь (Player2) отбил - защита сработала = +1 очко
                     }
 
-                    // Проверяем окончание игры (2 раунда)
-                    const currentRound = this.currentGame.current_round || 1;
-                    const gameFinished = currentRound >= 2;
-                    const nextRound = currentRound + 1;
+                    // Игра всегда заканчивается после 1 раунда
+                    const gameFinished = true;
 
-                    console.log(`Current round: ${currentRound}, Game finished: ${gameFinished}`);
+                    console.log('Game finished after 1 round');
 
                     // Только Player1 обновляет данные игры (избегаем конфликтов)
                     if (this.isPlayer1) {
+                        // Player1 (создатель) возвращается в ожидание - сбрасываем комнату
                         const updates = {
-                            player1_score: newPlayer1Score,
-                            player2_score: newPlayer2Score,
+                            player1_score: 0,
+                            player2_score: 0,
+                            player2: null,  // Убираем второго игрока
                             zone_sender: null,
                             zone1_protect: null,
                             zone2_protect: null,
                             sender_hod: 0,
-                            protect_hod: 0
+                            protect_hod: 0,
+                            current_round: 1,
+                            sec: 0,
+                            game_state: 'waiting',  // Возвращаем в ожидание
+                            winner: null
                         };
 
-                        if (gameFinished) {
-                            // Игра окончена после 2 раундов
-                            updates.current_round = nextRound;
-                            updates.sec = 0;
-                            updates.game_state = 'finished';
-                            updates.winner = newPlayer1Score > newPlayer2Score ? this.currentGame.player1 : this.currentGame.player2;
-                            console.log('Game finished, final updates:', updates);
-                        } else {
-                            // Переходим к следующему раунду
-                            updates.current_round = nextRound;
-                            updates.sec = 1;
-                            updates.game_state = 'game';
-                            console.log('Moving to next round, updates:', updates);
-                        }
-
+                        console.log('Resetting room for Player1 to waiting state:', updates);
                         await api.updateRoom(this.gameId, updates);
                     }
 
-                    if (gameFinished) {
-                        if (this.localTimerInterval) {
-                            clearInterval(this.localTimerInterval);
-                        }
-                        // Ждем 3 секунды, потом переходим к index.html
-                        setTimeout(() => {
-                            window.location.href = 'index.html';
-                        }, 3000);
-                    } else {
-                        // Начинаем новый раунд через 3 секунды
-                        setTimeout(() => {
-                            this.movesSubmitted = false;
-                            this.confirmedZones = [];
-                            this.selectedZones = [];
-                            this.clearZoneStyles();
-                            this.enableZoneSelection();
-                            this.startLocalTimer();
-                            this.showMessage(`Раунд ${nextRound} начинается!`, 'info');
-                        }, 3000);
+                    if (this.localTimerInterval) {
+                        clearInterval(this.localTimerInterval);
                     }
+
+                    // Player1 возвращается в ожидание, Player2 идет в меню
+                    setTimeout(() => {
+                        if (this.isPlayer1) {
+                            // Player1 (создатель) возвращается в ожидание
+                            this.showWaitingRoom(this.currentGame.room_name);
+                            this.showMessage('Ожидание нового игрока для реванша!', 'info');
+                        } else {
+                            // Player2 идет в главное меню
+                            window.location.href = 'index.html';
+                        }
+                    }, 4000);
                 } catch (error) {
                     console.error('Failed to process round results:', error);
                     this.showMessage('Ошибка обработки результата', 'error');
