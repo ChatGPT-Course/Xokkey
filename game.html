@@ -417,25 +417,40 @@
                     this.tg.ready();
                     this.tg.expand();
                     this.user = this.tg.initDataUnsafe?.user;
+                }
 
-                    if (!this.user) {
+                // Получаем реальные данные пользователя из cookies или Telegram
+                if (!this.user) {
+                    const savedUserId = this.getCookie('tg_user_id');
+                    const savedUsername = this.getCookie('tg_username');
+                    const savedName = this.getCookie('tg_name');
+
+                    if (savedUserId) {
                         this.user = {
-                            id: Date.now(),
+                            id: savedUserId,
+                            username: savedUsername || 'unknown',
+                            first_name: savedName || 'Игрок'
+                        };
+                    } else {
+                        // Fallback только если нет сохраненных данных
+                        this.user = {
+                            id: Date.now().toString(),
                             username: 'test_user',
                             first_name: 'Test'
                         };
                     }
-                } else {
-                    this.user = {
-                        id: Date.now(),
-                        username: 'test_user',
-                        first_name: 'Test'
-                    };
                 }
             }
 
+            getCookie(name) {
+                const value = `; ${document.cookie}`;
+                const parts = value.split(`; ${name}=`);
+                if (parts.length === 2) return parts.pop().split(';').shift();
+                return null;
+            }
+
             getUserId() {
-                return this.user?.id || Date.now();
+                return this.user?.id?.toString() || Date.now().toString();
             }
 
             getUsername() {
@@ -755,7 +770,12 @@
                     if (!updatedRoom) return;
 
                     const wasWaiting = this.currentGame?.game_state === 'waiting';
+                    const previousSec = this.currentGame?.sec;
+                    const previousSenderHod = this.currentGame?.sender_hod;
+                    const previousProtectHod = this.currentGame?.protect_hod;
+
                     this.currentGame = updatedRoom;
+                    console.log('Game status updated:', this.currentGame);
 
                     // Если игра завершена
                     if (this.currentGame.game_state === 'finished') {
@@ -772,7 +792,16 @@
                     }
 
                     // Проверяем, нужно ли обработать результат раунда
-                    if (this.currentGame.sec === 0 && this.currentGame.sender_hod === 1 && this.currentGame.protect_hod === 1) {
+                    // Обрабатываем только когда sec стал 0 и оба игрока сделали ходы
+                    const shouldProcessResult = (
+                        this.currentGame.sec === 0 && 
+                        this.currentGame.sender_hod === 1 && 
+                        this.currentGame.protect_hod === 1 &&
+                        (previousSec === 1 || previousSenderHod === 0 || previousProtectHod === 0)
+                    );
+
+                    if (shouldProcessResult) {
+                        console.log('Processing round result...');
                         await this.processRoundResult();
                         return;
                     }
@@ -922,69 +951,98 @@
 
             async processRoundResult() {
                 try {
+                    console.log('Processing round result for current game:', this.currentGame);
+
+                    // Проверяем, есть ли все необходимые данные для обработки
                     if (!this.currentGame.zone_sender || !this.currentGame.zone1_protect || !this.currentGame.zone2_protect) {
+                        console.log('Not all moves submitted yet');
                         return;
                     }
 
                     const attackerZone = this.currentGame.zone_sender;
                     const defenderZones = [this.currentGame.zone1_protect, this.currentGame.zone2_protect];
-
                     const goalScored = !defenderZones.includes(attackerZone);
 
+                    // Определяем результат для текущего игрока
+                    const amIPlayer1 = this.isPlayer1; // Player1 = подающий, Player2 = вратарь
+                    const amIAttacker = amIPlayer1;
+                    const amIDefender = !amIPlayer1;
+
+                    let resultMessage = '';
+                    let messageType = 'info';
+
+                    if (goalScored) {
+                        // Гол забит
+                        if (amIAttacker) {
+                            resultMessage = `⚽ ГОЛ! Ваш бросок в зону ${attackerZone} достиг цели!`;
+                            messageType = 'success';
+                        } else {
+                            resultMessage = `😔 Пропущен гол! Противник забил в зону ${attackerZone}. Ваша защита была в зонах ${defenderZones.join(', ')}.`;
+                            messageType = 'error';
+                        }
+                    } else {
+                        // Гол отбит
+                        if (amIDefender) {
+                            resultMessage = `🛡️ ОТЛИЧНАЯ ЗАЩИТА! Бросок в зону ${attackerZone} отбит! Ваша защита в зонах ${defenderZones.join(', ')} сработала!`;
+                            messageType = 'success';
+                        } else {
+                            resultMessage = `😔 Бросок отбит! Ваш бросок в зону ${attackerZone} заблокирован защитой противника.`;
+                            messageType = 'error';
+                        }
+                    }
+
+                    // Показываем персональный результат
+                    this.showMessage(resultMessage, messageType);
+
+                    // Обновляем счет
                     let newPlayer1Score = this.currentGame.player1_score || 0;
                     let newPlayer2Score = this.currentGame.player2_score || 0;
 
                     if (goalScored) {
-                        newPlayer1Score++; // Подающий забил
+                        newPlayer1Score++; // Подающий (Player1) забил
                     } else {
-                        newPlayer2Score++; // Вратарь отбил
-                    }
-
-                    const amIAttacker = this.isPlayer1;
-                    const didIScore = (goalScored && amIAttacker) || (!goalScored && !amIAttacker);
-
-                    if (goalScored) {
-                        this.showMessage(amIAttacker ? `⚽ ГОЛ! Бросок в зону ${attackerZone}!` : `⚽ Противник забил в зону ${attackerZone}!`, 
-                                       didIScore ? 'success' : 'error');
-                    } else {
-                        this.showMessage(amIAttacker ? `🛡️ Бросок в зону ${attackerZone} отбит!` : `🛡️ Отличная защита зон ${defenderZones.join(', ')}!`, 
-                                       didIScore ? 'success' : 'info');
+                        newPlayer2Score++; // Вратарь (Player2) отбил = очко вратарю
                     }
 
                     // Проверяем окончание игры (3 раунда)
                     const gameFinished = this.currentGame.current_round >= 3;
                     const nextRound = (this.currentGame.current_round || 1) + 1;
 
-                    const updates = {
-                        player1_score: newPlayer1Score,
-                        player2_score: newPlayer2Score,
-                        current_round: nextRound,
-                        zone_sender: null,
-                        zone1_protect: null,
-                        zone2_protect: null,
-                        sender_hod: 0,
-                        protect_hod: 0,
-                        sec: gameFinished ? 0 : 1,
-                        game_state: gameFinished ? 'finished' : 'game'
-                    };
+                    // Только Player1 обновляет данные игры (избегаем конфликтов)
+                    if (this.isPlayer1) {
+                        const updates = {
+                            player1_score: newPlayer1Score,
+                            player2_score: newPlayer2Score,
+                            current_round: nextRound,
+                            zone_sender: null,
+                            zone1_protect: null,
+                            zone2_protect: null,
+                            sender_hod: 0,
+                            protect_hod: 0,
+                            sec: gameFinished ? 0 : 1,
+                            game_state: gameFinished ? 'finished' : 'game'
+                        };
+
+                        if (gameFinished) {
+                            updates.winner = newPlayer1Score > newPlayer2Score ? this.currentGame.player1 : this.currentGame.player2;
+                        }
+
+                        console.log('Player1 updating game with:', updates);
+                        await api.updateRoom(this.gameId, updates);
+                    }
 
                     if (gameFinished) {
-                        updates.winner = newPlayer1Score > newPlayer2Score ? this.currentGame.player1 : this.currentGame.player2;
                         if (this.localTimerInterval) {
                             clearInterval(this.localTimerInterval);
                         }
-                    }
-
-                    await api.updateRoom(this.gameId, updates);
-
-                    if (gameFinished) {
                         setTimeout(() => this.endGame(), 3000);
                     } else {
-                        // Начинаем новый раунд с локальным таймером
+                        // Начинаем новый раунд через 3 секунды
                         setTimeout(() => {
                             this.movesSubmitted = false;
                             this.startLocalTimer();
-                        }, 2000);
+                            this.showMessage(`Раунд ${nextRound} начинается!`, 'info');
+                        }, 3000);
                     }
                 } catch (error) {
                     console.error('Failed to process round results:', error);
