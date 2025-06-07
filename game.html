@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -367,7 +368,7 @@
                 </div>
             </div>
 
-            <div class="timer-display" id="timerDisplay">10</div>
+            <div class="timer-display" id="timerDisplay">15</div>
 
             <div class="role-info" id="roleInfo">
                 Ваша роль
@@ -476,19 +477,21 @@
                 }
 
                 try {
+                    console.log(`Making ${method} request to: ${url}`, data);
                     const response = await fetch(url, options);
 
                     if (!response.ok) {
                         const errorText = await response.text();
                         console.error(`HTTP error! status: ${response.status}, response:`, errorText);
-                        return null;
+                        throw new Error(`HTTP ${response.status}: ${errorText}`);
                     }
 
                     const result = await response.json();
+                    console.log(`${method} response:`, result);
                     return result;
                 } catch (error) {
                     console.error('API Request failed:', error);
-                    return null;
+                    throw error;
                 }
             }
 
@@ -526,8 +529,9 @@
                 this.isPlayer1 = false;
                 this.selectedZones = [];
                 this.gameUpdateInterval = null;
-                this.timerInterval = null;
-                this.currentTimer = 10;
+                this.localTimer = 15;
+                this.localTimerInterval = null;
+                this.movesSubmitted = false;
                 this.init();
             }
 
@@ -540,6 +544,7 @@
                         display_name: tgApp.getDisplayName()
                     };
 
+                    console.log('Текущий пользователь:', this.currentUser);
                     this.showGameMenu();
                 } catch (error) {
                     console.error('Failed to initialize game:', error);
@@ -569,10 +574,12 @@
                         zone_sender: null,
                         zone1_protect: null,
                         zone2_protect: null,
-                        sec: 10
+                        sec: 0
                     };
 
+                    console.log('Creating room with data:', roomData);
                     const createdRoom = await api.createGame(roomData);
+                    console.log('Room created:', createdRoom);
 
                     if (createdRoom) {
                         this.currentGame = createdRoom;
@@ -621,7 +628,7 @@
                     const updateData = {
                         player2: this.currentUser.telegram_id,
                         game_state: 'game',
-                        sec: 10
+                        sec: 1
                     };
 
                     const updatedRoom = await api.updateRoom(room.Id, updateData);
@@ -634,6 +641,7 @@
                         this.hideJoinForm();
                         this.showGamePlay();
                         this.startGameLoop();
+                        this.startLocalTimer();
                         this.showMessage('Присоединились к игре!', 'success');
                     } else {
                         this.showMessage('Ошибка присоединения к игре', 'error');
@@ -652,6 +660,91 @@
                 this.gameUpdateInterval = setInterval(async () => {
                     await this.checkGameStatus();
                 }, 1000);
+            }
+
+            startLocalTimer() {
+                this.localTimer = 15;
+                this.movesSubmitted = false;
+                this.updateTimerDisplay();
+
+                if (this.localTimerInterval) {
+                    clearInterval(this.localTimerInterval);
+                }
+
+                this.localTimerInterval = setInterval(() => {
+                    this.localTimer--;
+                    this.updateTimerDisplay();
+
+                    if (this.localTimer <= 0) {
+                        this.handleTimeUp();
+                    }
+                }, 1000);
+            }
+
+            updateTimerDisplay() {
+                const timerElement = document.getElementById('timerDisplay');
+                if (timerElement) {
+                    timerElement.textContent = this.localTimer;
+
+                    if (this.localTimer <= 5) {
+                        timerElement.classList.add('warning');
+                    } else {
+                        timerElement.classList.remove('warning');
+                    }
+                }
+            }
+
+            async handleTimeUp() {
+                if (this.localTimerInterval) {
+                    clearInterval(this.localTimerInterval);
+                }
+
+                // Устанавливаем sec = 0 (время вышло, подводим итоги)
+                await api.updateRoom(this.gameId, { sec: 0 });
+
+                // Автоматически делаем случайные ходы для тех, кто не успел
+                if (!this.movesSubmitted) {
+                    await this.submitRandomMove();
+                }
+
+                this.disableZoneSelection();
+                const submitBtn = document.getElementById('submitMove');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Время вышло!';
+                }
+
+                this.showMessage('Время вышло! Автоматические ходы сделаны.', 'info');
+            }
+
+            async submitRandomMove() {
+                try {
+                    const iAmSender = this.isPlayer1;
+                    let moveData = {};
+
+                    if (iAmSender && this.currentGame.sender_hod === 0) {
+                        const randomZone = Math.floor(Math.random() * 4) + 1;
+                        moveData = {
+                            zone_sender: randomZone,
+                            sender_hod: 1
+                        };
+                    } else if (!iAmSender && this.currentGame.protect_hod === 0) {
+                        const zones = [1, 2, 3, 4];
+                        const shuffled = zones.sort(() => 0.5 - Math.random());
+                        moveData = {
+                            zone1_protect: shuffled[0],
+                            zone2_protect: shuffled[1],
+                            protect_hod: 1
+                        };
+                    }
+
+                    if (Object.keys(moveData).length > 0) {
+                        await api.updateRoom(this.gameId, moveData);
+                        this.movesSubmitted = true;
+                    }
+                } catch (error) {
+                    console.error('Failed to submit random move:', error);
+                }
             }
 
             async checkGameStatus() {
@@ -673,102 +766,20 @@
                     // Если ожидали игрока и он присоединился
                     if (this.currentGame.game_state === 'game' && wasWaiting && this.currentGame.player2) {
                         this.showGamePlay();
+                        this.startLocalTimer();
                         this.showMessage('Второй игрок присоединился! Игра началась!', 'success');
-                        this.startTimer();
                         return;
                     }
 
-                    // Обновляем таймер
-                    if (this.currentGame.game_state === 'game' && 
-                        !document.getElementById('gamePlay').classList.contains('hidden')) {
-                        this.updateTimer();
-
-                        // Проверяем, нужно ли обработать результат раунда
-                        if (this.currentGame.sender_hod === 1 && this.currentGame.protect_hod === 1) {
-                            await this.processRoundResult();
-                            return;
-                        }
-
-                        this.updateGameDisplay();
+                    // Проверяем, нужно ли обработать результат раунда
+                    if (this.currentGame.sec === 0 && this.currentGame.sender_hod === 1 && this.currentGame.protect_hod === 1) {
+                        await this.processRoundResult();
+                        return;
                     }
+
+                    this.updateGameDisplay();
                 } catch (error) {
                     console.error('Failed to check room status:', error);
-                }
-            }
-
-            async startTimer() {
-                if (this.timerInterval) {
-                    clearInterval(this.timerInterval);
-                }
-
-                this.timerInterval = setInterval(async () => {
-                    if (this.currentGame && this.currentGame.sec > 0) {
-                        const newSec = this.currentGame.sec - 1;
-                        await api.updateRoom(this.gameId, { sec: newSec });
-                    } else if (this.currentGame && this.currentGame.sec <= 0) {
-                        // Время вышло - автоматически завершаем ходы
-                        await this.handleTimeUp();
-                    }
-                }, 1000);
-            }
-
-            async handleTimeUp() {
-                if (this.timerInterval) {
-                    clearInterval(this.timerInterval);
-                }
-
-                // Автоматически делаем случайные ходы для тех, кто не успел
-                let updates = {};
-
-                if (this.currentGame.sender_hod === 0) {
-                    const randomZone = Math.floor(Math.random() * 4) + 1;
-                    updates.zone_sender = randomZone;
-                    updates.sender_hod = 1;
-                }
-
-                if (this.currentGame.protect_hod === 0) {
-                    const zones = [1, 2, 3, 4];
-                    const shuffled = zones.sort(() => 0.5 - Math.random());
-                    updates.zone1_protect = shuffled[0];
-                    updates.zone2_protect = shuffled[1];
-                    updates.protect_hod = 1;
-                }
-
-                if (Object.keys(updates).length > 0) {
-                    await api.updateRoom(this.gameId, updates);
-                }
-
-                // Блокируем все кнопки
-                this.disableZoneSelection();
-                const submitBtn = document.getElementById('submitMove');
-                if (submitBtn) {
-                    submitBtn.disabled = true;
-                    submitBtn.textContent = 'Время вышло!';
-                }
-
-                this.showMessage('Время вышло! Автоматические ходы сделаны.', 'info');
-            }
-
-            updateTimer() {
-                const timerElement = document.getElementById('timerDisplay');
-                if (timerElement && this.currentGame) {
-                    timerElement.textContent = this.currentGame.sec || 0;
-
-                    if (this.currentGame.sec <= 3) {
-                        timerElement.classList.add('warning');
-                    } else {
-                        timerElement.classList.remove('warning');
-                    }
-
-                    // Блокируем кнопки когда таймер равен 0
-                    if (this.currentGame.sec <= 0) {
-                        this.disableZoneSelection();
-                        const submitBtn = document.getElementById('submitMove');
-                        if (submitBtn) {
-                            submitBtn.disabled = true;
-                            submitBtn.textContent = 'Время вышло!';
-                        }
-                    }
                 }
             }
 
@@ -816,13 +827,14 @@
             }
 
             selectZone(zoneNumber) {
+                if (this.movesSubmitted || this.localTimer <= 0) return;
+
                 const iAmSender = this.isPlayer1;
                 const senderMoved = this.currentGame.sender_hod === 1;
                 const protectorMoved = this.currentGame.protect_hod === 1;
                 const iMoved = (iAmSender && senderMoved) || (!iAmSender && protectorMoved);
 
-                // Блокируем выбор если уже сделан ход или время вышло
-                if (iMoved || this.currentGame.sec <= 0) return;
+                if (iMoved) return;
 
                 const zone = document.getElementById(`zone${zoneNumber}`);
                 const maxSelections = iAmSender ? 1 : 2;
@@ -842,7 +854,7 @@
             }
 
             async submitMove() {
-                if (this.selectedZones.length === 0) return;
+                if (this.selectedZones.length === 0 || this.movesSubmitted) return;
 
                 try {
                     const iAmSender = this.isPlayer1;
@@ -855,8 +867,7 @@
                         return;
                     }
 
-                    // Проверяем время
-                    if (this.currentGame.sec <= 0) {
+                    if (this.localTimer <= 0) {
                         this.showMessage('Время вышло!', 'error');
                         return;
                     }
@@ -890,6 +901,7 @@
                     }
 
                     await api.updateRoom(this.gameId, moveData);
+                    this.movesSubmitted = true;
 
                     // Очищаем выбор и блокируем интерфейс
                     this.selectedZones = [];
@@ -952,14 +964,14 @@
                         zone2_protect: null,
                         sender_hod: 0,
                         protect_hod: 0,
-                        sec: 10,
+                        sec: gameFinished ? 0 : 1,
                         game_state: gameFinished ? 'finished' : 'game'
                     };
 
                     if (gameFinished) {
                         updates.winner = newPlayer1Score > newPlayer2Score ? this.currentGame.player1 : this.currentGame.player2;
-                        if (this.timerInterval) {
-                            clearInterval(this.timerInterval);
+                        if (this.localTimerInterval) {
+                            clearInterval(this.localTimerInterval);
                         }
                     }
 
@@ -968,8 +980,11 @@
                     if (gameFinished) {
                         setTimeout(() => this.endGame(), 3000);
                     } else {
-                        // Начинаем новый раунд с таймером
-                        setTimeout(() => this.startTimer(), 2000);
+                        // Начинаем новый раунд с локальным таймером
+                        setTimeout(() => {
+                            this.movesSubmitted = false;
+                            this.startLocalTimer();
+                        }, 2000);
                     }
                 } catch (error) {
                     console.error('Failed to process round results:', error);
@@ -1014,8 +1029,8 @@
                 if (this.gameUpdateInterval) {
                     clearInterval(this.gameUpdateInterval);
                 }
-                if (this.timerInterval) {
-                    clearInterval(this.timerInterval);
+                if (this.localTimerInterval) {
+                    clearInterval(this.localTimerInterval);
                 }
 
                 this.hideAllScreens();
@@ -1064,8 +1079,8 @@
                 if (this.gameUpdateInterval) {
                     clearInterval(this.gameUpdateInterval);
                 }
-                if (this.timerInterval) {
-                    clearInterval(this.timerInterval);
+                if (this.localTimerInterval) {
+                    clearInterval(this.localTimerInterval);
                 }
 
                 if (this.currentGame?.player2) {
