@@ -268,7 +268,7 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 2rem;
+            font-size: 6rem;
             z-index: 10;
         }
 
@@ -323,35 +323,7 @@
             background: #667eea;
         }
 
-        .result-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(0,0,0,0.8);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 100;
-            border-radius: 15px;
-        }
-
-        .result-animation {
-            text-align: center;
-            color: white;
-        }
-
-        .result-animation .big-emoji {
-            font-size: 4rem;
-            margin: 10px;
-            animation: fadeIn 0.5s ease-in;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.5); }
-            to { opacity: 1; transform: scale(1); }
-        }
+        
     </style>
 </head>
 <body>
@@ -435,12 +407,7 @@
                 Раунд <span id="roundNumber">1</span> из 3
             </p>
 
-            <!-- Overlay для анимации результата -->
-            <div id="resultOverlay" class="result-overlay hidden">
-                <div class="result-animation">
-                    <div id="resultEmojis"></div>
-                </div>
-            </div>
+            
         </div>
 
         <!-- Окончание игры -->
@@ -996,12 +963,12 @@
                     // Сохраняем подтвержденные зоны и меняем их цвет на зеленый
                     this.confirmedZones = [...this.selectedZones];
                     this.selectedZones = [];
-                    
+
                     // Обновляем цвета зон
                     document.querySelectorAll('.zone').forEach(zone => {
                         zone.classList.remove('selected');
                     });
-                    
+
                     this.confirmedZones.forEach(zoneNum => {
                         const zone = document.getElementById(`zone${zoneNum}`);
                         zone.classList.add('confirmed');
@@ -1019,18 +986,7 @@
             }
 
             async showResultAnimation(attackerZone, defenderZones, goalScored) {
-                const overlay = document.getElementById('resultOverlay');
-                const emojisContainer = document.getElementById('resultEmojis');
-                
-                overlay.classList.remove('hidden');
-                
-                // Сначала показываем шайбу на секторе атаки
-                const puckEmoji = document.createElement('div');
-                puckEmoji.className = 'big-emoji';
-                puckEmoji.textContent = '🏒';
-                emojisContainer.appendChild(puckEmoji);
-                
-                // Добавляем эмоджи на зоны
+                // Добавляем эмоджи клюшки на зону атаки
                 const attackZone = document.getElementById(`zone${attackerZone}`);
                 if (attackZone) {
                     const puckOverlay = document.createElement('div');
@@ -1038,9 +994,9 @@
                     puckOverlay.textContent = '🏒';
                     attackZone.appendChild(puckOverlay);
                 }
-                
+
                 await new Promise(resolve => setTimeout(resolve, 1000));
-                
+
                 // Показываем щиты на защитных зонах
                 defenderZones.forEach(zoneNum => {
                     const defZone = document.getElementById(`zone${zoneNum}`);
@@ -1048,40 +1004,13 @@
                         const shieldOverlay = document.createElement('div');
                         shieldOverlay.className = 'emoji-overlay';
                         shieldOverlay.textContent = '🛡️';
-                        shieldOverlay.style.marginLeft = '15px';
                         defZone.appendChild(shieldOverlay);
                     }
                 });
-                
-                const shieldEmoji = document.createElement('div');
-                shieldEmoji.className = 'big-emoji';
-                shieldEmoji.textContent = '🛡️';
-                emojisContainer.appendChild(shieldEmoji);
-                
-                await new Promise(resolve => setTimeout(resolve, 1000));
-                
-                // Показываем результат
-                const resultEmoji = document.createElement('div');
-                resultEmoji.className = 'big-emoji';
-                resultEmoji.textContent = goalScored ? '✅' : '❌';
-                emojisContainer.appendChild(resultEmoji);
-                
-                // Добавляем результат на зону атаки
-                if (attackZone) {
-                    const resultOverlay = document.createElement('div');
-                    resultOverlay.className = 'emoji-overlay';
-                    resultOverlay.textContent = goalScored ? '✅' : '❌';
-                    resultOverlay.style.marginTop = '-10px';
-                    resultOverlay.style.fontSize = '1.5rem';
-                    attackZone.appendChild(resultOverlay);
-                }
-                
+
                 await new Promise(resolve => setTimeout(resolve, 2000));
-                
-                // Убираем overlay и очищаем эмоджи с зон
-                overlay.classList.add('hidden');
-                emojisContainer.innerHTML = '';
-                
+
+                // Очищаем эмоджи с зон
                 document.querySelectorAll('.emoji-overlay').forEach(overlay => {
                     overlay.remove();
                 });
