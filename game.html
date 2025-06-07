@@ -729,7 +729,12 @@
                     submitBtn.textContent = 'Время вышло!';
                 }
 
-                this.showMessage('Время вышло! Автоматические ходы сделаны.', 'info');
+                // Player1 сразу делает запрос, Player2 - через секунду
+                if (this.isPlayer1) {
+                    setTimeout(() => this.processGameResult(), 100);
+                } else {
+                    setTimeout(() => this.processGameResult(), 1100);
+                }
             }
 
             async submitRandomMove() {
@@ -946,6 +951,87 @@
                 } catch (error) {
                     console.error('Failed to submit move:', error);
                     this.showMessage('Ошибка отправки хода', 'error');
+                }
+            }
+
+            async processGameResult() {
+                try {
+                    console.log('Processing game result...');
+                    
+                    // Получаем свежие данные из таблицы
+                    const currentGameData = await api.getRoom(this.gameId);
+                    if (!currentGameData) {
+                        console.log('Game data not found');
+                        return;
+                    }
+
+                    this.currentGame = currentGameData;
+                    console.log('Fresh game data:', this.currentGame);
+
+                    // Проверяем, есть ли все необходимые данные для обработки
+                    if (!this.currentGame.zone_sender || !this.currentGame.zone1_protect || !this.currentGame.zone2_protect) {
+                        console.log('Not all moves submitted yet');
+                        setTimeout(() => this.processGameResult(), 500);
+                        return;
+                    }
+
+                    const attackerZone = this.currentGame.zone_sender;
+                    const defenderZones = [this.currentGame.zone1_protect, this.currentGame.zone2_protect];
+                    const goalScored = !defenderZones.includes(attackerZone);
+
+                    // Определяем результат для текущего игрока
+                    const amIPlayer1 = this.isPlayer1; // Player1 = подающий, Player2 = вратарь
+                    const amIAttacker = amIPlayer1;
+                    const amIDefender = !amIPlayer1;
+
+                    let resultMessage = '';
+                    let messageType = 'info';
+
+                    if (goalScored) {
+                        // Гол забит
+                        if (amIAttacker) {
+                            resultMessage = `⚽ Гол забит! Ваш бросок в зону ${attackerZone} достиг цели!`;
+                            messageType = 'success';
+                        } else {
+                            resultMessage = `😔 Вы пропустили шайбу! Противник забил в зону ${attackerZone}. Ваша защита была в зонах ${defenderZones.join(', ')}.`;
+                            messageType = 'error';
+                        }
+                    } else {
+                        // Гол отбит
+                        if (amIDefender) {
+                            resultMessage = `🛡️ Шайба отбита! Бросок в зону ${attackerZone} заблокирован! Ваша защита в зонах ${defenderZones.join(', ')} сработала!`;
+                            messageType = 'success';
+                        } else {
+                            resultMessage = `😔 Гол попал в защиту! Ваш бросок в зону ${attackerZone} заблокирован защитой противника.`;
+                            messageType = 'error';
+                        }
+                    }
+
+                    // Показываем персональный результат
+                    this.showMessage(resultMessage, messageType);
+
+                    // Через 3 секунды закрываем комнату и переходим в меню
+                    setTimeout(async () => {
+                        try {
+                            // Удаляем комнату
+                            await api.deleteRoom(this.gameId);
+                            console.log('Room deleted');
+                        } catch (error) {
+                            console.error('Error deleting room:', error);
+                        }
+                        
+                        // Переходим в главное меню
+                        window.location.href = 'index.html';
+                    }, 3000);
+
+                } catch (error) {
+                    console.error('Failed to process game result:', error);
+                    this.showMessage('Ошибка обработки результата', 'error');
+                    
+                    // В случае ошибки тоже переходим в меню через 2 секунды
+                    setTimeout(() => {
+                        window.location.href = 'index.html';
+                    }, 2000);
                 }
             }
 
