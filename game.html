@@ -834,6 +834,18 @@
                         return;
                     }
 
+                    // Проверяем начало нового раунда (когда sec стал 1 после обработки результата)
+                    if (this.currentGame.sec === 1 && previousSec === 0 && this.movesSubmitted) {
+                        console.log('New round started, resetting moves...');
+                        this.movesSubmitted = false;
+                        this.confirmedZones = [];
+                        this.selectedZones = [];
+                        this.clearZoneStyles();
+                        this.enableZoneSelection();
+                        this.startLocalTimer();
+                        return;
+                    }
+
                     this.updateGameDisplay();
                 } catch (error) {
                     console.error('Failed to check room status:', error);
@@ -843,17 +855,24 @@
             updateGameDisplay() {
                 if (!this.currentGame) return;
 
-                // Обновляем счет, раунд и role info - НЕ ТРОГАЕМ ЗОНЫ
+                // Обновляем счет, раунд и role info
                 const player1Score = this.currentGame.player1_score || 0;
                 const player2Score = this.currentGame.player2_score || 0;
                 const currentRound = this.currentGame.current_round || 1;
                 
-                document.getElementById('player1Score').textContent = player1Score;
-                document.getElementById('player2Score').textContent = player2Score;
-                document.getElementById('roundNumber').textContent = currentRound;
+                // Обновляем отображение счета и раунда
+                const player1ScoreElement = document.getElementById('player1Score');
+                const player2ScoreElement = document.getElementById('player2Score');
+                const roundNumberElement = document.getElementById('roundNumber');
+                
+                if (player1ScoreElement) player1ScoreElement.textContent = player1Score;
+                if (player2ScoreElement) player2ScoreElement.textContent = player2Score;
+                if (roundNumberElement) roundNumberElement.textContent = currentRound;
 
                 const roleInfoElement = document.getElementById('roleInfo');
                 const submitBtn = document.getElementById('submitMove');
+
+                if (!roleInfoElement || !submitBtn) return;
 
                 const iAmSender = this.isPlayer1; // Player1 всегда подающий
                 const senderMoved = this.currentGame.sender_hod === 1;
@@ -1163,8 +1182,11 @@
                     }
 
                     // Проверяем окончание игры (2 раунда)
-                    const gameFinished = this.currentGame.current_round >= 2;
-                    const nextRound = (this.currentGame.current_round || 1) + 1;
+                    const currentRound = this.currentGame.current_round || 1;
+                    const gameFinished = currentRound >= 2;
+                    const nextRound = currentRound + 1;
+
+                    console.log(`Current round: ${currentRound}, Game finished: ${gameFinished}`);
 
                     // Только Player1 обновляет данные игры (избегаем конфликтов)
                     if (this.isPlayer1) {
@@ -1184,14 +1206,15 @@
                             updates.sec = 0;
                             updates.game_state = 'finished';
                             updates.winner = newPlayer1Score > newPlayer2Score ? this.currentGame.player1 : this.currentGame.player2;
+                            console.log('Game finished, final updates:', updates);
                         } else {
                             // Переходим к следующему раунду
                             updates.current_round = nextRound;
                             updates.sec = 1;
                             updates.game_state = 'game';
+                            console.log('Moving to next round, updates:', updates);
                         }
 
-                        console.log('Player1 updating game with:', updates);
                         await api.updateRoom(this.gameId, updates);
                     }
 
@@ -1208,7 +1231,9 @@
                         setTimeout(() => {
                             this.movesSubmitted = false;
                             this.confirmedZones = [];
+                            this.selectedZones = [];
                             this.clearZoneStyles();
+                            this.enableZoneSelection();
                             this.startLocalTimer();
                             this.showMessage(`Раунд ${nextRound} начинается!`, 'info');
                         }, 3000);
