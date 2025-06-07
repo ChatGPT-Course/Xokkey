@@ -179,6 +179,15 @@
             margin-bottom: 8px;
         }
 
+        .card-avatar {
+            width: 60px;
+            height: 60px;
+            border-radius: 8px;
+            margin: 0 auto 8px;
+            object-fit: cover;
+            border: 2px solid rgba(255,255,255,0.2);
+        }
+
         .card-name {
             font-size: 0.9rem;
             font-weight: bold;
@@ -363,10 +372,16 @@
             return cards;
         }
 
-        // Получить иконку для карточки
-        function getCardIcon(name) {
-            // Можно добавить логику для разных иконок в зависимости от имени
-            return '🏒';
+        // Получить аватар для карточки
+        function getCardAvatar(name) {
+            const avatarMap = {
+                'Ливо': 'https://raw.githubusercontent.com/your-username/your-repo/main/avatar/Dzoshya_livo.jpg',
+                'Голдобин': 'https://raw.githubusercontent.com/your-username/your-repo/main/avatar/Nikolay_goldobin.jpg',
+                'Рушан': 'https://raw.githubusercontent.com/your-username/your-repo/main/avatar/Rushan_rafikov.jpg',
+                'Сериков': 'https://raw.githubusercontent.com/your-username/your-repo/main/avatar/artem_serikov.jpg'
+            };
+            
+            return avatarMap[name] || null;
         }
 
         // Получить класс редкости
@@ -398,11 +413,22 @@
                 const rarityClass = getRarityClass(card.rarity);
                 cardElement.className = `card-item ${rarityClass}`;
                 
-                cardElement.innerHTML = `
-                    <div class="card-icon">${getCardIcon(card.name)}</div>
-                    <div class="card-name">${card.name}</div>
-                    <div class="card-rarity ${rarityClass}">${card.rarity}</div>
-                `;
+                const avatarUrl = getCardAvatar(card.name);
+                
+                if (avatarUrl) {
+                    cardElement.innerHTML = `
+                        <img src="${avatarUrl}" alt="${card.name}" class="card-avatar" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                        <div class="card-icon" style="display: none;">🏒</div>
+                        <div class="card-name">${card.name}</div>
+                        <div class="card-rarity ${rarityClass}">${card.rarity}</div>
+                    `;
+                } else {
+                    cardElement.innerHTML = `
+                        <div class="card-icon">🏒</div>
+                        <div class="card-name">${card.name}</div>
+                        <div class="card-rarity ${rarityClass}">${card.rarity}</div>
+                    `;
+                }
                 
                 inventoryGrid.appendChild(cardElement);
             });
