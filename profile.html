@@ -62,7 +62,7 @@
         }
 
         .container {
-            max-width: 450px;
+            max-width: 500px;
             margin: 0 auto;
             padding: 20px;
         }
@@ -97,6 +97,31 @@
             border: 3px solid rgba(255, 255, 255, 0.2);
             box-shadow: 0 8px 20px rgba(231, 76, 60, 0.3);
             flex-shrink: 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .avatar.loading::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            animation: shimmer 1.5s infinite;
+        }
+
+        .avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
         }
 
         .profile-info {
@@ -132,6 +157,19 @@
             font-weight: 600;
             color: white;
             box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .currency-display.loading::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 1.5s infinite;
         }
 
         .currency-display .stick-icon {
@@ -188,45 +226,77 @@
 
         .card-rarity-badge {
             position: absolute;
-            top: 8px;
-            right: 8px;
-            font-size: 0.7rem;
-            padding: 4px 8px;
-            border-radius: 10px;
+            top: 5px;
+            right: 5px;
+            font-size: 0.65rem;
+            padding: 3px 6px;
+            border-radius: 8px;
             font-weight: bold;
             transform: rotate(15deg);
-            background: rgba(0,0,0,0.7);
+            background: rgba(0,0,0,0.8);
             color: white;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border: 1px solid rgba(255,255,255,0.2);
+            letter-spacing: 0.3px;
+            border: 1px solid rgba(255,255,255,0.3);
+            z-index: 10;
         }
 
         .card-rarity-badge.rare { 
-            background: rgba(52, 152, 219, 0.8);
+            background: rgba(52, 152, 219, 0.9);
             border-color: #3498db;
         }
 
         .card-rarity-badge.epic { 
-            background: rgba(155, 89, 182, 0.8);
+            background: rgba(155, 89, 182, 0.9);
             border-color: #9b59b6;
         }
 
         .card-rarity-badge.legendary { 
-            background: rgba(243, 156, 18, 0.8);
+            background: rgba(243, 156, 18, 0.9);
             border-color: #f39c12;
         }
 
         .card-rarity-badge.mythical { 
-            background: rgba(231, 76, 60, 0.8);
+            background: rgba(231, 76, 60, 0.9);
             border-color: #e74c3c;
         }
 
+        /* Эффекты для карточек разной редкости */
+        .card-item.legendary {
+            background: rgba(44, 62, 80, 0.8);
+            border: 1px solid rgba(243, 156, 18, 0.3);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3), 0 0 20px rgba(243, 156, 18, 0.1);
+            animation: legendaryGlow 3s ease-in-out infinite alternate;
+        }
+
+        .card-item.mythical {
+            background: rgba(44, 62, 80, 0.8);
+            border: 1px solid rgba(231, 76, 60, 0.3);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3), 0 0 15px rgba(231, 76, 60, 0.1);
+            animation: mythicalShimmer 2s ease-in-out infinite;
+        }
+
+        .card-item.epic {
+            background: rgba(44, 62, 80, 0.8);
+            border: 1px solid rgba(155, 89, 182, 0.2);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3), inset 0 0 30px rgba(155, 89, 182, 0.1);
+        }
+
+        @keyframes legendaryGlow {
+            0% { box-shadow: 0 5px 15px rgba(0,0,0,0.3), 0 0 20px rgba(243, 156, 18, 0.1); }
+            100% { box-shadow: 0 5px 15px rgba(0,0,0,0.3), 0 0 30px rgba(243, 156, 18, 0.2); }
+        }
+
+        @keyframes mythicalShimmer {
+            0%, 100% { box-shadow: 0 5px 15px rgba(0,0,0,0.3), 0 0 15px rgba(231, 76, 60, 0.1); }
+            50% { box-shadow: 0 5px 15px rgba(0,0,0,0.3), 0 0 25px rgba(231, 76, 60, 0.15); }
+        }
+
         .card-avatar {
-            width: 70px;
-            height: 70px;
+            width: 84px;
+            height: 84px;
             border-radius: 10px;
-            margin: 10px auto;
+            margin: 5px auto 10px auto;
             object-fit: cover;
             border: 2px solid rgba(255,255,255,0.3);
             box-shadow: 0 4px 10px rgba(0,0,0,0.4);
@@ -415,10 +485,52 @@
 
         // Получить аватар пользователя
         function getUserAvatar(userData) {
-            if (userData.first_name) {
-                return userData.first_name.charAt(0).toUpperCase();
+            const avatarElement = document.getElementById('userAvatar');
+            avatarElement.classList.add('loading');
+
+            // Проверяем сохраненное фото из localStorage
+            const savedPhoto = localStorage.getItem('user_photo');
+            if (savedPhoto) {
+                const img = document.createElement('img');
+                img.src = savedPhoto;
+                img.onload = function() {
+                    avatarElement.innerHTML = '';
+                    avatarElement.appendChild(img);
+                    avatarElement.classList.remove('loading');
+                };
+                img.onerror = function() {
+                    showInitial();
+                };
+                return;
             }
-            return '👤';
+
+            // Проверяем Telegram фото
+            if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.photo_url) {
+                const img = document.createElement('img');
+                img.src = tg.initDataUnsafe.user.photo_url;
+                img.onload = function() {
+                    avatarElement.innerHTML = '';
+                    avatarElement.appendChild(img);
+                    avatarElement.classList.remove('loading');
+                    // Сохраняем фото в localStorage
+                    localStorage.setItem('user_photo', tg.initDataUnsafe.user.photo_url);
+                };
+                img.onerror = function() {
+                    showInitial();
+                };
+                return;
+            }
+
+            function showInitial() {
+                avatarElement.classList.remove('loading');
+                if (userData && userData.first_name) {
+                    avatarElement.textContent = userData.first_name.charAt(0).toUpperCase();
+                } else {
+                    avatarElement.textContent = '👤';
+                }
+            }
+
+            showInitial();
         }
 
         // Получить данные пользователя из базы
@@ -491,6 +603,22 @@
             return rarityMap[rarity] || 'common';
         }
 
+        // Сортировка карточек по редкости
+        function sortCardsByRarity(cards) {
+            const rarityOrder = {
+                'легендарный': 1,
+                'мифический': 2,
+                'редкий': 3,
+                'обычный': 4
+            };
+
+            return cards.sort((a, b) => {
+                const rarityA = rarityOrder[a.rarity] || 5;
+                const rarityB = rarityOrder[b.rarity] || 5;
+                return rarityA - rarityB;
+            });
+        }
+
         // Отобразить инвентарь
         function displayInventory(cards) {
             const container = document.getElementById('inventoryContainer');
@@ -500,10 +628,13 @@
                 return;
             }
 
+            // Сортируем карточки по редкости
+            const sortedCards = sortCardsByRarity(cards);
+
             const inventoryGrid = document.createElement('div');
             inventoryGrid.className = 'inventory-grid';
 
-            cards.forEach(card => {
+            sortedCards.forEach(card => {
                 const cardElement = document.createElement('div');
                 const rarityClass = getRarityClass(card.rarity);
                 cardElement.className = `card-item ${rarityClass}`;
@@ -551,10 +682,20 @@
                 document.getElementById('userName').textContent = userData.display_name;
                 document.getElementById('userUsername').textContent = `@${userData.username}`;
                 document.getElementById('userId').textContent = `ID: ${userData.id}`;
-                document.getElementById('userAvatar').textContent = getUserAvatar(userData);
+                
+                // Устанавливаем анимацию загрузки для валюты
+                const currencyDisplay = document.querySelector('.currency-display');
+                currencyDisplay.classList.add('loading');
+                
+                // Получаем аватар
+                getUserAvatar(userData);
 
                 // Получаем данные из базы
                 const dbUser = await getUserData(userData.id);
+                
+                // Убираем анимацию загрузки
+                currencyDisplay.classList.remove('loading');
+                
                 if (dbUser) {
                     document.getElementById('userMoney').textContent = dbUser.money || 0;
                     
