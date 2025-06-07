@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Игровое меню</title>
+    <title>Hockey Shootouts</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * {
@@ -15,86 +15,165 @@
 
         body {
             font-family: 'Arial', sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
             min-height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 20px;
+            color: white;
         }
 
         .container {
-            background: white;
-            padding: 60px 40px;
+            background: rgba(44, 62, 80, 0.9);
+            padding: 40px 30px;
             border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
             text-align: center;
-            min-width: 300px;
+            min-width: 320px;
             max-width: 400px;
             width: 100%;
+            backdrop-filter: blur(10px);
         }
 
-        h1 {
-            color: #333;
-            margin-bottom: 20px;
-            font-size: 2.5em;
+        .header {
+            margin-bottom: 30px;
         }
 
-        .subtitle {
-            color: #666;
-            margin-bottom: 40px;
-            font-size: 16px;
+        .title {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #ecf0f1;
         }
 
-        .play-button {
+        .currency-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(52, 73, 94, 0.8);
+            padding: 10px 20px;
+            border-radius: 25px;
+            margin: 20px auto;
+            width: fit-content;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .currency-display .stick-icon {
+            margin-left: 8px;
+            font-size: 1.3rem;
+        }
+
+        .game-icon {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px auto;
+            font-size: 3rem;
+            box-shadow: 0 10px 30px rgba(231, 76, 60, 0.3);
+        }
+
+        .btn {
             display: block;
             width: 100%;
-            padding: 20px;
-            background: linear-gradient(45deg, #667eea, #764ba2);
-            color: white;
+            padding: 15px 20px;
             border: none;
             border-radius: 15px;
-            font-size: 24px;
-            font-weight: bold;
+            font-size: 1.1rem;
+            font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
             text-decoration: none;
-            box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+            margin: 12px 0;
+            text-align: center;
         }
 
-        .play-button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 12px 30px rgba(102, 126, 234, 0.4);
+        .btn-primary {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+            box-shadow: 0 8px 25px rgba(231, 76, 60, 0.3);
         }
 
-        .play-button:active {
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(231, 76, 60, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(52, 73, 94, 0.8);
+            color: #ecf0f1;
+            border: 2px solid rgba(236, 240, 241, 0.3);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(52, 73, 94, 1);
+            border-color: rgba(236, 240, 241, 0.5);
             transform: translateY(-1px);
         }
 
-        .user-info {
+        .menu-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .version {
             margin-top: 30px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            font-size: 14px;
-            color: #666;
+            font-size: 0.9rem;
+            color: rgba(236, 240, 241, 0.6);
         }
 
         .loading {
             display: none;
-            color: #667eea;
+            color: #3498db;
             margin: 20px 0;
+        }
+
+        .user-info {
+            margin-top: 20px;
+            font-size: 0.9rem;
+            color: rgba(236, 240, 241, 0.8);
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🎮 Игра</h1>
-        <div class="subtitle">Добро пожаловать в увлекательную игру!</div>
+        <div class="header">
+            <div class="title">Hockey Shootouts</div>
+            <div class="currency-display">
+                <span>Клюшек: <span id="userMoney">0</span></span>
+                <span class="stick-icon">🏒</span>
+            </div>
+        </div>
 
-        <a href="game.html" class="play-button">
-            🚀 Играть
+        <div class="game-icon">
+            🏒🏒
+        </div>
+
+        <a href="game.html" class="btn btn-primary">
+            Играть
         </a>
+
+        <a href="profile.html" class="btn btn-secondary">
+            Мой профиль
+        </a>
+
+        <div class="menu-grid">
+            <a href="craft.html" class="btn btn-secondary">
+                Крафт
+            </a>
+            <a href="obmen.html" class="btn btn-secondary">
+                Обмен
+            </a>
+        </div>
+
+        <div class="version">Hockey Shootouts V(b-1.0)</div>
 
         <div class="user-info" id="userInfo">
             <div id="userData">
@@ -182,17 +261,14 @@
             setCookie('tg_username', userData.username);
             setCookie('tg_name', userData.display_name);
             setCookie('tg_language', userData.language_code);
-            
+
             console.log('Данные пользователя сохранены в cookies');
         }
 
-        // Проверить пользователя в базе данных
-        async function checkUserInDatabase(userData) {
-            console.log('Проверяем пользователя в базе данных:', userData);
-
+        // Получить данные пользователя из базы
+        async function getUserData(userId) {
             try {
-                // Получаем все записи из таблицы
-                const listResponse = await fetch(`${config.baseUrl}/${config.orgs}/${config.projectName}/${config.tableName}`, {
+                const response = await fetch(`${config.baseUrl}/${config.orgs}/${config.projectName}/${config.tableName}`, {
                     method: 'GET',
                     headers: {
                         'xc-token': config.apiToken,
@@ -200,20 +276,31 @@
                     }
                 });
 
-                if (!listResponse.ok) {
-                    throw new Error(`Ошибка получения данных: ${listResponse.status} ${listResponse.statusText}`);
+                if (!response.ok) {
+                    throw new Error(`Ошибка получения данных: ${response.status}`);
                 }
 
-                const data = await listResponse.json();
-                console.log('Получены данные из базы:', data);
+                const data = await response.json();
+                const user = data.list ? data.list.find(u => u.user_id && u.user_id.toString() === userId.toString()) : null;
+                
+                return user;
+            } catch (error) {
+                console.log('Ошибка получения данных пользователя:', error);
+                return null;
+            }
+        }
 
-                // Ищем пользователя по user_id
-                const existingUser = data.list ? data.list.find(user => 
-                    user.user_id && user.user_id.toString() === userData.id.toString()
-                ) : null;
+        // Проверить пользователя в базе данных
+        async function checkUserInDatabase(userData) {
+            console.log('Проверяем пользователя в базе данных:', userData);
+
+            try {
+                const existingUser = await getUserData(userData.id);
 
                 if (existingUser) {
                     console.log('Пользователь найден в базе данных:', existingUser);
+                    // Отображаем количество клюшек
+                    document.getElementById('userMoney').textContent = existingUser.money || 0;
                     return true;
                 }
 
@@ -224,7 +311,8 @@
                     user_id: userData.id,
                     user_name: userData.display_name,
                     user_username: userData.username,
-                    money: 0
+                    money: 0,
+                    card: ''
                 };
 
                 console.log('Данные для создания пользователя:', newUserData);
@@ -245,10 +333,14 @@
 
                 const createdUser = await createResponse.json();
                 console.log('Пользователь успешно создан:', createdUser);
+                
+                // Отображаем начальное количество клюшек (0)
+                document.getElementById('userMoney').textContent = 0;
                 return true;
 
             } catch (error) {
                 console.log('Ошибка при работе с базой данных:', error);
+                document.getElementById('userMoney').textContent = 0;
                 return true; // Позволяем продолжить работу даже с ошибками
             }
         }
@@ -266,7 +358,7 @@
                     console.log('Полученные данные пользователя:', userData);
 
                     saveUserData(userData);
-                    
+
                     // Отображаем данные пользователя
                     document.getElementById('userName').textContent = userData.display_name;
                     document.getElementById('userId').textContent = userData.id;
@@ -280,10 +372,11 @@
             } catch (error) {
                 console.log('Ошибка инициализации:', error);
                 isInitialized = true;
-                
+
                 // Показываем тестовые данные при ошибке
                 document.getElementById('userName').textContent = userData?.display_name || 'Тестовый игрок';
                 document.getElementById('userId').textContent = userData?.id || 'test_id';
+                document.getElementById('userMoney').textContent = 0;
             }
         }
 
