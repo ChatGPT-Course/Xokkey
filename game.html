@@ -404,7 +404,7 @@
             </button>
 
             <p style="text-align: center; margin-top: 10px;">
-                Раунд <span id="roundNumber">1</span> из 3
+                Раунд <span id="roundNumber">1</span> из 2
             </p>
 
             
@@ -843,10 +843,14 @@
             updateGameDisplay() {
                 if (!this.currentGame) return;
 
-                // Обновляем только счет, раунд и role info - НЕ ТРОГАЕМ ЗОНЫ
-                document.getElementById('player1Score').textContent = this.currentGame.player1_score || 0;
-                document.getElementById('player2Score').textContent = this.currentGame.player2_score || 0;
-                document.getElementById('roundNumber').textContent = this.currentGame.current_round || 1;
+                // Обновляем счет, раунд и role info - НЕ ТРОГАЕМ ЗОНЫ
+                const player1Score = this.currentGame.player1_score || 0;
+                const player2Score = this.currentGame.player2_score || 0;
+                const currentRound = this.currentGame.current_round || 1;
+                
+                document.getElementById('player1Score').textContent = player1Score;
+                document.getElementById('player2Score').textContent = player2Score;
+                document.getElementById('roundNumber').textContent = currentRound;
 
                 const roleInfoElement = document.getElementById('roleInfo');
                 const submitBtn = document.getElementById('submitMove');
@@ -1128,7 +1132,7 @@
                     if (goalScored) {
                         // Гол забит
                         if (amIAttacker) {
-                            resultMessage = `⚽ ГОЛ! Ваш бросок в зону ${attackerZone} достиг цели!`;
+                            resultMessage = `⚽ ГОЛ! Ваш бросок в зону ${attackerZone} достиг цели! +1 очко`;
                             messageType = 'success';
                         } else {
                             resultMessage = `😔 Пропущен гол! Противник забил в зону ${attackerZone}. Ваша защита была в зонах ${defenderZones.join(', ')}.`;
@@ -1137,7 +1141,7 @@
                     } else {
                         // Гол отбит
                         if (amIDefender) {
-                            resultMessage = `🛡️ ОТЛИЧНАЯ ЗАЩИТА! Бросок в зону ${attackerZone} отбит! Ваша защита в зонах ${defenderZones.join(', ')} сработала!`;
+                            resultMessage = `🛡️ ОТЛИЧНАЯ ЗАЩИТА! Бросок в зону ${attackerZone} отбит! Ваша защита в зонах ${defenderZones.join(', ')} сработала! +1 очко`;
                             messageType = 'success';
                         } else {
                             resultMessage = `😔 Бросок отбит! Ваш бросок в зону ${attackerZone} заблокирован защитой противника.`;
@@ -1153,13 +1157,13 @@
                     let newPlayer2Score = this.currentGame.player2_score || 0;
 
                     if (goalScored) {
-                        newPlayer1Score++; // Подающий (Player1) забил
+                        newPlayer1Score++; // Подающий (Player1) забил - гол = +1 очко
                     } else {
-                        newPlayer2Score++; // Вратарь (Player2) отбил = очко вратарю
+                        newPlayer2Score++; // Вратарь (Player2) отбил - защита сработала = +1 очко
                     }
 
-                    // Проверяем окончание игры (3 раунда)
-                    const gameFinished = this.currentGame.current_round >= 3;
+                    // Проверяем окончание игры (2 раунда)
+                    const gameFinished = this.currentGame.current_round >= 2;
                     const nextRound = (this.currentGame.current_round || 1) + 1;
 
                     // Только Player1 обновляет данные игры (избегаем конфликтов)
@@ -1167,18 +1171,24 @@
                         const updates = {
                             player1_score: newPlayer1Score,
                             player2_score: newPlayer2Score,
-                            current_round: nextRound,
                             zone_sender: null,
                             zone1_protect: null,
                             zone2_protect: null,
                             sender_hod: 0,
-                            protect_hod: 0,
-                            sec: gameFinished ? 0 : 1,
-                            game_state: gameFinished ? 'finished' : 'game'
+                            protect_hod: 0
                         };
 
                         if (gameFinished) {
+                            // Игра окончена после 2 раундов
+                            updates.current_round = nextRound;
+                            updates.sec = 0;
+                            updates.game_state = 'finished';
                             updates.winner = newPlayer1Score > newPlayer2Score ? this.currentGame.player1 : this.currentGame.player2;
+                        } else {
+                            // Переходим к следующему раунду
+                            updates.current_round = nextRound;
+                            updates.sec = 1;
+                            updates.game_state = 'game';
                         }
 
                         console.log('Player1 updating game with:', updates);
@@ -1189,7 +1199,10 @@
                         if (this.localTimerInterval) {
                             clearInterval(this.localTimerInterval);
                         }
-                        setTimeout(() => this.endGame(), 3000);
+                        // Ждем 3 секунды, потом переходим к index.html
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 3000);
                     } else {
                         // Начинаем новый раунд через 3 секунды
                         setTimeout(() => {
