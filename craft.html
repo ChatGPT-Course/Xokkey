@@ -1,0 +1,205 @@
+
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Крафт - Hockey Shootouts</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            min-height: 100vh;
+            color: white;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            background: rgba(44, 62, 80, 0.9);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .header {
+            background: linear-gradient(135deg, #8e44ad 0%, #9b59b6 100%);
+            padding: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .back-btn {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            text-decoration: none;
+        }
+
+        .back-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .header h2 {
+            font-size: 1.5rem;
+            margin: 0;
+        }
+
+        .content {
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .craft-icon {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(45deg, #8e44ad, #9b59b6);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px auto;
+            font-size: 4rem;
+            box-shadow: 0 10px 30px rgba(142, 68, 173, 0.3);
+        }
+
+        .title {
+            font-size: 2rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #ecf0f1;
+        }
+
+        .description {
+            font-size: 1.1rem;
+            color: rgba(236, 240, 241, 0.8);
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .coming-soon {
+            background: rgba(142, 68, 173, 0.2);
+            border: 2px solid rgba(142, 68, 173, 0.5);
+            border-radius: 15px;
+            padding: 30px 20px;
+            margin: 20px 0;
+        }
+
+        .coming-soon h3 {
+            color: #9b59b6;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+        }
+
+        .coming-soon p {
+            color: rgba(236, 240, 241, 0.7);
+            line-height: 1.5;
+        }
+
+        .features {
+            text-align: left;
+            margin: 30px 0;
+        }
+
+        .features h4 {
+            color: #ecf0f1;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .features ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .features li {
+            color: rgba(236, 240, 241, 0.8);
+            margin: 10px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .features li:before {
+            content: "⚡";
+            position: absolute;
+            left: 0;
+            color: #9b59b6;
+        }
+
+        .notification {
+            background: rgba(52, 152, 219, 0.2);
+            border: 1px solid rgba(52, 152, 219, 0.5);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 20px 0;
+            color: #3498db;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <a href="index.html" class="back-btn">← Назад</a>
+            <h2>Крафт</h2>
+        </div>
+
+        <div class="content">
+            <div class="craft-icon">⚒️</div>
+            
+            <div class="title">Система крафта</div>
+            
+            <div class="description">
+                Объединяйте карточки игроков для создания более редких и мощных версий!
+            </div>
+
+            <div class="coming-soon">
+                <h3>🚧 В разработке</h3>
+                <p>Функция крафта находится в активной разработке и скоро будет доступна всем игрокам.</p>
+            </div>
+
+            <div class="features">
+                <h4>Планируемые возможности:</h4>
+                <ul>
+                    <li>Объединение нескольких карточек одного игрока</li>
+                    <li>Повышение редкости карточек</li>
+                    <li>Создание уникальных комбинаций</li>
+                    <li>Специальные рецепты крафта</li>
+                    <li>Бонусные эффекты для редких карточек</li>
+                </ul>
+            </div>
+
+            <div class="notification">
+                💡 Следите за обновлениями! Крафт станет доступен в ближайших версиях игры.
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let tg = window.Telegram.WebApp;
+        
+        // Инициализация
+        if (tg) {
+            tg.ready();
+            tg.expand();
+        }
+    </script>
+</body>
+</html>
