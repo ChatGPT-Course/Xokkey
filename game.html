@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -237,6 +238,7 @@
             transition: all 0.3s ease;
             font-size: 1.2rem;
             font-weight: bold;
+            position: relative;
         }
 
         .zone:hover {
@@ -245,14 +247,29 @@
         }
 
         .zone.selected {
-            background: #667eea;
+            background: #ff8c00;
             color: white;
-            border-color: #5a67d8;
+            border-color: #ff7f00;
+        }
+
+        .zone.confirmed {
+            background: #28a745;
+            color: white;
+            border-color: #218838;
         }
 
         .zone:disabled {
             opacity: 0.3;
             cursor: not-allowed;
+        }
+
+        .zone .emoji-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 2rem;
+            z-index: 10;
         }
 
         .hidden {
@@ -304,6 +321,36 @@
 
         .message.info {
             background: #667eea;
+        }
+
+        .result-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            border-radius: 15px;
+        }
+
+        .result-animation {
+            text-align: center;
+            color: white;
+        }
+
+        .result-animation .big-emoji {
+            font-size: 4rem;
+            margin: 10px;
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.5); }
+            to { opacity: 1; transform: scale(1); }
         }
     </style>
 </head>
@@ -387,6 +434,13 @@
             <p style="text-align: center; margin-top: 10px;">
                 Раунд <span id="roundNumber">1</span> из 3
             </p>
+
+            <!-- Overlay для анимации результата -->
+            <div id="resultOverlay" class="result-overlay hidden">
+                <div class="result-animation">
+                    <div id="resultEmojis"></div>
+                </div>
+            </div>
         </div>
 
         <!-- Окончание игры -->
@@ -546,6 +600,7 @@
                 this.localTimer = 15;
                 this.localTimerInterval = null;
                 this.movesSubmitted = false;
+                this.confirmedZones = [];
                 this.init();
             }
 
@@ -679,7 +734,9 @@
             startLocalTimer() {
                 this.localTimer = 15;
                 this.movesSubmitted = false;
+                this.confirmedZones = [];
                 this.updateTimerDisplay();
+                this.clearZoneStyles();
 
                 if (this.localTimerInterval) {
                     clearInterval(this.localTimerInterval);
@@ -819,7 +876,7 @@
             updateGameDisplay() {
                 if (!this.currentGame) return;
 
-                // Обновляем счет и раунд
+                // Обновляем только счет, раунд и role info - НЕ ТРОГАЕМ ЗОНЫ
                 document.getElementById('player1Score').textContent = this.currentGame.player1_score || 0;
                 document.getElementById('player2Score').textContent = this.currentGame.player2_score || 0;
                 document.getElementById('roundNumber').textContent = this.currentGame.current_round || 1;
@@ -936,10 +993,18 @@
                     await api.updateRoom(this.gameId, moveData);
                     this.movesSubmitted = true;
 
-                    // Очищаем выбор и блокируем интерфейс
+                    // Сохраняем подтвержденные зоны и меняем их цвет на зеленый
+                    this.confirmedZones = [...this.selectedZones];
                     this.selectedZones = [];
+                    
+                    // Обновляем цвета зон
                     document.querySelectorAll('.zone').forEach(zone => {
                         zone.classList.remove('selected');
+                    });
+                    
+                    this.confirmedZones.forEach(zoneNum => {
+                        const zone = document.getElementById(`zone${zoneNum}`);
+                        zone.classList.add('confirmed');
                     });
 
                     const submitBtn = document.getElementById('submitMove');
@@ -951,6 +1016,75 @@
                     console.error('Failed to submit move:', error);
                     this.showMessage('Ошибка отправки хода', 'error');
                 }
+            }
+
+            async showResultAnimation(attackerZone, defenderZones, goalScored) {
+                const overlay = document.getElementById('resultOverlay');
+                const emojisContainer = document.getElementById('resultEmojis');
+                
+                overlay.classList.remove('hidden');
+                
+                // Сначала показываем шайбу на секторе атаки
+                const puckEmoji = document.createElement('div');
+                puckEmoji.className = 'big-emoji';
+                puckEmoji.textContent = '🏒';
+                emojisContainer.appendChild(puckEmoji);
+                
+                // Добавляем эмоджи на зоны
+                const attackZone = document.getElementById(`zone${attackerZone}`);
+                if (attackZone) {
+                    const puckOverlay = document.createElement('div');
+                    puckOverlay.className = 'emoji-overlay';
+                    puckOverlay.textContent = '🏒';
+                    attackZone.appendChild(puckOverlay);
+                }
+                
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Показываем щиты на защитных зонах
+                defenderZones.forEach(zoneNum => {
+                    const defZone = document.getElementById(`zone${zoneNum}`);
+                    if (defZone) {
+                        const shieldOverlay = document.createElement('div');
+                        shieldOverlay.className = 'emoji-overlay';
+                        shieldOverlay.textContent = '🛡️';
+                        shieldOverlay.style.marginLeft = '15px';
+                        defZone.appendChild(shieldOverlay);
+                    }
+                });
+                
+                const shieldEmoji = document.createElement('div');
+                shieldEmoji.className = 'big-emoji';
+                shieldEmoji.textContent = '🛡️';
+                emojisContainer.appendChild(shieldEmoji);
+                
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // Показываем результат
+                const resultEmoji = document.createElement('div');
+                resultEmoji.className = 'big-emoji';
+                resultEmoji.textContent = goalScored ? '✅' : '❌';
+                emojisContainer.appendChild(resultEmoji);
+                
+                // Добавляем результат на зону атаки
+                if (attackZone) {
+                    const resultOverlay = document.createElement('div');
+                    resultOverlay.className = 'emoji-overlay';
+                    resultOverlay.textContent = goalScored ? '✅' : '❌';
+                    resultOverlay.style.marginTop = '-10px';
+                    resultOverlay.style.fontSize = '1.5rem';
+                    attackZone.appendChild(resultOverlay);
+                }
+                
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // Убираем overlay и очищаем эмоджи с зон
+                overlay.classList.add('hidden');
+                emojisContainer.innerHTML = '';
+                
+                document.querySelectorAll('.emoji-overlay').forEach(overlay => {
+                    overlay.remove();
+                });
             }
 
             async processGameResult() {
@@ -977,6 +1111,9 @@
                     const attackerZone = this.currentGame.zone_sender;
                     const defenderZones = [this.currentGame.zone1_protect, this.currentGame.zone2_protect];
                     const goalScored = !defenderZones.includes(attackerZone);
+
+                    // Показываем анимацию результата
+                    await this.showResultAnimation(attackerZone, defenderZones, goalScored);
 
                     // Определяем результат для текущего игрока
                     const amIPlayer1 = this.isPlayer1; // Player1 = подающий, Player2 = вратарь
@@ -1048,6 +1185,9 @@
                     const defenderZones = [this.currentGame.zone1_protect, this.currentGame.zone2_protect];
                     const goalScored = !defenderZones.includes(attackerZone);
 
+                    // Показываем анимацию результата
+                    await this.showResultAnimation(attackerZone, defenderZones, goalScored);
+
                     // Определяем результат для текущего игрока
                     const amIPlayer1 = this.isPlayer1; // Player1 = подающий, Player2 = вратарь
                     const amIAttacker = amIPlayer1;
@@ -1076,7 +1216,7 @@
                         }
                     }
 
-                    // Показыва �м персональный результат
+                    // Показываем персональный результат
                     this.showMessage(resultMessage, messageType);
 
                     // Обновляем счет
@@ -1125,6 +1265,8 @@
                         // Начинаем новый раунд через 3 секунды
                         setTimeout(() => {
                             this.movesSubmitted = false;
+                            this.confirmedZones = [];
+                            this.clearZoneStyles();
                             this.startLocalTimer();
                             this.showMessage(`Раунд ${nextRound} начинается!`, 'info');
                         }, 3000);
@@ -1135,13 +1277,21 @@
                 }
             }
 
+            clearZoneStyles() {
+                document.querySelectorAll('.zone').forEach(zone => {
+                    zone.classList.remove('selected', 'confirmed');
+                    // Убираем все эмоджи overlays
+                    zone.querySelectorAll('.emoji-overlay').forEach(overlay => {
+                        overlay.remove();
+                    });
+                });
+            }
+
             enableZoneSelection() {
                 document.querySelectorAll('.zone').forEach(zone => {
                     zone.style.pointerEvents = 'auto';
                     zone.style.opacity = '1';
-                    zone.classList.remove('selected'); // Очищаем предыдущий выбор
                 });
-                this.selectedZones = []; // Сбрасываем массив выбранных зон
             }
 
             disableZoneSelection() {
