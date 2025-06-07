@@ -564,10 +564,11 @@
                         current_round: 1,
                         game_state: 'waiting',
                         winner: null,
-                        attacker_move: null,
-                        defender_move: null,
                         sender_hod: 0,
                         protect_hod: 0,
+                        zone_sender: null,
+                        zone1_protect: null,
+                        zone2_protect: null,
                         sec: 10
                     };
 
@@ -720,19 +721,29 @@
                 let updates = {};
 
                 if (this.currentGame.sender_hod === 0) {
-                    updates.attacker_move = JSON.stringify([Math.floor(Math.random() * 4) + 1]);
+                    const randomZone = Math.floor(Math.random() * 4) + 1;
+                    updates.zone_sender = randomZone;
                     updates.sender_hod = 1;
                 }
 
                 if (this.currentGame.protect_hod === 0) {
                     const zones = [1, 2, 3, 4];
                     const shuffled = zones.sort(() => 0.5 - Math.random());
-                    updates.defender_move = JSON.stringify(shuffled.slice(0, 2));
+                    updates.zone1_protect = shuffled[0];
+                    updates.zone2_protect = shuffled[1];
                     updates.protect_hod = 1;
                 }
 
                 if (Object.keys(updates).length > 0) {
                     await api.updateRoom(this.gameId, updates);
+                }
+
+                // Блокируем все кнопки
+                this.disableZoneSelection();
+                const submitBtn = document.getElementById('submitMove');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.textContent = 'Время вышло!';
                 }
 
                 this.showMessage('Время вышло! Автоматические ходы сделаны.', 'info');
@@ -747,6 +758,16 @@
                         timerElement.classList.add('warning');
                     } else {
                         timerElement.classList.remove('warning');
+                    }
+
+                    // Блокируем кнопки когда таймер равен 0
+                    if (this.currentGame.sec <= 0) {
+                        this.disableZoneSelection();
+                        const submitBtn = document.getElementById('submitMove');
+                        if (submitBtn) {
+                            submitBtn.disabled = true;
+                            submitBtn.textContent = 'Время вышло!';
+                        }
                     }
                 }
             }
@@ -800,7 +821,8 @@
                 const protectorMoved = this.currentGame.protect_hod === 1;
                 const iMoved = (iAmSender && senderMoved) || (!iAmSender && protectorMoved);
 
-                if (iMoved) return;
+                // Блокируем выбор если уже сделан ход или время вышло
+                if (iMoved || this.currentGame.sec <= 0) return;
 
                 const zone = document.getElementById(`zone${zoneNumber}`);
                 const maxSelections = iAmSender ? 1 : 2;
@@ -827,46 +849,56 @@
                     const senderMoved = this.currentGame.sender_hod === 1;
                     const protectorMoved = this.currentGame.protect_hod === 1;
 
+                    // Проверяем, не сделан ли уже ход
+                    if ((iAmSender && senderMoved) || (!iAmSender && protectorMoved)) {
+                        this.showMessage('Вы уже сделали ход!', 'error');
+                        return;
+                    }
+
+                    // Проверяем время
+                    if (this.currentGame.sec <= 0) {
+                        this.showMessage('Время вышло!', 'error');
+                        return;
+                    }
+
                     let moveData = {};
 
-                    if (iAmSender && !senderMoved) {
+                    if (iAmSender) {
                         if (this.selectedZones.length !== 1) {
                             this.showMessage('Выберите ровно 1 зону для броска!', 'error');
                             return;
                         }
 
                         moveData = {
-                            attacker_move: JSON.stringify(this.selectedZones),
+                            zone_sender: this.selectedZones[0],
                             sender_hod: 1
                         };
                         this.showMessage('Бросок сделан!', 'success');
 
-                    } else if (!iAmSender && !protectorMoved) {
+                    } else {
                         if (this.selectedZones.length !== 2) {
                             this.showMessage('Выберите ровно 2 зоны для защиты!', 'error');
                             return;
                         }
 
                         moveData = {
-                            defender_move: JSON.stringify(this.selectedZones),
+                            zone1_protect: this.selectedZones[0],
+                            zone2_protect: this.selectedZones[1],
                             protect_hod: 1
                         };
                         this.showMessage('Защита поставлена!', 'success');
-
-                    } else {
-                        this.showMessage('Вы уже сделали ход!', 'error');
-                        return;
                     }
 
                     await api.updateRoom(this.gameId, moveData);
 
+                    // Очищаем выбор и блокируем интерфейс
                     this.selectedZones = [];
                     document.querySelectorAll('.zone').forEach(zone => {
                         zone.classList.remove('selected');
                     });
 
                     const submitBtn = document.getElementById('submitMove');
-                    submitBtn.textContent = 'Ожидание...';
+                    submitBtn.textContent = 'Ход сделан!';
                     submitBtn.disabled = true;
                     this.disableZoneSelection();
 
@@ -878,14 +910,14 @@
 
             async processRoundResult() {
                 try {
-                    if (!this.currentGame.attacker_move || !this.currentGame.defender_move) {
+                    if (!this.currentGame.zone_sender || !this.currentGame.zone1_protect || !this.currentGame.zone2_protect) {
                         return;
                     }
 
-                    const attackerMove = JSON.parse(this.currentGame.attacker_move)[0];
-                    const defenderMoves = JSON.parse(this.currentGame.defender_move);
+                    const attackerZone = this.currentGame.zone_sender;
+                    const defenderZones = [this.currentGame.zone1_protect, this.currentGame.zone2_protect];
 
-                    const goalScored = !defenderMoves.includes(attackerMove);
+                    const goalScored = !defenderZones.includes(attackerZone);
 
                     let newPlayer1Score = this.currentGame.player1_score || 0;
                     let newPlayer2Score = this.currentGame.player2_score || 0;
@@ -900,10 +932,10 @@
                     const didIScore = (goalScored && amIAttacker) || (!goalScored && !amIAttacker);
 
                     if (goalScored) {
-                        this.showMessage(amIAttacker ? '⚽ ГОЛ! Отличный бросок!' : '⚽ Противник забил гол!', 
+                        this.showMessage(amIAttacker ? `⚽ ГОЛ! Бросок в зону ${attackerZone}!` : `⚽ Противник забил в зону ${attackerZone}!`, 
                                        didIScore ? 'success' : 'error');
                     } else {
-                        this.showMessage(amIAttacker ? '🛡️ Бросок отбит!' : '🛡️ Отличная защита!', 
+                        this.showMessage(amIAttacker ? `🛡️ Бросок в зону ${attackerZone} отбит!` : `🛡️ Отличная защита зон ${defenderZones.join(', ')}!`, 
                                        didIScore ? 'success' : 'info');
                     }
 
@@ -915,8 +947,9 @@
                         player1_score: newPlayer1Score,
                         player2_score: newPlayer2Score,
                         current_round: nextRound,
-                        attacker_move: null,
-                        defender_move: null,
+                        zone_sender: null,
+                        zone1_protect: null,
+                        zone2_protect: null,
                         sender_hod: 0,
                         protect_hod: 0,
                         sec: 10,
@@ -948,7 +981,9 @@
                 document.querySelectorAll('.zone').forEach(zone => {
                     zone.style.pointerEvents = 'auto';
                     zone.style.opacity = '1';
+                    zone.classList.remove('selected'); // Очищаем предыдущий выбор
                 });
+                this.selectedZones = []; // Сбрасываем массив выбранных зон
             }
 
             disableZoneSelection() {
