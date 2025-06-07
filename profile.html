@@ -61,6 +61,7 @@
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             text-align: center;
+            margin-right: 50px;
         }
 
         .container {
@@ -134,9 +135,9 @@
 
         .inventory-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            grid-template-columns: 1fr 1fr;
             gap: 15px;
-            max-height: 300px;
+            max-height: 400px;
             overflow-y: auto;
             padding: 15px;
             background: rgba(52, 73, 94, 0.3);
@@ -147,11 +148,16 @@
         .card-item {
             background: rgba(52, 73, 94, 0.8);
             border-radius: 12px;
-            padding: 15px 10px;
+            padding: 15px;
             text-align: center;
             border: 2px solid transparent;
             transition: all 0.3s ease;
             backdrop-filter: blur(5px);
+            position: relative;
+            height: 220px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         }
 
         .card-item.rare {
@@ -174,30 +180,56 @@
             box-shadow: 0 5px 15px rgba(231, 76, 60, 0.3);
         }
 
+        .card-rarity-badge {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 12px;
+            font-weight: bold;
+            transform: rotate(15deg);
+            background: rgba(0,0,0,0.8);
+            backdrop-filter: blur(5px);
+        }
+
         .card-icon {
             font-size: 2.5rem;
             margin-bottom: 8px;
         }
 
         .card-avatar {
-            width: 60px;
-            height: 60px;
+            width: 80px;
+            height: 80px;
             border-radius: 8px;
-            margin: 0 auto 8px;
+            margin: 10px auto;
             object-fit: cover;
             border: 2px solid rgba(255,255,255,0.2);
         }
 
         .card-name {
-            font-size: 0.9rem;
+            font-size: 1rem;
             font-weight: bold;
-            margin-bottom: 5px;
+            margin: 10px 0;
             color: #ecf0f1;
         }
 
-        .card-rarity {
-            font-size: 0.8rem;
-            opacity: 0.8;
+        .card-manage-btn {
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: auto;
+        }
+
+        .card-manage-btn:hover {
+            background: linear-gradient(45deg, #2980b9, #1f4e79);
+            transform: translateY(-1px);
         }
 
         .rare { color: #3498db; }
@@ -227,7 +259,7 @@
 </head>
 <body>
     <div class="header">
-        <a href="index.html" class="back-btn">← Назад</a>
+        <a href="index.html" class="back-btn">←</a>
         <div class="header-title">Hockey Shootouts</div>
     </div>
 
@@ -375,10 +407,10 @@
         // Получить аватар для карточки
         function getCardAvatar(name) {
             const avatarMap = {
-                'Ливо': 'https://raw.githubusercontent.com/ChatGPT-Course/Xokkey/main/avatar/Dzoshya_livo.jpg',
-                'Голдобин': 'https://raw.githubusercontent.com/ChatGPT-Course/Xokkey/main/avatar/Nikolay_goldobin.jpg',
-                'Рушан': 'https://raw.githubusercontent.com/ChatGPT-Course/Xokkey/main/avatar/Rushan_rafikov.jpg',
-                'Сериков': 'https://raw.githubusercontent.com/ChatGPT-Course/Xokkey/main/avatar/artem_serikov.jpg'
+                'Ливо': 'https://raw.githubusercontent.com/your-username/your-repo/main/avatar/Dzoshya_livo.jpg',
+                'Голдобин': 'https://raw.githubusercontent.com/your-username/your-repo/main/avatar/Nikolay_goldobin.jpg',
+                'Рушан': 'https://raw.githubusercontent.com/your-username/your-repo/main/avatar/Rushan_rafikov.jpg',
+                'Сериков': 'https://raw.githubusercontent.com/your-username/your-repo/main/avatar/artem_serikov.jpg'
             };
             
             return avatarMap[name] || null;
@@ -417,16 +449,18 @@
                 
                 if (avatarUrl) {
                     cardElement.innerHTML = `
+                        <div class="card-rarity-badge ${rarityClass}">${card.rarity}</div>
                         <img src="${avatarUrl}" alt="${card.name}" class="card-avatar" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                         <div class="card-icon" style="display: none;">🏒</div>
                         <div class="card-name">${card.name}</div>
-                        <div class="card-rarity ${rarityClass}">${card.rarity}</div>
+                        <button class="card-manage-btn">Управление</button>
                     `;
                 } else {
                     cardElement.innerHTML = `
+                        <div class="card-rarity-badge ${rarityClass}">${card.rarity}</div>
                         <div class="card-icon">🏒</div>
                         <div class="card-name">${card.name}</div>
-                        <div class="card-rarity ${rarityClass}">${card.rarity}</div>
+                        <button class="card-manage-btn">Управление</button>
                     `;
                 }
                 
