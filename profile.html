@@ -245,42 +245,42 @@
             z-index: 10;
         }
 
-        .card-rarity-badge.rare { 
-            background: rgba(52, 152, 219, 0.9);
-            border-color: #3498db;
+        .card-rarity-badge.простой { 
+            background: rgba(0, 0, 0, 0.9);
+            border-color: #333333;
         }
 
-        .card-rarity-badge.epic { 
+        .card-rarity-badge.эпический { 
             background: rgba(155, 89, 182, 0.9);
             border-color: #9b59b6;
         }
 
-        .card-rarity-badge.legendary { 
-            background: rgba(243, 156, 18, 0.9);
-            border-color: #f39c12;
-        }
-
-        .card-rarity-badge.mythical { 
+        .card-rarity-badge.мифический { 
             background: rgba(231, 76, 60, 0.9);
             border-color: #e74c3c;
         }
 
+        .card-rarity-badge.легендарный { 
+            background: rgba(243, 156, 18, 0.9);
+            border-color: #f39c12;
+        }
+
         /* Эффекты для карточек разной редкости */
-        .card-item.legendary {
+        .card-item.легендарный {
             background: rgba(44, 62, 80, 0.8);
             border: 1px solid rgba(243, 156, 18, 0.3);
             box-shadow: 0 5px 15px rgba(0,0,0,0.3), 0 0 20px rgba(243, 156, 18, 0.1);
             animation: legendaryGlow 3s ease-in-out infinite alternate;
         }
 
-        .card-item.mythical {
+        .card-item.мифический {
             background: rgba(44, 62, 80, 0.8);
             border: 1px solid rgba(231, 76, 60, 0.3);
             box-shadow: 0 5px 15px rgba(0,0,0,0.3), 0 0 15px rgba(231, 76, 60, 0.1);
             animation: mythicalShimmer 2s ease-in-out infinite;
         }
 
-        .card-item.epic {
+        .card-item.эпический {
             background: rgba(44, 62, 80, 0.8);
             border: 1px solid rgba(155, 89, 182, 0.2);
             box-shadow: 0 5px 15px rgba(0,0,0,0.3), inset 0 0 30px rgba(155, 89, 182, 0.1);
@@ -432,6 +432,18 @@
 
         let tg = window.Telegram.WebApp;
         let userData = null;
+
+        // Нормализация редкости для CSS классов
+        function normalizeRarity(rarity) {
+            const rarityText = rarity.toLowerCase().trim();
+            
+            if (rarityText.includes('легендар')) return 'легендарный';
+            if (rarityText.includes('мифич')) return 'мифический';
+            if (rarityText.includes('эпич')) return 'эпический';
+            if (rarityText.includes('прост')) return 'простой';
+            
+            return 'простой'; // по умолчанию
+        }
 
         // Получить cookie
         function getCookie(name) {
@@ -597,14 +609,7 @@
 
         // Получить класс редкости
         function getRarityClass(rarity) {
-            const rarityMap = {
-                'Простой': 'common',
-                'Редкий': 'rare',
-                'Эпический': 'epic',
-                'Легендарный': 'legendary',
-                'Мифический': 'mythical'
-            };
-            return rarityMap[rarity] || 'common';
+            return normalizeRarity(rarity);
         }
 
         // Сортировка карточек по редкости
@@ -647,7 +652,7 @@
                 
                 if (avatarUrl) {
                     cardElement.innerHTML = `
-                        <div class="card-rarity-badge ${rarityClass}">${card.rarity}</div>
+                        <div class="card-rarity-badge ${normalizeRarity(card.rarity)}">${card.rarity}</div>
                         <img src="${avatarUrl}" alt="${card.name}" class="card-avatar" 
                              onload="console.log('Аватар загружен:', '${card.name}');"
                              onerror="console.log('Ошибка загрузки аватара:', '${card.name}'); this.style.display='none'; this.nextElementSibling.style.display='block';">
@@ -657,7 +662,7 @@
                     `;
                 } else {
                     cardElement.innerHTML = `
-                        <div class="card-rarity-badge ${rarityClass}">${card.rarity}</div>
+                        <div class="card-rarity-badge ${normalizeRarity(card.rarity)}">${card.rarity}</div>
                         <div class="card-icon">🏒</div>
                         <div class="card-name">${card.name}</div>
                         <button class="card-manage-btn">Управление</button>
