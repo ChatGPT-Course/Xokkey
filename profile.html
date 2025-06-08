@@ -575,7 +575,7 @@
                 const match = entry.match(/(.+?)\((.+?)\)/);
                 if (match) {
                     const name = match[1].trim();
-                    const rarity = match[2].trim().toLowerCase();
+                    const rarity = match[2].trim();
                     cards.push({ name, rarity });
                 }
             });
@@ -598,11 +598,11 @@
         // Получить класс редкости
         function getRarityClass(rarity) {
             const rarityMap = {
-                'обычный': 'common',
-                'редкий': 'rare',
-                'эпический': 'epic',
-                'легендарный': 'legendary',
-                'мифический': 'mythical'
+                'Простой': 'common',
+                'Редкий': 'rare',
+                'Эпический': 'epic',
+                'Легендарный': 'legendary',
+                'Мифический': 'mythical'
             };
             return rarityMap[rarity] || 'common';
         }
@@ -610,10 +610,10 @@
         // Сортировка карточек по редкости
         function sortCardsByRarity(cards) {
             const rarityOrder = {
-                'легендарный': 1,
-                'мифический': 2,
-                'редкий': 3,
-                'обычный': 4
+                'Легендарный': 1,
+                'Мифический': 2,
+                'Эпический': 3,
+                'Простой': 4
             };
 
             return cards.sort((a, b) => {
