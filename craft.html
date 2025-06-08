@@ -225,8 +225,8 @@
         }
 
         .card-rarity-badge.простой { 
-            background: rgba(149, 165, 166, 0.9);
-            border-color: #95a5a6;
+            background: rgba(0, 0, 0, 0.9);
+            border-color: #333333;
         }
 
         .card-rarity-badge.эпический { 
@@ -481,6 +481,18 @@
             'Мифический': { required: 3, result: 'Легендарный' }
         };
 
+        // Нормализация редкости для CSS классов
+        function normalizeRarity(rarity) {
+            const rarityText = rarity.toLowerCase().trim();
+            
+            if (rarityText.includes('легендар')) return 'легендарный';
+            if (rarityText.includes('мифич')) return 'мифический';
+            if (rarityText.includes('эпич')) return 'эпический';
+            if (rarityText.includes('прост')) return 'простой';
+            
+            return 'простой'; // по умолчанию
+        }
+
         // Получить cookie
         function getCookie(name) {
             const value = `; ${document.cookie}`;
@@ -726,7 +738,7 @@
                 
                 if (avatarUrl) {
                     cardElement.innerHTML = `
-                        <div class="card-rarity-badge ${card.rarity}">${card.rarity}</div>
+                        <div class="card-rarity-badge ${normalizeRarity(card.rarity)}">${card.rarity}</div>
                         <img src="${avatarUrl}" alt="${card.name}" class="card-avatar" 
                              onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                         <div class="card-icon" style="display: none;">🏒</div>
@@ -734,7 +746,7 @@
                     `;
                 } else {
                     cardElement.innerHTML = `
-                        <div class="card-rarity-badge ${card.rarity}">${card.rarity}</div>
+                        <div class="card-rarity-badge ${normalizeRarity(card.rarity)}">${card.rarity}</div>
                         <div class="card-icon">🏒</div>
                         <div class="card-name">${card.name}</div>
                     `;
