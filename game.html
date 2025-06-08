@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -181,39 +182,6 @@
             font-family: monospace;
         }
 
-        .score {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 15px;
-            padding: 15px;
-            background: rgba(52, 73, 94, 0.8);
-            border-radius: 15px;
-            backdrop-filter: blur(5px);
-        }
-
-        .score-item {
-            text-align: center;
-        }
-
-        .player-name {
-            font-size: 0.9rem;
-            color: rgba(236, 240, 241, 0.7);
-            margin-bottom: 5px;
-        }
-
-        .player-score {
-            font-size: 2rem;
-            font-weight: bold;
-            color: #e74c3c;
-        }
-
-        .vs {
-            font-size: 1.2rem;
-            color: #ecf0f1;
-            font-weight: bold;
-        }
-
         .timer-display {
             text-align: center;
             font-size: 2rem;
@@ -355,6 +323,201 @@
         .message.info {
             background: #3498db;
         }
+
+        /* Модальные окна */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            margin: 10% auto;
+            padding: 30px;
+            border-radius: 20px;
+            width: 90%;
+            max-width: 400px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+
+        .modal h3 {
+            margin-bottom: 20px;
+            color: #ecf0f1;
+            font-size: 1.3rem;
+        }
+
+        .modal p {
+            margin-bottom: 15px;
+            color: rgba(236, 240, 241, 0.8);
+            line-height: 1.5;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        .modal-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            flex: 1;
+        }
+
+        .modal-btn.confirm {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            color: white;
+        }
+
+        .modal-btn.confirm:hover {
+            background: linear-gradient(45deg, #229954, #27ae60);
+        }
+
+        .modal-btn.cancel {
+            background: rgba(127, 140, 141, 0.3);
+            color: white;
+        }
+
+        .modal-btn.cancel:hover {
+            background: rgba(127, 140, 141, 0.5);
+        }
+
+        .modal-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .currency-info {
+            background: rgba(52, 73, 94, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+            color: #2ecc71;
+            font-weight: bold;
+        }
+
+        .currency-info .stick-icon {
+            margin-left: 8px;
+            font-size: 1.3rem;
+        }
+
+        .checkbox-group {
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .checkbox-group label {
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            font-size: 1rem;
+            color: #ecf0f1;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            margin-right: 10px;
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+        }
+
+        .bet-amount-group {
+            margin: 15px 0;
+            text-align: left;
+        }
+
+        .bet-amount-group input {
+            margin-top: 8px;
+            text-align: left;
+            text-transform: none;
+        }
+
+        .room-info {
+            background: rgba(52, 73, 94, 0.8);
+            padding: 20px;
+            border-radius: 15px;
+            margin: 15px 0;
+        }
+
+        .room-info h4 {
+            color: #ecf0f1;
+            margin-bottom: 15px;
+            font-size: 1.2rem;
+        }
+
+        .room-info-item {
+            display: flex;
+            justify-content: between;
+            margin: 8px 0;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .room-info-item:last-child {
+            border-bottom: none;
+        }
+
+        .room-info-label {
+            color: rgba(236, 240, 241, 0.7);
+            margin-right: 10px;
+        }
+
+        .room-info-value {
+            color: #ecf0f1;
+            font-weight: bold;
+            margin-left: auto;
+        }
+
+        .bet-info {
+            background: rgba(52, 73, 94, 0.8);
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .bet-info .bet-amount {
+            font-size: 1.2rem;
+            color: #f39c12;
+            font-weight: bold;
+        }
+
+        .result-modal .modal-content {
+            max-width: 350px;
+        }
+
+        .result-modal h3 {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+        }
+
+        .result-modal .win-amount {
+            font-size: 1.3rem;
+            color: #2ecc71;
+            font-weight: bold;
+            margin: 10px 0;
+        }
     </style>
 </head>
 <body>
@@ -368,26 +531,13 @@
         <div id="gameMenu" class="menu-screen">
             <h3>Выберите режим игры</h3>
 
-            <button class="btn primary" onclick="createGame()">
+            <button class="btn primary" onclick="showCreateGameModal()">
                 🎮 Создать игру
             </button>
 
-            <button class="btn secondary" onclick="showJoinForm()">
+            <button class="btn secondary" onclick="showJoinGameModal()">
                 🚪 Присоединиться к игре
             </button>
-
-            <div id="joinForm" class="hidden">
-                <div class="input-group">
-                    <label for="gameCodeInput">Введите код игры:</label>
-                    <input type="text" id="gameCodeInput" placeholder="ABC123" maxlength="6">
-                </div>
-                <button class="btn primary" onclick="joinGame()">
-                    Присоединиться
-                </button>
-                <button class="btn secondary" onclick="hideJoinForm()">
-                    Отмена
-                </button>
-            </div>
         </div>
 
         <!-- Ожидание в комнате -->
@@ -397,6 +547,9 @@
                 <h4>Код для присоединения:</h4>
                 <div class="code-display" id="roomCode">------</div>
             </div>
+            <div id="betInfoWaiting" class="bet-info hidden">
+                <p>Ставка: <span class="bet-amount" id="waitingBetAmount">0</span> 🏒</p>
+            </div>
             <p>Ожидание второго игрока...</p>
             <button class="btn secondary" onclick="cancelGame()">
                 Отменить игру
@@ -405,19 +558,11 @@
 
         <!-- Игровой процесс -->
         <div id="gamePlay" class="game-container hidden">
-            <div class="score">
-                <div class="score-item">
-                    <div class="player-name">Подающий</div>
-                    <div class="player-score" id="player1Score">0</div>
-                </div>
-                <div class="vs">VS</div>
-                <div class="score-item">
-                    <div class="player-name">Вратарь</div>
-                    <div class="player-score" id="player2Score">0</div>
-                </div>
-            </div>
-
             <div class="timer-display" id="timerDisplay">15</div>
+
+            <div id="betInfoGame" class="bet-info hidden">
+                <p>Ставка: <span class="bet-amount" id="gameBetAmount">0</span> 🏒</p>
+            </div>
 
             <div class="role-info" id="roleInfo">
                 Ваша роль
@@ -433,22 +578,105 @@
             <button id="submitMove" class="btn primary" onclick="submitMove()" disabled>
                 Подтвердить выбор
             </button>
-
-            <p style="text-align: center; margin-top: 10px; color: rgba(236, 240, 241, 0.7);">
-                Раунд <span id="roundNumber">1</span> из 2
-            </p>
         </div>
 
         <!-- Окончание игры -->
         <div id="gameEnd" class="game-end hidden">
             <h3 id="finalResult">Игра окончена!</h3>
-            <div class="final-stats">
-                <p>Финальный счет:</p>
-                <p>Подающий: <span id="finalScore1"></span></p>
-                <p>Вратарь: <span id="finalScore2"></span></p>
-            </div>
             <button class="btn primary" onclick="playAgain()">Играть снова</button>
             <button class="btn secondary" onclick="goHome()">В меню</button>
+        </div>
+    </div>
+
+    <!-- Модальное окно создания игры -->
+    <div id="createGameModal" class="modal">
+        <div class="modal-content">
+            <h3>Создание игры</h3>
+            
+            <div class="currency-info">
+                <span>Ваш баланс: <span id="createModalBalance">0</span></span>
+                <span class="stick-icon">🏒</span>
+            </div>
+
+            <div class="checkbox-group">
+                <label>
+                    <input type="checkbox" id="betCheckbox" onchange="toggleBetAmount()">
+                    Игра на клюшки
+                </label>
+            </div>
+
+            <div class="bet-amount-group hidden" id="betAmountGroup">
+                <label for="betAmount">Сумма ставки (1-100):</label>
+                <input type="number" id="betAmount" min="1" max="100" placeholder="Введите сумму">
+            </div>
+
+            <div class="modal-buttons">
+                <button class="modal-btn cancel" onclick="closeCreateGameModal()">Отмена</button>
+                <button class="modal-btn confirm" onclick="createGameWithBet()">Создать</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно ввода кода игры -->
+    <div id="joinGameModal" class="modal">
+        <div class="modal-content">
+            <h3>Присоединиться к игре</h3>
+            
+            <div class="currency-info">
+                <span>Ваш баланс: <span id="joinModalBalance">0</span></span>
+                <span class="stick-icon">🏒</span>
+            </div>
+
+            <div class="input-group">
+                <label for="gameCodeInput">Введите код игры:</label>
+                <input type="text" id="gameCodeInput" placeholder="ABC123" maxlength="6">
+            </div>
+
+            <div class="modal-buttons">
+                <button class="modal-btn cancel" onclick="closeJoinGameModal()">Отмена</button>
+                <button class="modal-btn confirm" onclick="findGameRoom()">Найти игру</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно информации о комнате -->
+    <div id="roomInfoModal" class="modal">
+        <div class="modal-content">
+            <h3>Информация о комнате</h3>
+            
+            <div class="room-info">
+                <h4>Детали игры:</h4>
+                <div class="room-info-item">
+                    <span class="room-info-label">Создатель:</span>
+                    <span class="room-info-value" id="roomCreator">-</span>
+                </div>
+                <div class="room-info-item">
+                    <span class="room-info-label">Ставка:</span>
+                    <span class="room-info-value" id="roomBetInfo">-</span>
+                </div>
+            </div>
+
+            <div class="currency-info">
+                <span>Ваш баланс: <span id="roomInfoBalance">0</span></span>
+                <span class="stick-icon">🏒</span>
+            </div>
+
+            <div class="modal-buttons">
+                <button class="modal-btn cancel" onclick="closeRoomInfoModal()">Отмена</button>
+                <button class="modal-btn confirm" id="enterRoomBtn" onclick="joinGameRoom()">Войти</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно результата игры -->
+    <div id="resultModal" class="modal result-modal">
+        <div class="modal-content">
+            <h3 id="resultTitle">Результат игры</h3>
+            <p id="resultMessage">Игра завершена</p>
+            <div id="winAmountInfo" class="win-amount hidden"></div>
+            <div class="modal-buttons">
+                <button class="modal-btn confirm" onclick="closeResultModal()">Понятно</button>
+            </div>
         </div>
     </div>
 
@@ -511,8 +739,8 @@
             }
         }
 
-        // NocoDB API конфигурация
-        const API_CONFIG = {
+        // NocoDB API конфигурация для игровых комнат
+        const GAME_API_CONFIG = {
             baseUrl: 'https://app.nocodb.com/api/v1/db/data',
             orgs: 'wf52x8bf',
             projectName: 'pawgl0ouxic497w',
@@ -520,16 +748,26 @@
             token: '4lZnGEoWEQeBswBHzzp_lPPYDFFkNc7s2BlWClxb'
         };
 
+        // NocoDB API конфигурация для пользователей
+        const USER_API_CONFIG = {
+            baseUrl: 'https://app.nocodb.com/api/v1/db/data',
+            orgs: 'wf52x8bf',
+            projectName: 'pawgl0ouxic497w',
+            tableName: 'mtfr4e3wywjtyua',
+            token: '4lZnGEoWEQeBswBHzzp_lPPYDFFkNc7s2BlWClxb'
+        };
+
         class NocoDBAPI {
-            constructor() {
+            constructor(config) {
+                this.config = config;
                 this.headers = {
                     'Content-Type': 'application/json',
-                    'xc-token': API_CONFIG.token
+                    'xc-token': config.token
                 };
             }
 
             async makeRequest(endpoint, method = 'GET', data = null) {
-                const url = `${API_CONFIG.baseUrl}/${API_CONFIG.orgs}/${API_CONFIG.projectName}/${API_CONFIG.tableName}${endpoint}`;
+                const url = `${this.config.baseUrl}/${this.config.orgs}/${this.config.projectName}/${this.config.tableName}${endpoint}`;
 
                 const options = {
                     method,
@@ -582,9 +820,25 @@
             async deleteRoom(roomId) {
                 return await this.makeRequest(`/${roomId}`, 'DELETE');
             }
+
+            async findUserById(userId) {
+                const response = await this.makeRequest(`?where=(user_id,eq,${userId})`);
+                if (response && response.list && response.list.length > 0) {
+                    return response.list[0];
+                }
+                return null;
+            }
+
+            async updateUser(userId, updates) {
+                const user = await this.findUserById(userId);
+                if (!user) {
+                    throw new Error('User not found');
+                }
+                return await this.makeRequest(`/${user.Id}`, 'PATCH', updates);
+            }
         }
 
-        // Game Manager с новой логикой
+        // Game Manager с системой ставок
         class HockeyGameManager {
             constructor() {
                 this.currentUser = null;
@@ -597,6 +851,8 @@
                 this.localTimerInterval = null;
                 this.movesSubmitted = false;
                 this.confirmedZones = [];
+                this.userBalance = 0;
+                this.pendingRoomData = null;
                 this.init();
             }
 
@@ -610,6 +866,10 @@
                     };
 
                     console.log('Текущий пользователь:', this.currentUser);
+                    
+                    // Загружаем баланс пользователя
+                    await this.loadUserBalance();
+                    
                     this.showGameMenu();
                 } catch (error) {
                     console.error('Failed to initialize game:', error);
@@ -617,20 +877,71 @@
                 }
             }
 
+            async loadUserBalance() {
+                try {
+                    const userData = await userAPI.findUserById(this.currentUser.telegram_id);
+                    this.userBalance = userData ? (userData.money || 0) : 0;
+                    console.log('User balance loaded:', this.userBalance);
+                } catch (error) {
+                    console.error('Failed to load user balance:', error);
+                    this.userBalance = 0;
+                }
+            }
+
             generateRoomCode() {
                 return Math.floor(1000 + Math.random() * 9000).toString();
             }
 
-            async createGame() {
+            toggleBetAmount() {
+                const checkbox = document.getElementById('betCheckbox');
+                const betGroup = document.getElementById('betAmountGroup');
+                
+                if (checkbox.checked) {
+                    betGroup.classList.remove('hidden');
+                } else {
+                    betGroup.classList.add('hidden');
+                    document.getElementById('betAmount').value = '';
+                }
+            }
+
+            showCreateGameModal() {
+                document.getElementById('createModalBalance').textContent = this.userBalance;
+                document.getElementById('createGameModal').style.display = 'block';
+            }
+
+            closeCreateGameModal() {
+                document.getElementById('createGameModal').style.display = 'none';
+                document.getElementById('betCheckbox').checked = false;
+                document.getElementById('betAmountGroup').classList.add('hidden');
+                document.getElementById('betAmount').value = '';
+            }
+
+            async createGameWithBet() {
                 try {
+                    const betCheckbox = document.getElementById('betCheckbox');
+                    const betAmountInput = document.getElementById('betAmount');
+                    let betAmount = 0;
+
+                    if (betCheckbox.checked) {
+                        betAmount = parseInt(betAmountInput.value) || 0;
+                        
+                        if (betAmount < 1 || betAmount > 100) {
+                            this.showMessage('Ставка должна быть от 1 до 100 клюшек', 'error');
+                            return;
+                        }
+
+                        if (betAmount > this.userBalance) {
+                            this.showMessage('Недостаточно клюшек для ставки', 'error');
+                            return;
+                        }
+                    }
+
                     const roomCode = this.generateRoomCode();
 
                     const roomData = {
                         room_name: roomCode,
                         player1: this.currentUser.telegram_id,
                         player2: null,
-                        player1_score: 0,
-                        player2_score: 0,
                         current_round: 1,
                         game_state: 'waiting',
                         winner: null,
@@ -639,19 +950,29 @@
                         zone_sender: null,
                         zone1_protect: null,
                         zone2_protect: null,
-                        sec: 0
+                        sec: 0,
+                        bet: betAmount
                     };
 
                     console.log('Creating room with data:', roomData);
-                    const createdRoom = await api.createGame(roomData);
+                    const createdRoom = await gameAPI.createGame(roomData);
                     console.log('Room created:', createdRoom);
 
                     if (createdRoom) {
+                        // Списываем ставку если есть
+                        if (betAmount > 0) {
+                            await userAPI.updateUser(this.currentUser.telegram_id, {
+                                money: this.userBalance - betAmount
+                            });
+                            this.userBalance -= betAmount;
+                        }
+
                         this.currentGame = createdRoom;
                         this.gameId = createdRoom.Id;
                         this.isPlayer1 = true;
 
-                        this.showWaitingRoom(roomCode);
+                        this.closeCreateGameModal();
+                        this.showWaitingRoom(roomCode, betAmount);
                         this.startGameLoop();
                         this.showMessage('Комната создана!', 'success');
                     } else {
@@ -663,7 +984,17 @@
                 }
             }
 
-            async joinGame() {
+            showJoinGameModal() {
+                document.getElementById('joinModalBalance').textContent = this.userBalance;
+                document.getElementById('joinGameModal').style.display = 'block';
+            }
+
+            closeJoinGameModal() {
+                document.getElementById('joinGameModal').style.display = 'none';
+                document.getElementById('gameCodeInput').value = '';
+            }
+
+            async findGameRoom() {
                 const gameCodeInput = document.getElementById('gameCodeInput');
                 const roomCode = gameCodeInput.value.trim();
 
@@ -673,7 +1004,7 @@
                 }
 
                 try {
-                    const room = await api.findRoomByName(roomCode);
+                    const room = await gameAPI.findRoomByName(roomCode);
 
                     if (!room) {
                         this.showMessage('Комната не найдена', 'error');
@@ -690,20 +1021,94 @@
                         return;
                     }
 
+                    // Проверяем баланс для ставки
+                    const betAmount = room.bet || 0;
+                    if (betAmount > 0 && this.userBalance < betAmount) {
+                        this.showMessage('Недостаточно клюшек для участия в игре', 'error');
+                        return;
+                    }
+
+                    // Показываем информацию о комнате
+                    this.pendingRoomData = room;
+                    await this.showRoomInfo(room);
+
+                } catch (error) {
+                    console.error('Failed to find game room:', error);
+                    this.showMessage('Ошибка поиска комнаты', 'error');
+                }
+            }
+
+            async showRoomInfo(room) {
+                try {
+                    // Получаем информацию о создателе
+                    const creatorData = await userAPI.findUserById(room.player1);
+                    const creatorName = creatorData ? creatorData.display_name || 'Неизвестный игрок' : 'Неизвестный игрок';
+
+                    document.getElementById('roomCreator').textContent = creatorName;
+                    
+                    const betAmount = room.bet || 0;
+                    if (betAmount > 0) {
+                        document.getElementById('roomBetInfo').textContent = `${betAmount} 🏒`;
+                        
+                        const enterBtn = document.getElementById('enterRoomBtn');
+                        if (this.userBalance < betAmount) {
+                            enterBtn.disabled = true;
+                            enterBtn.textContent = 'Недостаточно клюшек';
+                        } else {
+                            enterBtn.disabled = false;
+                            enterBtn.textContent = 'Войти';
+                        }
+                    } else {
+                        document.getElementById('roomBetInfo').textContent = 'Без ставки';
+                        document.getElementById('enterRoomBtn').disabled = false;
+                        document.getElementById('enterRoomBtn').textContent = 'Войти';
+                    }
+
+                    document.getElementById('roomInfoBalance').textContent = this.userBalance;
+                    document.getElementById('joinGameModal').style.display = 'none';
+                    document.getElementById('roomInfoModal').style.display = 'block';
+                    
+                } catch (error) {
+                    console.error('Failed to show room info:', error);
+                    this.showMessage('Ошибка загрузки информации о комнате', 'error');
+                }
+            }
+
+            closeRoomInfoModal() {
+                document.getElementById('roomInfoModal').style.display = 'none';
+                this.pendingRoomData = null;
+                this.showJoinGameModal();
+            }
+
+            async joinGameRoom() {
+                if (!this.pendingRoomData) return;
+
+                try {
+                    const room = this.pendingRoomData;
+                    const betAmount = room.bet || 0;
+
+                    // Списываем ставку если есть
+                    if (betAmount > 0) {
+                        await userAPI.updateUser(this.currentUser.telegram_id, {
+                            money: this.userBalance - betAmount
+                        });
+                        this.userBalance -= betAmount;
+                    }
+
                     const updateData = {
                         player2: this.currentUser.telegram_id,
                         game_state: 'game',
                         sec: 1
                     };
 
-                    const updatedRoom = await api.updateRoom(room.Id, updateData);
+                    const updatedRoom = await gameAPI.updateRoom(room.Id, updateData);
 
                     if (updatedRoom) {
                         this.currentGame = updatedRoom;
                         this.gameId = room.Id;
                         this.isPlayer1 = false;
 
-                        this.hideJoinForm();
+                        document.getElementById('roomInfoModal').style.display = 'none';
                         this.showGamePlay();
                         this.startGameLoop();
                         this.startLocalTimer();
@@ -767,7 +1172,7 @@
                 }
 
                 // Устанавливаем sec = 0 (время вышло, подводим итоги)
-                await api.updateRoom(this.gameId, { sec: 0 });
+                await gameAPI.updateRoom(this.gameId, { sec: 0 });
 
                 // Автоматически делаем случайные ходы для тех, кто не успел
                 if (!this.movesSubmitted) {
@@ -811,7 +1216,7 @@
                     }
 
                     if (Object.keys(moveData).length > 0) {
-                        await api.updateRoom(this.gameId, moveData);
+                        await gameAPI.updateRoom(this.gameId, moveData);
                         this.movesSubmitted = true;
                     }
                 } catch (error) {
@@ -823,7 +1228,7 @@
                 try {
                     if (!this.gameId) return;
 
-                    const updatedRoom = await api.getRoom(this.gameId);
+                    const updatedRoom = await gameAPI.getRoom(this.gameId);
                     if (!updatedRoom) return;
 
                     const wasWaiting = this.currentGame?.game_state === 'waiting';
@@ -849,7 +1254,6 @@
                     }
 
                     // Проверяем, нужно ли обработать результат раунда
-                    // Обрабатываем только когда sec стал 0 и оба игрока сделали ходы
                     const shouldProcessResult = (
                         this.currentGame.sec === 0 && 
                         this.currentGame.sender_hod === 1 && 
@@ -859,19 +1263,7 @@
 
                     if (shouldProcessResult) {
                         console.log('Processing round result...');
-                        await this.processRoundResult();
-                        return;
-                    }
-
-                    // Проверяем начало нового раунда (когда sec стал 1 после обработки результата)
-                    if (this.currentGame.sec === 1 && previousSec === 0 && this.movesSubmitted) {
-                        console.log('New round started, resetting moves...');
-                        this.movesSubmitted = false;
-                        this.confirmedZones = [];
-                        this.selectedZones = [];
-                        this.clearZoneStyles();
-                        this.enableZoneSelection();
-                        this.startLocalTimer();
+                        await this.processGameResult();
                         return;
                     }
 
@@ -884,19 +1276,17 @@
             updateGameDisplay() {
                 if (!this.currentGame) return;
 
-                // Обновляем счет, раунд и role info
-                const player1Score = this.currentGame.player1_score || 0;
-                const player2Score = this.currentGame.player2_score || 0;
-                const currentRound = this.currentGame.current_round || 1;
-
-                // Обновляем отображение счета и раунда
-                const player1ScoreElement = document.getElementById('player1Score');
-                const player2ScoreElement = document.getElementById('player2Score');
-                const roundNumberElement = document.getElementById('roundNumber');
-
-                if (player1ScoreElement) player1ScoreElement.textContent = player1Score;
-                if (player2ScoreElement) player2ScoreElement.textContent = player2Score;
-                if (roundNumberElement) roundNumberElement.textContent = currentRound;
+                // Показываем информацию о ставке если есть
+                const betAmount = this.currentGame.bet || 0;
+                const betInfoGame = document.getElementById('betInfoGame');
+                const gameBetAmount = document.getElementById('gameBetAmount');
+                
+                if (betAmount > 0) {
+                    gameBetAmount.textContent = betAmount;
+                    betInfoGame.classList.remove('hidden');
+                } else {
+                    betInfoGame.classList.add('hidden');
+                }
 
                 const roleInfoElement = document.getElementById('roleInfo');
                 const submitBtn = document.getElementById('submitMove');
@@ -1009,7 +1399,7 @@
                         this.showMessage('Защита поставлена!', 'success');
                     }
 
-                    await api.updateRoom(this.gameId, moveData);
+                    await gameAPI.updateRoom(this.gameId, moveData);
                     this.movesSubmitted = true;
 
                     // Сохраняем подтвержденные зоны и меняем их цвет на зеленый
@@ -1073,7 +1463,7 @@
                     console.log('Processing game result...');
 
                     // Получаем свежие данные из таблицы
-                    const currentGameData = await api.getRoom(this.gameId);
+                    const currentGameData = await gameAPI.getRoom(this.gameId);
                     if (!currentGameData) {
                         console.log('Game data not found');
                         return;
@@ -1096,42 +1486,29 @@
                     // Показываем анимацию результата
                     await this.showResultAnimation(attackerZone, defenderZones, goalScored);
 
-                    // Определяем результат для текущего игрока
+                    // Определяем победителя и начисляем награду
                     const amIPlayer1 = this.isPlayer1; // Player1 = подающий, Player2 = вратарь
-                    const amIAttacker = amIPlayer1;
-                    const amIDefender = !amIPlayer1;
+                    const amIWinner = goalScored ? amIPlayer1 : !amIPlayer1;
+                    const betAmount = this.currentGame.bet || 0;
+                    let winAmount = 0;
 
-                    let resultMessage = '';
-                    let messageType = 'info';
-
-                    if (goalScored) {
-                        // Гол забит
-                        if (amIAttacker) {
-                            resultMessage = `⚽ Гол забит! Ваш бросок в зону ${attackerZone} достиг цели!`;
-                            messageType = 'success';
-                        } else {
-                            resultMessage = `😔 Вы пропустили шайбу! Противник забил в зону ${attackerZone}. Ваша защита была в зонах ${defenderZones.join(', ')}.`;
-                            messageType = 'error';
-                        }
-                    } else {
-                        // Гол отбит
-                        if (amIDefender) {
-                            resultMessage = `🛡️ Шайба отбита! Бросок в зону ${attackerZone} заблокирован! Ваша защита в зонах ${defenderZones.join(', ')} сработала!`;
-                            messageType = 'success';
-                        } else {
-                            resultMessage = `😔 Гол попал в защиту! Ваш бросок в зону ${attackerZone} заблокирован защитой противника.`;
-                            messageType = 'error';
-                        }
+                    if (amIWinner && betAmount > 0) {
+                        winAmount = betAmount * 2; // Победитель получает удвоенную ставку
+                        
+                        // Начисляем выигрыш
+                        await userAPI.updateUser(this.currentUser.telegram_id, {
+                            money: this.userBalance + winAmount
+                        });
+                        this.userBalance += winAmount;
                     }
 
-                    // Показываем персональный результат
-                    this.showMessage(resultMessage, messageType);
+                    // Показываем результат в модальном окне
+                    this.showGameResult(amIWinner, winAmount);
 
-                    // Через 3 секунды закрываем комнату и переходим в меню
+                    // Удаляем комнату и через 5 секунд переходим в меню
                     setTimeout(async () => {
                         try {
-                            // Удаляем комнату
-                            await api.deleteRoom(this.gameId);
+                            await gameAPI.deleteRoom(this.gameId);
                             console.log('Room deleted');
                         } catch (error) {
                             console.error('Error deleting room:', error);
@@ -1139,7 +1516,7 @@
 
                         // Переходим в главное меню
                         window.location.href = 'index.html';
-                    }, 4000);
+                    }, 5000);
 
                 } catch (error) {
                     console.error('Failed to process game result:', error);
@@ -1152,125 +1529,32 @@
                 }
             }
 
-            async processRoundResult() {
-                try {
-                    console.log('Processing round result for current game:', this.currentGame);
+            showGameResult(isWinner, winAmount) {
+                const resultTitle = document.getElementById('resultTitle');
+                const resultMessage = document.getElementById('resultMessage');
+                const winAmountInfo = document.getElementById('winAmountInfo');
 
-                    // Проверяем, есть ли все необходимые данные для обработки
-                    if (!this.currentGame.zone_sender || !this.currentGame.zone1_protect || !this.currentGame.zone2_protect) {
-                        console.log('Not all moves submitted yet');
-                        return;
-                    }
-
-                    const attackerZone = this.currentGame.zone_sender;
-                    const defenderZones = [this.currentGame.zone1_protect, this.currentGame.zone2_protect];
-                    const goalScored = !defenderZones.includes(attackerZone);
-
-                    // Показываем анимацию результата
-                    await this.showResultAnimation(attackerZone, defenderZones, goalScored);
-
-                    // Определяем результат для текущего игрока
-                    const amIPlayer1 = this.isPlayer1; // Player1 = подающий, Player2 = вратарь
-                    const amIAttacker = amIPlayer1;
-                    const amIDefender = !amIPlayer1;
-
-                    let resultMessage = '';
-                    let messageType = 'info';
-
-                    if (goalScored) {
-                        // Гол забит
-                        if (amIAttacker) {
-                            resultMessage = `⚽ ГОЛ! Ваш бросок в зону ${attackerZone} достиг цели! +1 очко`;
-                            messageType = 'success';
-                        } else {
-                            resultMessage = `😔 Пропущен гол! Противник забил в зону ${attackerZone}. Ваша защита была в зонах ${defenderZones.join(', ')}.`;
-                            messageType = 'error';
-                        }
+                if (isWinner) {
+                    resultTitle.textContent = '🎉 ПОБЕДА!';
+                    resultMessage.textContent = 'Поздравляем! Вы выиграли!';
+                    
+                    if (winAmount > 0) {
+                        winAmountInfo.textContent = `+${winAmount} 🏒`;
+                        winAmountInfo.classList.remove('hidden');
                     } else {
-                        // Гол отбит
-                        if (amIDefender) {
-                            resultMessage = `🛡️ ОТЛИЧНАЯ ЗАЩИТА! Бросок в зону ${attackerZone} отбит! Ваша защита в зонах ${defenderZones.join(', ')} сработала! +1 очко`;
-                            messageType = 'success';
-                        } else {
-                            resultMessage = `😔 Бросок отбит! Ваш бросок в зону ${attackerZone} заблокирован защитой противника.`;
-                            messageType = 'error';
-                        }
+                        winAmountInfo.classList.add('hidden');
                     }
-
-                    // Показываем персональный результат
-                    this.showMessage(resultMessage, messageType);
-
-                    // Обновляем счет
-                    let newPlayer1Score = this.currentGame.player1_score || 0;
-                    let newPlayer2Score = this.currentGame.player2_score || 0;
-
-                    if (goalScored) {
-                        newPlayer1Score++; // Подающий (Player1) забил - гол = +1 очко
-                    } else {
-                        newPlayer2Score++; // Вратарь (Player2) отбил - защита сработала = +1 очко
-                    }
-
-                    // Проверяем окончание игры (2 раунда)
-                    const currentRound = this.currentGame.current_round || 1;
-                    const gameFinished = currentRound >= 2;
-                    const nextRound = currentRound + 1;
-
-                    console.log(`Current round: ${currentRound}, Game finished: ${gameFinished}`);
-
-                    // Только Player1 обновляет данные игры (избегаем конфликтов)
-                    if (this.isPlayer1) {
-                        const updates = {
-                            player1_score: newPlayer1Score,
-                            player2_score: newPlayer2Score,
-                            zone_sender: null,
-                            zone1_protect: null,
-                            zone2_protect: null,
-                            sender_hod: 0,
-                            protect_hod: 0
-                        };
-
-                        if (gameFinished) {
-                            // Игра окончена после 2 раундов
-                            updates.current_round = nextRound;
-                            updates.sec = 0;
-                            updates.game_state = 'finished';
-                            updates.winner = newPlayer1Score > newPlayer2Score ? this.currentGame.player1 : this.currentGame.player2;
-                            console.log('Game finished, final updates:', updates);
-                        } else {
-                            // Переходим к следующему раунду
-                            updates.current_round = nextRound;
-                            updates.sec = 1;
-                            updates.game_state = 'game';
-                            console.log('Moving to next round, updates:', updates);
-                        }
-
-                        await api.updateRoom(this.gameId, updates);
-                    }
-
-                    if (gameFinished) {
-                        if (this.localTimerInterval) {
-                            clearInterval(this.localTimerInterval);
-                        }
-                        // Ждем 3 секунды, потом переходим к index.html
-                        setTimeout(() => {
-                            window.location.href = 'index.html';
-                        }, 3000);
-                    } else {
-                        // Начинаем новый раунд через 3 секунды
-                        setTimeout(() => {
-                            this.movesSubmitted = false;
-                            this.confirmedZones = [];
-                            this.selectedZones = [];
-                            this.clearZoneStyles();
-                            this.enableZoneSelection();
-                            this.startLocalTimer();
-                            this.showMessage(`Раунд ${nextRound} начинается!`, 'info');
-                        }, 3000);
-                    }
-                } catch (error) {
-                    console.error('Failed to process round results:', error);
-                    this.showMessage('Ошибка обработки результата', 'error');
+                } else {
+                    resultTitle.textContent = '😔 ПОРАЖЕНИЕ';
+                    resultMessage.textContent = 'В этот раз не повезло. Попробуйте еще раз!';
+                    winAmountInfo.classList.add('hidden');
                 }
+
+                document.getElementById('resultModal').style.display = 'block';
+            }
+
+            closeResultModal() {
+                document.getElementById('resultModal').style.display = 'none';
             }
 
             clearZoneStyles() {
@@ -1302,10 +1586,20 @@
                 document.getElementById('gameMenu').classList.remove('hidden');
             }
 
-            showWaitingRoom(roomName) {
+            showWaitingRoom(roomName, betAmount = 0) {
                 this.hideAllScreens();
                 document.getElementById('waitingRoom').classList.remove('hidden');
                 document.getElementById('roomCode').textContent = roomName;
+                
+                const betInfoWaiting = document.getElementById('betInfoWaiting');
+                const waitingBetAmount = document.getElementById('waitingBetAmount');
+                
+                if (betAmount > 0) {
+                    waitingBetAmount.textContent = betAmount;
+                    betInfoWaiting.classList.remove('hidden');
+                } else {
+                    betInfoWaiting.classList.add('hidden');
+                }
             }
 
             showGamePlay() {
@@ -1324,14 +1618,6 @@
 
                 this.hideAllScreens();
                 document.getElementById('gameEnd').classList.remove('hidden');
-
-                const myScore = this.isPlayer1 ? this.currentGame.player1_score : this.currentGame.player2_score;
-                const opponentScore = this.isPlayer1 ? this.currentGame.player2_score : this.currentGame.player1_score;
-                const won = myScore > opponentScore;
-
-                document.getElementById('finalResult').textContent = won ? '🎉 ПОБЕДА!' : '😔 ПОРАЖЕНИЕ';
-                document.getElementById('finalScore1').textContent = this.currentGame.player1_score;
-                document.getElementById('finalScore2').textContent = this.currentGame.player2_score;
             }
 
             hideAllScreens() {
@@ -1339,11 +1625,6 @@
                 document.getElementById('waitingRoom').classList.add('hidden');
                 document.getElementById('gamePlay').classList.add('hidden');
                 document.getElementById('gameEnd').classList.add('hidden');
-            }
-
-            hideJoinForm() {
-                document.getElementById('joinForm').classList.add('hidden');
-                document.getElementById('gameCodeInput').value = '';
             }
 
             showMessage(message, type = 'info') {
@@ -1379,7 +1660,16 @@
 
                 if (this.gameId) {
                     try {
-                        await api.deleteRoom(this.gameId);
+                        // Возвращаем ставку если игра была отменена
+                        const betAmount = this.currentGame?.bet || 0;
+                        if (betAmount > 0) {
+                            await userAPI.updateUser(this.currentUser.telegram_id, {
+                                money: this.userBalance + betAmount
+                            });
+                            this.userBalance += betAmount;
+                        }
+
+                        await gameAPI.deleteRoom(this.gameId);
                         this.showMessage('Комната удалена', 'info');
                     } catch (error) {
                         console.error('Failed to delete room:', error);
@@ -1393,24 +1683,44 @@
 
         // Initialize
         const tgApp = new TelegramApp();
-        const api = new NocoDBAPI();
+        const gameAPI = new NocoDBAPI(GAME_API_CONFIG);
+        const userAPI = new NocoDBAPI(USER_API_CONFIG);
 
         // Global functions
-        function createGame() {
-            window.gameManager.createGame();
+        function showCreateGameModal() {
+            window.gameManager.showCreateGameModal();
         }
 
-        function showJoinForm() {
-            document.getElementById('joinForm').classList.remove('hidden');
+        function toggleBetAmount() {
+            window.gameManager.toggleBetAmount();
         }
 
-        function hideJoinForm() {
-            document.getElementById('joinForm').classList.add('hidden');
-            document.getElementById('gameCodeInput').value = '';
+        function createGameWithBet() {
+            window.gameManager.createGameWithBet();
         }
 
-        function joinGame() {
-            window.gameManager.joinGame();
+        function closeCreateGameModal() {
+            window.gameManager.closeCreateGameModal();
+        }
+
+        function showJoinGameModal() {
+            window.gameManager.showJoinGameModal();
+        }
+
+        function closeJoinGameModal() {
+            window.gameManager.closeJoinGameModal();
+        }
+
+        function findGameRoom() {
+            window.gameManager.findGameRoom();
+        }
+
+        function closeRoomInfoModal() {
+            window.gameManager.closeRoomInfoModal();
+        }
+
+        function joinGameRoom() {
+            window.gameManager.joinGameRoom();
         }
 
         function selectZone(zoneNumber) {
@@ -1429,12 +1739,27 @@
             window.gameManager.cancelGame();
         }
 
+        function closeResultModal() {
+            window.gameManager.closeResultModal();
+        }
+
         function playAgain() {
             window.location.reload();
         }
 
         function goHome() {
             window.location.href = 'index.html';
+        }
+
+        // Закрытие модалок по клику вне их
+        window.onclick = function(event) {
+            const modals = ['createGameModal', 'joinGameModal', 'roomInfoModal', 'resultModal'];
+            modals.forEach(modalId => {
+                const modal = document.getElementById(modalId);
+                if (event.target === modal) {
+                    modal.style.display = 'none';
+                }
+            });
         }
 
         // Initialize game when page loads
