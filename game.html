@@ -1106,7 +1106,7 @@
                     
                     // Получаем информацию о создателе по player1 ID
                     const creatorData = await userAPI.findUserById(room.player1);
-                    const creatorName = creatorData ? (creatorData.display_name || creatorData.username || 'Неизвестный игрок') : 'Неизвестный игрок';
+                    const creatorName = creatorData ? (creatorData.user_name || creatorData.user_username || 'Неизвестный игрок') : 'Неизвестный игрок';
 
                     document.getElementById('roomCreator').textContent = creatorName;
                     
@@ -1875,9 +1875,9 @@
             window.location.href = 'index.html';
         }
 
-        // Закрытие модалок по клику вне их
+        // Закрытие модалок по клику вне их (кроме resultModal)
         window.onclick = function(event) {
-            const modals = ['createGameModal', 'joinGameModal', 'roomInfoModal', 'resultModal'];
+            const modals = ['createGameModal', 'joinGameModal', 'roomInfoModal'];
             modals.forEach(modalId => {
                 const modal = document.getElementById(modalId);
                 if (event.target === modal) {
