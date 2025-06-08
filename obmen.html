@@ -27,3 +27,720 @@
             left: 0;
             right: 0;
             height: 60px;
+            background: rgba(44, 62, 80, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.3);
+        }
+
+        .back-btn {
+            position: absolute;
+            left: 15px;
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            text-decoration: none;
+        }
+
+        .back-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .header-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: right;
+            margin-right: 20px;
+            flex: 1;
+        }
+
+        .container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .currency-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(52, 73, 94, 0.8);
+            padding: 12px 20px;
+            border-radius: 25px;
+            margin: 20px 0;
+            font-size: 1.2rem;
+            font-weight: 600;
+            backdrop-filter: blur(5px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .currency-display.loading::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        .currency-display .stick-icon {
+            margin-left: 8px;
+            font-size: 1.4rem;
+        }
+
+        .content {
+            padding: 20px 0;
+        }
+
+        .shop-section {
+            margin-bottom: 30px;
+        }
+
+        .section-title {
+            font-size: 1.6rem;
+            font-weight: bold;
+            margin-bottom: 25px;
+            text-align: center;
+            color: #ecf0f1;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 15px;
+        }
+
+        .card-item {
+            background: rgba(52, 73, 94, 0.8);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            backdrop-filter: blur(5px);
+        }
+
+        .card-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            background: rgba(52, 73, 94, 0.95);
+        }
+
+        .card-rarity-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 0.7rem;
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-weight: bold;
+            transform: rotate(15deg);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            border: 1px solid rgba(255,255,255,0.3);
+            z-index: 10;
+        }
+
+        .card-rarity-badge.простой { 
+            background: rgba(0, 0, 0, 0.9);
+            border-color: #333333;
+        }
+
+        .card-rarity-badge.эпический { 
+            background: rgba(155, 89, 182, 0.9);
+            border-color: #9b59b6;
+        }
+
+        .card-rarity-badge.мифический { 
+            background: rgba(231, 76, 60, 0.9);
+            border-color: #e74c3c;
+        }
+
+        .card-rarity-badge.легендарный { 
+            background: rgba(243, 156, 18, 0.9);
+            border-color: #f39c12;
+        }
+
+        .card-content {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .card-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 2px solid rgba(255,255,255,0.3);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            flex-shrink: 0;
+        }
+
+        .card-info {
+            flex: 1;
+            text-align: left;
+        }
+
+        .card-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #ecf0f1;
+        }
+
+        .card-price {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 1.1rem;
+            color: #2ecc71;
+            font-weight: bold;
+            margin-bottom: 15px;
+        }
+
+        .buy-btn {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 100px;
+        }
+
+        .buy-btn:hover {
+            background: linear-gradient(45deg, #229954, #27ae60);
+            transform: translateY(-1px);
+        }
+
+        .buy-btn:disabled {
+            background: rgba(127, 140, 141, 0.5);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .loading {
+            text-align: center;
+            color: #3498db;
+            padding: 20px;
+        }
+
+        .message {
+            position: fixed;
+            top: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 15px 20px;
+            border-radius: 10px;
+            z-index: 1000;
+            color: white;
+            font-weight: 600;
+            max-width: 300px;
+            text-align: center;
+        }
+
+        .message.success {
+            background: #2ed573;
+        }
+
+        .message.error {
+            background: #ff4757;
+        }
+
+        .message.info {
+            background: #3498db;
+        }
+
+        /* Модальное окно */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            margin: 15% auto;
+            padding: 30px;
+            border-radius: 20px;
+            width: 80%;
+            max-width: 400px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        .modal h3 {
+            margin-bottom: 20px;
+            color: #ecf0f1;
+            font-size: 1.3rem;
+        }
+
+        .modal p {
+            margin-bottom: 25px;
+            color: rgba(236, 240, 241, 0.8);
+            line-height: 1.5;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .modal-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-btn.confirm {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            color: white;
+        }
+
+        .modal-btn.confirm:hover {
+            background: linear-gradient(45deg, #229954, #27ae60);
+        }
+
+        .modal-btn.cancel {
+            background: rgba(127, 140, 141, 0.3);
+            color: white;
+        }
+
+        .modal-btn.cancel:hover {
+            background: rgba(127, 140, 141, 0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="index.html" class="back-btn">←</a>
+        <div class="header-title">Hockey Shootouts</div>
+    </div>
+
+    <div class="container">
+        <div class="currency-display" id="currencyDisplay">
+            <span>Клюшек: <span id="userMoney">0</span></span>
+            <span class="stick-icon">🏒</span>
+        </div>
+
+        <div class="content">
+            <div class="shop-section">
+                <div class="section-title">Карточки игроков</div>
+                
+                <div class="cards-grid" id="cardsGrid">
+                    <div class="loading">Загрузка карточек...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно подтверждения -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <h3>Подтверждение покупки</h3>
+            <p id="confirmText">Вы действительно хотите купить карточку?</p>
+            <div class="modal-buttons">
+                <button class="modal-btn confirm" onclick="confirmPurchase()">Купить</button>
+                <button class="modal-btn cancel" onclick="closeModal()">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно недостатка средств -->
+    <div id="errorModal" class="modal">
+        <div class="modal-content">
+            <h3>Недостаточно клюшек</h3>
+            <p>У вас недостаточно клюшек для покупки этой карточки.</p>
+            <div class="modal-buttons">
+                <button class="modal-btn cancel" onclick="closeModal()">Понятно</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Конфигурация NocoDB 
+        const config = {
+            orgs: 'wf52x8bf',
+            projectName: 'pawgl0ouxic497w',
+            tableName: 'mtfr4e3wywjtyua',
+            apiToken: '4lZnGEoWEQeBswBHzzp_lPPYDFFkNc7s2BlWClxb',
+            baseUrl: 'https://app.nocodb.com/api/v1/db/data'
+        };
+
+        let tg = window.Telegram.WebApp;
+        let userData = null;
+        let currentUserData = null;
+        let pendingPurchase = null;
+
+        // Карточки игроков для продажи
+        const playerCards = [
+            {
+                name: 'Сериков',
+                rarity: 'Простой',
+                price: 20,
+                avatar: 'https://raw.githubusercontent.com/ChatGPT-Course/Xokkey/main/avatar/artem_serikov.jpg'
+            },
+            {
+                name: 'Рушан',
+                rarity: 'Эпический',
+                price: 30,
+                avatar: 'https://raw.githubusercontent.com/ChatGPT-Course/Xokkey/main/avatar/Rushan_rafikov.jpg'
+            },
+            {
+                name: 'Голдобин',
+                rarity: 'Мифический',
+                price: 40,
+                avatar: 'https://raw.githubusercontent.com/ChatGPT-Course/Xokkey/main/avatar/Nikolay_goldobin.jpg'
+            },
+            {
+                name: 'Ливо',
+                rarity: 'Легендарный',
+                price: 50,
+                avatar: 'https://raw.githubusercontent.com/ChatGPT-Course/Xokkey/main/avatar/Dzoshya_livo.jpg'
+            }
+        ];
+
+        // Нормализация редкости для CSS классов
+        function normalizeRarity(rarity) {
+            const rarityText = rarity.toLowerCase().trim();
+            
+            if (rarityText.includes('легендар')) return 'легендарный';
+            if (rarityText.includes('мифич')) return 'мифический';
+            if (rarityText.includes('эпич')) return 'эпический';
+            if (rarityText.includes('прост')) return 'простой';
+            
+            return 'простой'; // по умолчанию
+        }
+
+        // Получить cookie
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return null;
+        }
+
+        // Получить данные пользователя из Telegram WebApp
+        function getTelegramUserData() {
+            try {
+                if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                    const user = tg.initDataUnsafe.user;
+                    return {
+                        id: user.id.toString(),
+                        username: user.username || '',
+                        display_name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Игрок',
+                    };
+                }
+
+                // Fallback из cookies
+                const savedUserId = getCookie('tg_user_id');
+                const savedUsername = getCookie('tg_username');
+                const savedName = getCookie('tg_name');
+
+                if (savedUserId) {
+                    return {
+                        id: savedUserId,
+                        username: savedUsername || 'unknown',
+                        display_name: savedName || 'Игрок'
+                    };
+                }
+
+                // Fallback для тестирования
+                return {
+                    id: Date.now().toString(),
+                    username: 'test_user',
+                    display_name: 'Тестовый игрок'
+                };
+            } catch (error) {
+                console.log('Ошибка получения данных пользователя:', error);
+                return {
+                    id: Date.now().toString(),
+                    username: 'test_user',
+                    display_name: 'Тестовый игрок'
+                };
+            }
+        }
+
+        // Получить данные пользователя из базы
+        async function getUserData(userId) {
+            try {
+                const response = await fetch(`${config.baseUrl}/${config.orgs}/${config.projectName}/${config.tableName}`, {
+                    method: 'GET',
+                    headers: {
+                        'xc-token': config.apiToken,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Ошибка получения данных: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const user = data.list ? data.list.find(u => u.user_id && u.user_id.toString() === userId.toString()) : null;
+                
+                return user;
+            } catch (error) {
+                console.log('Ошибка получения данных пользователя:', error);
+                return null;
+            }
+        }
+
+        // Обновить данные пользователя в базе
+        async function updateUserData(userId, updates) {
+            try {
+                const dbUser = await getUserData(userId);
+                if (!dbUser) {
+                    throw new Error('Пользователь не найден в базе данных');
+                }
+
+                const response = await fetch(`${config.baseUrl}/${config.orgs}/${config.projectName}/${config.tableName}/${dbUser.Id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'xc-token': config.apiToken,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updates)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Ошибка обновления данных: ${response.status}`);
+                }
+
+                return await response.json();
+            } catch (error) {
+                console.error('Ошибка обновления данных пользователя:', error);
+                throw error;
+            }
+        }
+
+        // Показать сообщение
+        function showMessage(message, type = 'info') {
+            const existingMessage = document.querySelector('.message');
+            if (existingMessage) {
+                existingMessage.remove();
+            }
+
+            const messageDiv = document.createElement('div');
+            messageDiv.textContent = message;
+            messageDiv.className = `message ${type}`;
+
+            document.body.appendChild(messageDiv);
+            setTimeout(() => {
+                if (document.body.contains(messageDiv)) {
+                    document.body.removeChild(messageDiv);
+                }
+            }, 3000);
+        }
+
+        // Отобразить карточки
+        function displayCards() {
+            const container = document.getElementById('cardsGrid');
+            container.innerHTML = '';
+
+            playerCards.forEach(card => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card-item';
+                
+                cardElement.innerHTML = `
+                    <div class="card-rarity-badge ${normalizeRarity(card.rarity)}">${card.rarity}</div>
+                    <div class="card-content">
+                        <img src="${card.avatar}" alt="${card.name}" class="card-avatar" 
+                             onerror="this.style.display='none';">
+                        <div class="card-info">
+                            <div class="card-name">${card.name}</div>
+                            <div class="card-price">${card.price} <span>🏒</span></div>
+                            <button class="buy-btn" onclick="buyCard('${card.name}', '${card.rarity}', ${card.price})">
+                                Купить
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(cardElement);
+            });
+
+            updateButtonStates();
+        }
+
+        // Обновление доступности кнопок
+        function updateButtonStates() {
+            const money = currentUserData?.money || 0;
+            const buttons = document.querySelectorAll('.buy-btn');
+            
+            buttons.forEach(button => {
+                const cardElement = button.closest('.card-item');
+                const priceText = cardElement.querySelector('.card-price').textContent;
+                const price = parseInt(priceText.match(/\d+/)[0]);
+                
+                if (money < price) {
+                    button.disabled = true;
+                    button.textContent = 'Недостаточно';
+                } else {
+                    button.disabled = false;
+                    button.textContent = 'Купить';
+                }
+            });
+        }
+
+        // Покупка карточки
+        function buyCard(name, rarity, price) {
+            if (!currentUserData) {
+                showMessage('Ошибка загрузки данных пользователя', 'error');
+                return;
+            }
+
+            const currentMoney = currentUserData.money || 0;
+            if (currentMoney < price) {
+                document.getElementById('errorModal').style.display = 'block';
+                return;
+            }
+
+            pendingPurchase = { name, rarity, price };
+            document.getElementById('confirmText').textContent = 
+                `Вы действительно хотите купить карточку ${name} (${rarity}) за ${price} клюшек?`;
+            document.getElementById('confirmModal').style.display = 'block';
+        }
+
+        // Подтверждение покупки
+        async function confirmPurchase() {
+            if (!pendingPurchase) return;
+
+            try {
+                const { name, rarity, price } = pendingPurchase;
+                const currentMoney = currentUserData.money || 0;
+                
+                // Создаем новую карточку
+                const newCard = `${name}(${rarity})`;
+                const existingCards = currentUserData.card || '';
+                
+                // Объединяем с существующими карточками
+                let allCards = existingCards ? existingCards.split(',').map(s => s.trim()).filter(s => s) : [];
+                allCards.push(newCard);
+                const updatedCardsString = allCards.join(', ');
+
+                // Обновляем данные в базе
+                const updates = {
+                    money: currentMoney - price,
+                    card: updatedCardsString
+                };
+
+                await updateUserData(userData.id, updates);
+
+                // Обновляем локальные данные
+                currentUserData.money = currentMoney - price;
+                currentUserData.card = updatedCardsString;
+                
+                // Обновляем отображение
+                document.getElementById('userMoney').textContent = currentUserData.money;
+                updateButtonStates();
+
+                // Показываем результат
+                showMessage(`Карточка ${name} (${rarity}) успешно куплена!`, 'success');
+                closeModal();
+
+            } catch (error) {
+                console.error('Ошибка покупки карточки:', error);
+                showMessage('Ошибка покупки карточки', 'error');
+            }
+
+            pendingPurchase = null;
+        }
+
+        // Закрыть модальное окно
+        function closeModal() {
+            document.getElementById('confirmModal').style.display = 'none';
+            document.getElementById('errorModal').style.display = 'none';
+            pendingPurchase = null;
+        }
+
+        // Закрытие модалки по клику вне её
+        window.onclick = function(event) {
+            const confirmModal = document.getElementById('confirmModal');
+            const errorModal = document.getElementById('errorModal');
+            if (event.target === confirmModal || event.target === errorModal) {
+                closeModal();
+            }
+        }
+
+        // Инициализация магазина
+        async function initShop() {
+            try {
+                if (tg) {
+                    tg.ready();
+                    tg.expand();
+                }
+
+                userData = getTelegramUserData();
+                console.log('Данные пользователя:', userData);
+
+                // Устанавливаем анимацию загрузки для валюты
+                const currencyDisplay = document.getElementById('currencyDisplay');
+                currencyDisplay.classList.add('loading');
+
+                // Получаем данные из базы
+                currentUserData = await getUserData(userData.id);
+                
+                // Убираем анимацию загрузки
+                currencyDisplay.classList.remove('loading');
+                
+                if (currentUserData) {
+                    document.getElementById('userMoney').textContent = currentUserData.money || 0;
+                } else {
+                    document.getElementById('userMoney').textContent = 0;
+                    showMessage('Ошибка загрузки данных пользователя', 'error');
+                }
+
+                // Отображаем карточки
+                displayCards();
+
+            } catch (error) {
+                console.error('Ошибка инициализации магазина:', error);
+                showMessage('Ошибка загрузки данных', 'error');
+            }
+        }
+
+        // Запускаем инициализацию после загрузки DOM
+        document.addEventListener('DOMContentLoaded', initShop);
+    </script>
+</body>
+</html>
