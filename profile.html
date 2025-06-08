@@ -197,20 +197,24 @@
         .inventory-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 15px;
+            gap: 12px;
             max-height: 400px;
             overflow-y: auto;
+            overflow-x: hidden;
             padding: 5px;
+            width: 100%;
         }
 
         .card-item {
             background: rgba(44, 62, 80, 0.8);
             border-radius: 15px;
-            padding: 15px;
+            padding: 12px;
             text-align: center;
             transition: all 0.3s ease;
             position: relative;
-            height: 220px;
+            height: 200px;
+            width: 100%;
+            min-width: 0;
             display: flex;
             flex-direction: column;
             justify-content: space-between;
@@ -293,10 +297,10 @@
         }
 
         .card-avatar {
-            width: 84px;
-            height: 84px;
+            width: 70px;
+            height: 70px;
             border-radius: 10px;
-            margin: 5px auto 10px auto;
+            margin: 5px auto 8px auto;
             object-fit: cover;
             border: 2px solid rgba(255,255,255,0.3);
             box-shadow: 0 4px 10px rgba(0,0,0,0.4);
@@ -315,9 +319,9 @@
         }
 
         .card-name {
-            font-size: 1rem;
+            font-size: 0.9rem;
             font-weight: 600;
-            margin: 10px 0;
+            margin: 8px 0;
             color: #ecf0f1;
             letter-spacing: 0.3px;
         }
