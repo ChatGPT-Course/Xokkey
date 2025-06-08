@@ -224,22 +224,22 @@
             z-index: 10;
         }
 
-        .card-rarity-badge.простая { 
+        .card-rarity-badge.простой { 
             background: rgba(149, 165, 166, 0.9);
             border-color: #95a5a6;
         }
 
-        .card-rarity-badge.эпическая { 
+        .card-rarity-badge.эпический { 
             background: rgba(155, 89, 182, 0.9);
             border-color: #9b59b6;
         }
 
-        .card-rarity-badge.мифическая { 
+        .card-rarity-badge.мифический { 
             background: rgba(231, 76, 60, 0.9);
             border-color: #e74c3c;
         }
 
-        .card-rarity-badge.легендарная { 
+        .card-rarity-badge.легендарный { 
             background: rgba(243, 156, 18, 0.9);
             border-color: #f39c12;
         }
@@ -476,9 +476,9 @@
 
         // Правила крафта
         const craftRules = {
-            'простая': { required: 5, result: 'эпическая' },
-            'эпическая': { required: 3, result: 'мифическая' },
-            'мифическая': { required: 3, result: 'легендарная' }
+            'Простой': { required: 5, result: 'Эпический' },
+            'Эпический': { required: 3, result: 'Мифический' },
+            'Мифический': { required: 3, result: 'Легендарный' }
         };
 
         // Получить cookie
@@ -596,7 +596,7 @@
                 const match = entry.match(/(.+?)\((.+?)\)/);
                 if (match) {
                     const name = match[1].trim();
-                    const rarity = match[2].trim().toLowerCase();
+                    const rarity = match[2].trim();
                     cards.push({ 
                         id: index,
                         name, 
@@ -762,10 +762,10 @@
         // Получить случайного игрока для редкости
         function getRandomPlayerForRarity(rarity) {
             const rarityPlayers = {
-                'простая': ['Сериков'],
-                'эпическая': ['Рушан'],
-                'мифическая': ['Голдобин'],
-                'легендарная': ['Ливо']
+                'Простой': ['Сериков'],
+                'Эпический': ['Рушан'],
+                'Мифический': ['Голдобин'],
+                'Легендарный': ['Ливо']
             };
             
             const players = rarityPlayers[rarity] || ['Неизвестный'];
