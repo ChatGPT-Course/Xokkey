@@ -66,7 +66,7 @@
         }
 
         .container {
-            max-width: 400px;
+            max-width: 500px;
             margin: 0 auto;
             padding: 20px;
         }
@@ -82,6 +82,24 @@
             font-size: 1.2rem;
             font-weight: 600;
             backdrop-filter: blur(5px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .currency-display.loading::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
         }
 
         .currency-display .stick-icon {
@@ -98,94 +116,123 @@
         }
 
         .section-title {
-            font-size: 1.3rem;
+            font-size: 1.6rem;
             font-weight: bold;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             text-align: center;
             color: #ecf0f1;
         }
 
-        .pack-grid {
+        .cards-grid {
             display: grid;
+            grid-template-columns: 1fr;
             gap: 15px;
         }
 
-        .pack-item {
+        .card-item {
             background: rgba(52, 73, 94, 0.8);
             border-radius: 15px;
             padding: 20px;
             text-align: center;
-            border: 2px solid transparent;
             transition: all 0.3s ease;
-            cursor: pointer;
+            position: relative;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
             backdrop-filter: blur(5px);
         }
 
-        .pack-item:hover {
-            transform: translateY(-2px);
-            border-color: rgba(46, 204, 113, 0.5);
-            box-shadow: 0 8px 25px rgba(46, 204, 113, 0.2);
+        .card-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            background: rgba(52, 73, 94, 0.95);
         }
 
-        .pack-item.basic {
-            border-color: rgba(52, 152, 219, 0.3);
-        }
-
-        .pack-item.premium {
-            border-color: rgba(155, 89, 182, 0.3);
-        }
-
-        .pack-item.legendary {
-            border-color: rgba(243, 156, 18, 0.3);
-        }
-
-        .pack-icon {
-            font-size: 3rem;
-            margin-bottom: 15px;
-        }
-
-        .pack-name {
-            font-size: 1.2rem;
+        .card-rarity-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            font-size: 0.7rem;
+            padding: 4px 8px;
+            border-radius: 8px;
             font-weight: bold;
-            margin-bottom: 10px;
+            transform: rotate(15deg);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            border: 1px solid rgba(255,255,255,0.3);
+            z-index: 10;
+        }
+
+        .card-rarity-badge.простая { 
+            background: rgba(149, 165, 166, 0.9);
+            border-color: #95a5a6;
+        }
+
+        .card-rarity-badge.эпическая { 
+            background: rgba(155, 89, 182, 0.9);
+            border-color: #9b59b6;
+        }
+
+        .card-rarity-badge.мифическая { 
+            background: rgba(231, 76, 60, 0.9);
+            border-color: #e74c3c;
+        }
+
+        .card-rarity-badge.легендарная { 
+            background: rgba(243, 156, 18, 0.9);
+            border-color: #f39c12;
+        }
+
+        .card-content {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .card-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 2px solid rgba(255,255,255,0.3);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            flex-shrink: 0;
+        }
+
+        .card-info {
+            flex: 1;
+            text-align: left;
+        }
+
+        .card-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 8px;
             color: #ecf0f1;
         }
 
-        .pack-description {
-            font-size: 0.9rem;
-            color: rgba(236, 240, 241, 0.7);
-            margin-bottom: 15px;
-            line-height: 1.4;
-        }
-
-        .pack-price {
+        .card-price {
             display: flex;
             align-items: center;
-            justify-content: center;
-            background: rgba(46, 204, 113, 0.2);
-            padding: 10px 15px;
-            border-radius: 20px;
-            margin-bottom: 15px;
+            gap: 5px;
             font-size: 1.1rem;
-            font-weight: bold;
             color: #2ecc71;
-        }
-
-        .pack-price .stick-icon {
-            margin-left: 5px;
+            font-weight: bold;
+            margin-bottom: 15px;
         }
 
         .buy-btn {
             background: linear-gradient(45deg, #27ae60, #2ecc71);
             color: white;
             border: none;
-            padding: 12px 25px;
-            border-radius: 10px;
-            font-size: 1rem;
+            padding: 10px 20px;
+            border-radius: 8px;
+            font-size: 0.9rem;
             font-weight: bold;
             cursor: pointer;
-            width: 100%;
             transition: all 0.3s ease;
+            min-width: 100px;
         }
 
         .buy-btn:hover {
@@ -231,42 +278,76 @@
             background: #3498db;
         }
 
-        .rarity-info {
-            background: rgba(52, 73, 94, 0.6);
-            border-radius: 10px;
-            padding: 15px;
-            margin: 20px 0;
-            font-size: 0.9rem;
+        /* Модальное окно */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
             backdrop-filter: blur(5px);
         }
 
-        .rarity-info h4 {
-            margin-bottom: 10px;
+        .modal-content {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            margin: 15% auto;
+            padding: 30px;
+            border-radius: 20px;
+            width: 80%;
+            max-width: 400px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        .modal h3 {
+            margin-bottom: 20px;
             color: #ecf0f1;
+            font-size: 1.3rem;
         }
 
-        .rarity-list {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 8px;
+        .modal p {
+            margin-bottom: 25px;
+            color: rgba(236, 240, 241, 0.8);
+            line-height: 1.5;
         }
 
-        .rarity-item {
+        .modal-buttons {
             display: flex;
-            align-items: center;
-            gap: 5px;
+            gap: 15px;
+            justify-content: center;
         }
 
-        .rarity-color {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
+        .modal-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
         }
 
-        .rarity-color.rare { background: #3498db; }
-        .rarity-color.epic { background: #9b59b6; }
-        .rarity-color.legendary { background: #f39c12; }
-        .rarity-color.mythical { background: #e74c3c; }
+        .modal-btn.confirm {
+            background: linear-gradient(45deg, #27ae60, #2ecc71);
+            color: white;
+        }
+
+        .modal-btn.confirm:hover {
+            background: linear-gradient(45deg, #229954, #27ae60);
+        }
+
+        .modal-btn.cancel {
+            background: rgba(127, 140, 141, 0.3);
+            color: white;
+        }
+
+        .modal-btn.cancel:hover {
+            background: rgba(127, 140, 141, 0.5);
+        }
     </style>
 </head>
 <body>
@@ -276,62 +357,41 @@
     </div>
 
     <div class="container">
-        <div class="currency-display">
+        <div class="currency-display" id="currencyDisplay">
             <span>Клюшек: <span id="userMoney">0</span></span>
             <span class="stick-icon">🏒</span>
         </div>
 
         <div class="content">
             <div class="shop-section">
-                <div class="section-title">Карточные наборы</div>
+                <div class="section-title">Карточки игроков</div>
                 
-                <div class="pack-grid">
-                    <div class="pack-item basic" data-pack="basic">
-                        <div class="pack-icon">📦</div>
-                        <div class="pack-name">Базовый набор</div>
-                        <div class="pack-description">1 случайная карточка<br>Шанс на редкую карту 15%</div>
-                        <div class="pack-price">10 <span class="stick-icon">🏒</span></div>
-                        <button class="buy-btn" onclick="buyPack('basic', 10)">Купить</button>
-                    </div>
-
-                    <div class="pack-item premium" data-pack="premium">
-                        <div class="pack-icon">🎁</div>
-                        <div class="pack-name">Премиум набор</div>
-                        <div class="pack-description">3 карточки<br>Гарантированно 1 редкая+<br>Шанс на эпическую 25%</div>
-                        <div class="pack-price">25 <span class="stick-icon">🏒</span></div>
-                        <button class="buy-btn" onclick="buyPack('premium', 25)">Купить</button>
-                    </div>
-
-                    <div class="pack-item legendary" data-pack="legendary">
-                        <div class="pack-icon">💎</div>
-                        <div class="pack-name">Легендарный набор</div>
-                        <div class="pack-description">5 карточек<br>Гарантированно 1 эпическая+<br>Шанс на мифическую 10%</div>
-                        <div class="pack-price">50 <span class="stick-icon">🏒</span></div>
-                        <button class="buy-btn" onclick="buyPack('legendary', 50)">Купить</button>
-                    </div>
+                <div class="cards-grid" id="cardsGrid">
+                    <div class="loading">Загрузка карточек...</div>
                 </div>
+            </div>
+        </div>
+    </div>
 
-                <div class="rarity-info">
-                    <h4>Редкость карточек:</h4>
-                    <div class="rarity-list">
-                        <div class="rarity-item">
-                            <div class="rarity-color rare"></div>
-                            <span>Редкая</span>
-                        </div>
-                        <div class="rarity-item">
-                            <div class="rarity-color epic"></div>
-                            <span>Эпическая</span>
-                        </div>
-                        <div class="rarity-item">
-                            <div class="rarity-color legendary"></div>
-                            <span>Легендарная</span>
-                        </div>
-                        <div class="rarity-item">
-                            <div class="rarity-color mythical"></div>
-                            <span>Мифическая</span>
-                        </div>
-                    </div>
-                </div>
+    <!-- Модальное окно подтверждения -->
+    <div id="confirmModal" class="modal">
+        <div class="modal-content">
+            <h3>Подтверждение покупки</h3>
+            <p id="confirmText">Вы действительно хотите купить карточку?</p>
+            <div class="modal-buttons">
+                <button class="modal-btn confirm" onclick="confirmPurchase()">Купить</button>
+                <button class="modal-btn cancel" onclick="closeModal()">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно недостатка средств -->
+    <div id="errorModal" class="modal">
+        <div class="modal-content">
+            <h3>Недостаточно клюшек</h3>
+            <p>У вас недостаточно клюшек для покупки этой карточки.</p>
+            <div class="modal-buttons">
+                <button class="modal-btn cancel" onclick="closeModal()">Понятно</button>
             </div>
         </div>
     </div>
@@ -349,13 +409,106 @@
         let tg = window.Telegram.WebApp;
         let userData = null;
         let currentUserData = null;
+        let pendingPurchase = null;
 
-        // Список хоккеистов для генерации карточек
-        const players = [
-            'Овечкин', 'Малкин', 'Кучеров', 'Панарин', 'Драйзайтль', 
-            'МакДэвид', 'Крэсби', 'Стэмкос', 'Хедман', 'Макар',
-            'Ландескуг', 'Маккиннон', 'Паста', 'Марчанд', 'Бергерон',
-            'Карлссон', 'Бернс', 'Жирд', 'Куутерфорд', 'Ванечек'
+        // Карточки игроков для продажи
+        const playerCards = [
+            {
+                name: 'Ливо',
+                rarity: 'простая',
+                price: 20,
+                avatar: 'https://raw.githubusercontent.com/ChatGPT-Course/Xokkey/main/avatar/Dzoshya_livo.jpg'
+            },
+            {
+                name: 'Ливо',
+                rarity: 'эпическая',
+                price: 30,
+                avatar: 'https://raw.githubusercontent.com/ChatGPT-Course/Xokkey/main/avatar/Dzoshya_livo.jpg'
+            },
+            {
+                name: 'Ливо',
+                rarity: 'мифическая',
+                price: 40,
+                avatar: 'https://raw.githubusercontent.com/ChatGPT-Course/Xokkey/main/avatar/Dzoshya_livo.jpg'
+            },
+            {
+                name: 'Ливо',
+                rarity: 'легендарная',
+                price: 50,
+                avatar: 'https://raw.githubusercontent.com/ChatGPT-Course/Xokkey/main/avatar/Dzoshya_livo.jpg'
+            },
+            {
+                name: 'Голдобин',
+                rarity: 'простая',
+                price: 20,
+                avatar: 'https://raw.githubusercontent.com/ChatGPT-Course/Xokkey/main/avatar/Nikolay_goldobin.jpg'
+            },
+            {
+                name: 'Голдобин',
+                rarity: 'эпическая',
+                price: 30,
+                avatar: 'https://raw.githubusercontent.com/ChatGPT-Course/Xokkey/main/avatar/Nikolay_goldobin.jpg'
+            },
+            {
+                name: 'Голдобин',
+                rarity: 'мифическая',
+                price: 40,
+                avatar: 'https://raw.githubusercontent.com/ChatGPT-Course/Xokkey/main/avatar/Nikolay_goldobin.jpg'
+            },
+            {
+                name: 'Голдобин',
+                rarity: 'легендарная',
+                price: 50,
+                avatar: 'https://raw.githubusercontent.com/ChatGPT-Course/Xokkey/main/avatar/Nikolay_goldobin.jpg'
+            },
+            {
+                name: 'Рушан',
+                rarity: 'простая',
+                price: 20,
+                avatar: 'https://raw.githubusercontent.com/ChatGPT-Course/Xokkey/main/avatar/Rushan_rafikov.jpg'
+            },
+            {
+                name: 'Рушан',
+                rarity: 'эпическая',
+                price: 30,
+                avatar: 'https://raw.githubusercontent.com/ChatGPT-Course/Xokkey/main/avatar/Rushan_rafikov.jpg'
+            },
+            {
+                name: 'Рушан',
+                rarity: 'мифическая',
+                price: 40,
+                avatar: 'https://raw.githubusercontent.com/ChatGPT-Course/Xokkey/main/avatar/Rushan_rafikov.jpg'
+            },
+            {
+                name: 'Рушан',
+                rarity: 'легендарная',
+                price: 50,
+                avatar: 'https://raw.githubusercontent.com/ChatGPT-Course/Xokkey/main/avatar/Rushan_rafikov.jpg'
+            },
+            {
+                name: 'Сериков',
+                rarity: 'простая',
+                price: 20,
+                avatar: 'https://raw.githubusercontent.com/ChatGPT-Course/Xokkey/main/avatar/artem_serikov.jpg'
+            },
+            {
+                name: 'Сериков',
+                rarity: 'эпическая',
+                price: 30,
+                avatar: 'https://raw.githubusercontent.com/ChatGPT-Course/Xokkey/main/avatar/artem_serikov.jpg'
+            },
+            {
+                name: 'Сериков',
+                rarity: 'мифическая',
+                price: 40,
+                avatar: 'https://raw.githubusercontent.com/ChatGPT-Course/Xokkey/main/avatar/artem_serikov.jpg'
+            },
+            {
+                name: 'Сериков',
+                rarity: 'легендарная',
+                price: 50,
+                avatar: 'https://raw.githubusercontent.com/ChatGPT-Course/Xokkey/main/avatar/artem_serikov.jpg'
+            }
         ];
 
         // Получить cookie
@@ -460,58 +613,6 @@
             }
         }
 
-        // Генерация случайной карточки
-        function generateRandomCard(packType) {
-            const player = players[Math.floor(Math.random() * players.length)];
-            let rarity;
-            
-            const random = Math.random();
-            
-            switch (packType) {
-                case 'basic':
-                    if (random < 0.15) rarity = 'редкий';
-                    else rarity = 'обычный';
-                    break;
-                case 'premium':
-                    if (random < 0.25) rarity = 'эпический';
-                    else if (random < 0.70) rarity = 'редкий';
-                    else rarity = 'обычный';
-                    break;
-                case 'legendary':
-                    if (random < 0.10) rarity = 'мифический';
-                    else if (random < 0.40) rarity = 'легендарный';
-                    else if (random < 0.80) rarity = 'эпический';
-                    else rarity = 'редкий';
-                    break;
-            }
-            
-            return `${player}(${rarity})`;
-        }
-
-        // Генерация набора карточек
-        function generateCardPack(packType) {
-            const cards = [];
-            let cardCount;
-            
-            switch (packType) {
-                case 'basic':
-                    cardCount = 1;
-                    break;
-                case 'premium':
-                    cardCount = 3;
-                    break;
-                case 'legendary':
-                    cardCount = 5;
-                    break;
-            }
-            
-            for (let i = 0; i < cardCount; i++) {
-                cards.push(generateRandomCard(packType));
-            }
-            
-            return cards;
-        }
-
         // Показать сообщение
         function showMessage(message, type = 'info') {
             const existingMessage = document.querySelector('.message');
@@ -531,8 +632,58 @@
             }, 3000);
         }
 
-        // Покупка набора
-        async function buyPack(packType, price) {
+        // Отобразить карточки
+        function displayCards() {
+            const container = document.getElementById('cardsGrid');
+            container.innerHTML = '';
+
+            playerCards.forEach(card => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card-item';
+                
+                cardElement.innerHTML = `
+                    <div class="card-rarity-badge ${card.rarity}">${card.rarity}</div>
+                    <div class="card-content">
+                        <img src="${card.avatar}" alt="${card.name}" class="card-avatar" 
+                             onerror="this.style.display='none';">
+                        <div class="card-info">
+                            <div class="card-name">${card.name}</div>
+                            <div class="card-price">${card.price} <span>🏒</span></div>
+                            <button class="buy-btn" onclick="buyCard('${card.name}', '${card.rarity}', ${card.price})">
+                                Купить
+                            </button>
+                        </div>
+                    </div>
+                `;
+                
+                container.appendChild(cardElement);
+            });
+
+            updateButtonStates();
+        }
+
+        // Обновление доступности кнопок
+        function updateButtonStates() {
+            const money = currentUserData?.money || 0;
+            const buttons = document.querySelectorAll('.buy-btn');
+            
+            buttons.forEach(button => {
+                const cardElement = button.closest('.card-item');
+                const priceText = cardElement.querySelector('.card-price').textContent;
+                const price = parseInt(priceText.match(/\d+/)[0]);
+                
+                if (money < price) {
+                    button.disabled = true;
+                    button.textContent = 'Недостаточно';
+                } else {
+                    button.disabled = false;
+                    button.textContent = 'Купить';
+                }
+            });
+        }
+
+        // Покупка карточки
+        function buyCard(name, rarity, price) {
             if (!currentUserData) {
                 showMessage('Ошибка загрузки данных пользователя', 'error');
                 return;
@@ -540,18 +691,31 @@
 
             const currentMoney = currentUserData.money || 0;
             if (currentMoney < price) {
-                showMessage('Недостаточно клюшек для покупки!', 'error');
+                document.getElementById('errorModal').style.display = 'block';
                 return;
             }
 
+            pendingPurchase = { name, rarity, price };
+            document.getElementById('confirmText').textContent = 
+                `Вы действительно хотите купить карточку ${name} (${rarity}) за ${price} клюшек?`;
+            document.getElementById('confirmModal').style.display = 'block';
+        }
+
+        // Подтверждение покупки
+        async function confirmPurchase() {
+            if (!pendingPurchase) return;
+
             try {
-                // Генерируем новые карточки
-                const newCards = generateCardPack(packType);
+                const { name, rarity, price } = pendingPurchase;
+                const currentMoney = currentUserData.money || 0;
+                
+                // Создаем новую карточку
+                const newCard = `${name}(${rarity})`;
                 const existingCards = currentUserData.card || '';
                 
                 // Объединяем с существующими карточками
                 let allCards = existingCards ? existingCards.split(',').map(s => s.trim()).filter(s => s) : [];
-                allCards = allCards.concat(newCards);
+                allCards.push(newCard);
                 const updatedCardsString = allCards.join(', ');
 
                 // Обновляем данные в базе
@@ -568,35 +732,34 @@
                 
                 // Обновляем отображение
                 document.getElementById('userMoney').textContent = currentUserData.money;
+                updateButtonStates();
 
                 // Показываем результат
-                const cardsList = newCards.join(', ');
-                showMessage(`Получены карточки: ${cardsList}`, 'success');
+                showMessage(`Карточка ${name} (${rarity}) успешно куплена!`, 'success');
+                closeModal();
 
             } catch (error) {
-                console.error('Ошибка покупки набора:', error);
-                showMessage('Ошибка покупки набора', 'error');
+                console.error('Ошибка покупки карточки:', error);
+                showMessage('Ошибка покупки карточки', 'error');
             }
+
+            pendingPurchase = null;
         }
 
-        // Обновление доступности кнопок
-        function updateButtonStates() {
-            const money = currentUserData?.money || 0;
-            const buttons = document.querySelectorAll('.buy-btn');
-            
-            buttons.forEach(button => {
-                const packItem = button.closest('.pack-item');
-                const priceText = packItem.querySelector('.pack-price').textContent;
-                const price = parseInt(priceText.match(/\d+/)[0]);
-                
-                if (money < price) {
-                    button.disabled = true;
-                    button.textContent = 'Недостаточно клюшек';
-                } else {
-                    button.disabled = false;
-                    button.textContent = 'Купить';
-                }
-            });
+        // Закрыть модальное окно
+        function closeModal() {
+            document.getElementById('confirmModal').style.display = 'none';
+            document.getElementById('errorModal').style.display = 'none';
+            pendingPurchase = null;
+        }
+
+        // Закрытие модалки по клику вне её
+        window.onclick = function(event) {
+            const confirmModal = document.getElementById('confirmModal');
+            const errorModal = document.getElementById('errorModal');
+            if (event.target === confirmModal || event.target === errorModal) {
+                closeModal();
+            }
         }
 
         // Инициализация магазина
@@ -610,15 +773,25 @@
                 userData = getTelegramUserData();
                 console.log('Данные пользователя:', userData);
 
+                // Устанавливаем анимацию загрузки для валюты
+                const currencyDisplay = document.getElementById('currencyDisplay');
+                currencyDisplay.classList.add('loading');
+
                 // Получаем данные из базы
                 currentUserData = await getUserData(userData.id);
+                
+                // Убираем анимацию загрузки
+                currencyDisplay.classList.remove('loading');
+                
                 if (currentUserData) {
                     document.getElementById('userMoney').textContent = currentUserData.money || 0;
-                    updateButtonStates();
                 } else {
                     document.getElementById('userMoney').textContent = 0;
                     showMessage('Ошибка загрузки данных пользователя', 'error');
                 }
+
+                // Отображаем карточки
+                displayCards();
 
             } catch (error) {
                 console.error('Ошибка инициализации магазина:', error);
