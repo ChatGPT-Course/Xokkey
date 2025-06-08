@@ -338,12 +338,20 @@
 
                 console.log('Пользователь не найден, создаем новую запись...');
 
+                // Проверяем еще раз перед созданием
+                const doubleCheck = await getUserData(userData.id);
+                if (doubleCheck) {
+                    console.log('Пользователь уже создан другим процессом');
+                    document.getElementById('userMoney').textContent = doubleCheck.money || 0;
+                    return true;
+                }
+
                 // Создаем нового пользователя согласно структуре таблицы
                 const newUserData = {
                     user_id: userData.id,
                     user_name: userData.display_name,
                     user_username: userData.username,
-                    money: 0,
+                    money: 100,
                     card: ''
                 };
 
@@ -366,8 +374,8 @@
                 const createdUser = await createResponse.json();
                 console.log('Пользователь успешно создан:', createdUser);
                 
-                // Отображаем начальное количество клюшек (0)
-                document.getElementById('userMoney').textContent = 0;
+                // Отображаем начальное количество клюшек
+                document.getElementById('userMoney').textContent = 100;
                 return true;
 
             } catch (error) {
