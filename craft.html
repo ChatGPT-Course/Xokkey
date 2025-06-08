@@ -66,106 +66,336 @@
         }
 
         .container {
-            max-width: 400px;
+            max-width: 500px;
             margin: 0 auto;
             padding: 20px;
         }
 
-        .content {
-            padding: 40px 20px;
-            text-align: center;
-        }
-
-        .craft-icon {
-            width: 120px;
-            height: 120px;
-            background: linear-gradient(45deg, #8e44ad, #9b59b6);
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 20px auto;
-            font-size: 4rem;
-            box-shadow: 0 10px 30px rgba(142, 68, 173, 0.3);
-        }
-
-        .title {
-            font-size: 2rem;
-            font-weight: bold;
-            margin-bottom: 20px;
-            color: #ecf0f1;
-        }
-
-        .description {
-            font-size: 1.1rem;
-            color: rgba(236, 240, 241, 0.8);
-            line-height: 1.6;
-            margin-bottom: 30px;
-        }
-
-        .coming-soon {
-            background: rgba(142, 68, 173, 0.2);
-            border: 2px solid rgba(142, 68, 173, 0.5);
-            border-radius: 15px;
-            padding: 30px 20px;
-            margin: 20px 0;
-            backdrop-filter: blur(5px);
-        }
-
-        .coming-soon h3 {
-            color: #9b59b6;
-            margin-bottom: 15px;
-            font-size: 1.3rem;
-        }
-
-        .coming-soon p {
-            color: rgba(236, 240, 241, 0.7);
-            line-height: 1.5;
-        }
-
-        .features {
-            text-align: left;
-            margin: 30px 0;
-            background: rgba(52, 73, 94, 0.3);
-            border-radius: 15px;
+        .craft-info {
+            background: rgba(52, 73, 94, 0.9);
+            border-radius: 20px;
             padding: 20px;
-            backdrop-filter: blur(5px);
+            margin-bottom: 20px;
+            text-align: center;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
         }
 
-        .features h4 {
-            color: #ecf0f1;
+        .craft-title {
+            font-size: 1.6rem;
+            font-weight: bold;
             margin-bottom: 15px;
-            font-size: 1.2rem;
+            color: #ecf0f1;
         }
 
-        .features ul {
+        .craft-rules {
+            background: rgba(44, 62, 80, 0.8);
+            border-radius: 15px;
+            padding: 15px;
+            margin-bottom: 20px;
+            text-align: left;
+        }
+
+        .craft-rules h4 {
+            color: #ecf0f1;
+            margin-bottom: 10px;
+            font-size: 1.1rem;
+        }
+
+        .craft-rules ul {
             list-style: none;
             padding: 0;
         }
 
-        .features li {
+        .craft-rules li {
             color: rgba(236, 240, 241, 0.8);
-            margin: 10px 0;
-            padding-left: 25px;
+            margin: 8px 0;
+            padding-left: 20px;
             position: relative;
         }
 
-        .features li:before {
+        .craft-rules li:before {
             content: "⚡";
             position: absolute;
             left: 0;
             color: #9b59b6;
         }
 
-        .notification {
+        .selection-info {
             background: rgba(52, 152, 219, 0.2);
             border: 1px solid rgba(52, 152, 219, 0.5);
             border-radius: 10px;
             padding: 15px;
-            margin: 20px 0;
-            color: #3498db;
-            font-size: 0.9rem;
+            text-align: center;
+            margin-bottom: 20px;
             backdrop-filter: blur(5px);
+        }
+
+        .selection-counter {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #3498db;
+            margin-bottom: 10px;
+        }
+
+        .selection-description {
+            color: rgba(236, 240, 241, 0.8);
+            font-size: 0.9rem;
+        }
+
+        .inventory-section {
+            background: rgba(52, 73, 94, 0.9);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .inventory-title {
+            font-size: 1.4rem;
+            font-weight: bold;
+            text-align: center;
+            margin-bottom: 20px;
+            color: #ecf0f1;
+        }
+
+        .inventory-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 5px;
+            width: 100%;
+        }
+
+        .card-item {
+            background: rgba(44, 62, 80, 0.8);
+            border-radius: 15px;
+            padding: 12px;
+            text-align: center;
+            transition: all 0.3s ease;
+            position: relative;
+            height: 200px;
+            width: 100%;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            cursor: pointer;
+        }
+
+        .card-item:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.4);
+            background: rgba(44, 62, 80, 0.95);
+        }
+
+        .card-item.selected {
+            border: 2px solid #3498db;
+            background: rgba(52, 152, 219, 0.2);
+            box-shadow: 0 5px 20px rgba(52, 152, 219, 0.3);
+        }
+
+        .card-item.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .card-rarity-badge {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            font-size: 0.65rem;
+            padding: 3px 6px;
+            border-radius: 8px;
+            font-weight: bold;
+            transform: rotate(15deg);
+            background: rgba(0,0,0,0.8);
+            color: white;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            border: 1px solid rgba(255,255,255,0.3);
+            z-index: 10;
+        }
+
+        .card-rarity-badge.простая { 
+            background: rgba(149, 165, 166, 0.9);
+            border-color: #95a5a6;
+        }
+
+        .card-rarity-badge.эпическая { 
+            background: rgba(155, 89, 182, 0.9);
+            border-color: #9b59b6;
+        }
+
+        .card-rarity-badge.мифическая { 
+            background: rgba(231, 76, 60, 0.9);
+            border-color: #e74c3c;
+        }
+
+        .card-rarity-badge.легендарная { 
+            background: rgba(243, 156, 18, 0.9);
+            border-color: #f39c12;
+        }
+
+        .card-avatar {
+            width: 70px;
+            height: 70px;
+            border-radius: 10px;
+            margin: 5px auto 8px auto;
+            object-fit: cover;
+            border: 2px solid rgba(255,255,255,0.3);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+            transition: all 0.3s ease;
+        }
+
+        .card-name {
+            font-size: 0.9rem;
+            font-weight: 600;
+            margin: 8px 0;
+            color: #ecf0f1;
+            letter-spacing: 0.3px;
+        }
+
+        .craft-btn {
+            background: linear-gradient(45deg, #8e44ad, #9b59b6);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 20px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .craft-btn:hover:not(:disabled) {
+            background: linear-gradient(45deg, #732d91, #8e44ad);
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(142, 68, 173, 0.3);
+        }
+
+        .craft-btn:disabled {
+            background: rgba(127, 140, 141, 0.5);
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .empty-inventory {
+            text-align: center;
+            color: rgba(236, 240, 241, 0.6);
+            font-style: italic;
+            padding: 40px 20px;
+            background: rgba(44, 62, 80, 0.5);
+            border-radius: 15px;
+            border: 2px dashed rgba(236, 240, 241, 0.2);
+            font-size: 1rem;
+        }
+
+        .loading {
+            text-align: center;
+            color: #3498db;
+            padding: 20px;
+        }
+
+        /* Модальное окно */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 2000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-content {
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            margin: 15% auto;
+            padding: 30px;
+            border-radius: 20px;
+            width: 80%;
+            max-width: 400px;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+        }
+
+        .modal h3 {
+            margin-bottom: 20px;
+            color: #ecf0f1;
+            font-size: 1.3rem;
+        }
+
+        .modal p {
+            margin-bottom: 25px;
+            color: rgba(236, 240, 241, 0.8);
+            line-height: 1.5;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+        }
+
+        .modal-btn {
+            padding: 12px 25px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .modal-btn.confirm {
+            background: linear-gradient(45deg, #8e44ad, #9b59b6);
+            color: white;
+        }
+
+        .modal-btn.confirm:hover {
+            background: linear-gradient(45deg, #732d91, #8e44ad);
+        }
+
+        .modal-btn.cancel {
+            background: rgba(127, 140, 141, 0.3);
+            color: white;
+        }
+
+        .modal-btn.cancel:hover {
+            background: rgba(127, 140, 141, 0.5);
+        }
+
+        /* Стили прокрутки */
+        .inventory-grid::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .inventory-grid::-webkit-scrollbar-track {
+            background: rgba(44, 62, 80, 0.5);
+            border-radius: 3px;
+        }
+
+        .inventory-grid::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+
+        .inventory-grid::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
         }
     </style>
 </head>
@@ -176,45 +406,474 @@
     </div>
 
     <div class="container">
-        <div class="content">
-            <div class="craft-icon">⚒️</div>
-            
-            <div class="title">Система крафта</div>
-            
-            <div class="description">
-                Объединяйте карточки игроков для создания более редких и мощных версий!
-            </div>
-
-            <div class="coming-soon">
-                <h3>🚧 В разработке</h3>
-                <p>Функция крафта находится в активной разработке и скоро будет доступна всем игрокам.</p>
-            </div>
-
-            <div class="features">
-                <h4>Планируемые возможности:</h4>
+        <div class="craft-info">
+            <div class="craft-title">Система крафта</div>
+            <div class="craft-rules">
+                <h4>Правила крафта:</h4>
                 <ul>
-                    <li>Объединение нескольких карточек одного игрока</li>
-                    <li>Повышение редкости карточек</li>
-                    <li>Создание уникальных комбинаций</li>
-                    <li>Специальные рецепты крафта</li>
-                    <li>Бонусные эффекты для редких карточек</li>
+                    <li>5 простых карт → 1 эпическая карта</li>
+                    <li>3 эпические карты → 1 мифическая карта</li>
+                    <li>3 мифические карты → 1 легендарная карта</li>
                 </ul>
             </div>
+            <div class="selection-info" id="selectionInfo" style="display: none;">
+                <div class="selection-counter" id="selectionCounter">Выбрано: 0/0 карт</div>
+                <div class="selection-description" id="selectionDescription">Выберите карты одной редкости для крафта</div>
+            </div>
+        </div>
 
-            <div class="notification">
-                💡 Следите за обновлениями! Крафт станет доступен в ближайших версиях игры.
+        <div class="inventory-section">
+            <div class="inventory-title">Выберите нужные карты для крафта</div>
+            <div id="inventoryContainer">
+                <div class="loading">Загрузка инвентаря...</div>
+            </div>
+        </div>
+
+        <button class="craft-btn" id="craftBtn" disabled onclick="showCraftConfirmation()">
+            СОВМЕСТИТЬ
+        </button>
+    </div>
+
+    <!-- Модальное окно подтверждения крафта -->
+    <div id="craftModal" class="modal">
+        <div class="modal-content">
+            <h3>Подтверждение крафта</h3>
+            <p id="craftText">Вы действительно хотите объединить выбранные карты?</p>
+            <div class="modal-buttons">
+                <button class="modal-btn confirm" onclick="confirmCraft()">Совместить</button>
+                <button class="modal-btn cancel" onclick="closeModal()">Отмена</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Модальное окно результата -->
+    <div id="resultModal" class="modal">
+        <div class="modal-content">
+            <h3 id="resultTitle">Результат крафта</h3>
+            <p id="resultText">Крафт завершен!</p>
+            <div class="modal-buttons">
+                <button class="modal-btn cancel" onclick="closeModal()">Понятно</button>
             </div>
         </div>
     </div>
 
     <script>
+        // Конфигурация NocoDB 
+        const config = {
+            orgs: 'wf52x8bf',
+            projectName: 'pawgl0ouxic497w',
+            tableName: 'mtfr4e3wywjtyua',
+            apiToken: '4lZnGEoWEQeBswBHzzp_lPPYDFFkNc7s2BlWClxb',
+            baseUrl: 'https://app.nocodb.com/api/v1/db/data'
+        };
+
         let tg = window.Telegram.WebApp;
-        
-        // Инициализация
-        if (tg) {
-            tg.ready();
-            tg.expand();
+        let userData = null;
+        let currentUserData = null;
+        let selectedCards = [];
+        let selectedRarity = null;
+        let userCards = [];
+
+        // Правила крафта
+        const craftRules = {
+            'простая': { required: 5, result: 'эпическая' },
+            'эпическая': { required: 3, result: 'мифическая' },
+            'мифическая': { required: 3, result: 'легендарная' }
+        };
+
+        // Получить cookie
+        function getCookie(name) {
+            const value = `; ${document.cookie}`;
+            const parts = value.split(`; ${name}=`);
+            if (parts.length === 2) return parts.pop().split(';').shift();
+            return null;
         }
+
+        // Получить данные пользователя из Telegram WebApp
+        function getTelegramUserData() {
+            try {
+                if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                    const user = tg.initDataUnsafe.user;
+                    return {
+                        id: user.id.toString(),
+                        username: user.username || '',
+                        display_name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Игрок',
+                    };
+                }
+
+                // Fallback из cookies
+                const savedUserId = getCookie('tg_user_id');
+                const savedUsername = getCookie('tg_username');
+                const savedName = getCookie('tg_name');
+
+                if (savedUserId) {
+                    return {
+                        id: savedUserId,
+                        username: savedUsername || 'unknown',
+                        display_name: savedName || 'Игрок'
+                    };
+                }
+
+                // Fallback для тестирования
+                return {
+                    id: Date.now().toString(),
+                    username: 'test_user',
+                    display_name: 'Тестовый игрок'
+                };
+            } catch (error) {
+                console.log('Ошибка получения данных пользователя:', error);
+                return {
+                    id: Date.now().toString(),
+                    username: 'test_user',
+                    display_name: 'Тестовый игрок'
+                };
+            }
+        }
+
+        // Получить данные пользователя из базы
+        async function getUserData(userId) {
+            try {
+                const response = await fetch(`${config.baseUrl}/${config.orgs}/${config.projectName}/${config.tableName}`, {
+                    method: 'GET',
+                    headers: {
+                        'xc-token': config.apiToken,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Ошибка получения данных: ${response.status}`);
+                }
+
+                const data = await response.json();
+                const user = data.list ? data.list.find(u => u.user_id && u.user_id.toString() === userId.toString()) : null;
+                
+                return user;
+            } catch (error) {
+                console.log('Ошибка получения данных пользователя:', error);
+                return null;
+            }
+        }
+
+        // Обновить данные пользователя в базе
+        async function updateUserData(userId, updates) {
+            try {
+                const dbUser = await getUserData(userId);
+                if (!dbUser) {
+                    throw new Error('Пользователь не найден в базе данных');
+                }
+
+                const response = await fetch(`${config.baseUrl}/${config.orgs}/${config.projectName}/${config.tableName}/${dbUser.Id}`, {
+                    method: 'PATCH',
+                    headers: {
+                        'xc-token': config.apiToken,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(updates)
+                });
+
+                if (!response.ok) {
+                    throw new Error(`Ошибка обновления данных: ${response.status}`);
+                }
+
+                return await response.json();
+            } catch (error) {
+                console.error('Ошибка обновления данных пользователя:', error);
+                throw error;
+            }
+        }
+
+        // Парсинг карточек из строки
+        function parseCards(cardString) {
+            if (!cardString || cardString.trim() === '') {
+                return [];
+            }
+
+            const cards = [];
+            const cardEntries = cardString.split(',').map(s => s.trim()).filter(s => s);
+
+            cardEntries.forEach((entry, index) => {
+                const match = entry.match(/(.+?)\((.+?)\)/);
+                if (match) {
+                    const name = match[1].trim();
+                    const rarity = match[2].trim().toLowerCase();
+                    cards.push({ 
+                        id: index,
+                        name, 
+                        rarity: rarity,
+                        originalIndex: index 
+                    });
+                }
+            });
+
+            return cards;
+        }
+
+        // Получить аватар для карточки
+        function getCardAvatar(name) {
+            const avatarMap = {
+                'Ливо': 'https://raw.githubusercontent.com/ChatGPT-Course/Xokkey/main/avatar/Dzoshya_livo.jpg',
+                'Голдобин': 'https://raw.githubusercontent.com/ChatGPT-Course/Xokkey/main/avatar/Nikolay_goldobin.jpg',
+                'Рушан': 'https://raw.githubusercontent.com/ChatGPT-Course/Xokkey/main/avatar/Rushan_rafikov.jpg',
+                'Сериков': 'https://raw.githubusercontent.com/ChatGPT-Course/Xokkey/main/avatar/artem_serikov.jpg'
+            };
+            
+            return avatarMap[name] || null;
+        }
+
+        // Выбор карточки
+        function selectCard(cardId) {
+            const card = userCards.find(c => c.id === cardId);
+            if (!card) return;
+
+            // Если это первая выбранная карточка, устанавливаем редкость
+            if (selectedCards.length === 0) {
+                selectedRarity = card.rarity;
+                updateCardStates();
+            }
+
+            // Проверяем, можно ли выбрать эту карточку
+            if (card.rarity !== selectedRarity) return;
+
+            const cardIndex = selectedCards.findIndex(c => c.id === cardId);
+            
+            if (cardIndex >= 0) {
+                // Убираем карточку из выбранных
+                selectedCards.splice(cardIndex, 1);
+                document.querySelector(`[data-card-id="${cardId}"]`).classList.remove('selected');
+            } else {
+                // Проверяем лимит
+                const rule = craftRules[selectedRarity];
+                if (rule && selectedCards.length < rule.required) {
+                    selectedCards.push(card);
+                    document.querySelector(`[data-card-id="${cardId}"]`).classList.add('selected');
+                }
+            }
+
+            // Если убрали все карточки, сбрасываем редкость
+            if (selectedCards.length === 0) {
+                selectedRarity = null;
+                updateCardStates();
+            }
+
+            updateSelectionInfo();
+            updateCraftButton();
+        }
+
+        // Обновление состояния карточек
+        function updateCardStates() {
+            const cardElements = document.querySelectorAll('.card-item');
+            
+            cardElements.forEach(element => {
+                const cardId = parseInt(element.getAttribute('data-card-id'));
+                const card = userCards.find(c => c.id === cardId);
+                
+                if (selectedRarity && card.rarity !== selectedRarity) {
+                    element.classList.add('disabled');
+                } else {
+                    element.classList.remove('disabled');
+                }
+            });
+        }
+
+        // Обновление информации о выборе
+        function updateSelectionInfo() {
+            const infoElement = document.getElementById('selectionInfo');
+            const counterElement = document.getElementById('selectionCounter');
+            const descriptionElement = document.getElementById('selectionDescription');
+
+            if (selectedRarity) {
+                const rule = craftRules[selectedRarity];
+                infoElement.style.display = 'block';
+                counterElement.textContent = `Выбрано: ${selectedCards.length}/${rule.required} карт`;
+                descriptionElement.textContent = `${rule.required} карт редкости "${selectedRarity}" дадут 1 карту редкости "${rule.result}"`;
+            } else {
+                infoElement.style.display = 'none';
+            }
+        }
+
+        // Обновление кнопки крафта
+        function updateCraftButton() {
+            const button = document.getElementById('craftBtn');
+            
+            if (selectedRarity && craftRules[selectedRarity]) {
+                const rule = craftRules[selectedRarity];
+                button.disabled = selectedCards.length !== rule.required;
+            } else {
+                button.disabled = true;
+            }
+        }
+
+        // Отобразить инвентарь
+        function displayInventory(cards) {
+            const container = document.getElementById('inventoryContainer');
+            
+            if (cards.length === 0) {
+                container.innerHTML = '<div class="empty-inventory">Инвентарь пуст<br>Получите карточки в разделе "Обмен"</div>';
+                return;
+            }
+
+            const inventoryGrid = document.createElement('div');
+            inventoryGrid.className = 'inventory-grid';
+
+            cards.forEach(card => {
+                const cardElement = document.createElement('div');
+                cardElement.className = 'card-item';
+                cardElement.setAttribute('data-card-id', card.id);
+                cardElement.onclick = () => selectCard(card.id);
+                
+                const avatarUrl = getCardAvatar(card.name);
+                
+                if (avatarUrl) {
+                    cardElement.innerHTML = `
+                        <div class="card-rarity-badge ${card.rarity}">${card.rarity}</div>
+                        <img src="${avatarUrl}" alt="${card.name}" class="card-avatar" 
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                        <div class="card-icon" style="display: none;">🏒</div>
+                        <div class="card-name">${card.name}</div>
+                    `;
+                } else {
+                    cardElement.innerHTML = `
+                        <div class="card-rarity-badge ${card.rarity}">${card.rarity}</div>
+                        <div class="card-icon">🏒</div>
+                        <div class="card-name">${card.name}</div>
+                    `;
+                }
+                
+                inventoryGrid.appendChild(cardElement);
+            });
+
+            container.innerHTML = '';
+            container.appendChild(inventoryGrid);
+        }
+
+        // Показать подтверждение крафта
+        function showCraftConfirmation() {
+            if (!selectedRarity || selectedCards.length === 0) return;
+            
+            const rule = craftRules[selectedRarity];
+            const playerName = getRandomPlayerForRarity(rule.result);
+            
+            document.getElementById('craftText').textContent = 
+                `Вы действительно хотите объединить ${selectedCards.length} карт редкости "${selectedRarity}" в 1 карту "${playerName}" редкости "${rule.result}"?`;
+            document.getElementById('craftModal').style.display = 'block';
+        }
+
+        // Получить случайного игрока для редкости
+        function getRandomPlayerForRarity(rarity) {
+            const rarityPlayers = {
+                'простая': ['Сериков'],
+                'эпическая': ['Рушан'],
+                'мифическая': ['Голдобин'],
+                'легендарная': ['Ливо']
+            };
+            
+            const players = rarityPlayers[rarity] || ['Неизвестный'];
+            return players[Math.floor(Math.random() * players.length)];
+        }
+
+        // Подтверждение крафта
+        async function confirmCraft() {
+            try {
+                const rule = craftRules[selectedRarity];
+                const newPlayerName = getRandomPlayerForRarity(rule.result);
+                const newCard = `${newPlayerName}(${rule.result})`;
+
+                // Создаем новый массив карт без выбранных
+                const selectedIds = selectedCards.map(c => c.id);
+                const remainingCards = userCards.filter(c => !selectedIds.includes(c.id));
+                
+                // Добавляем новую карту
+                remainingCards.push({
+                    id: Date.now(),
+                    name: newPlayerName,
+                    rarity: rule.result,
+                    originalIndex: remainingCards.length
+                });
+
+                // Формируем строку для базы данных
+                const updatedCardsString = remainingCards.map(c => `${c.name}(${c.rarity})`).join(', ');
+
+                // Обновляем данные в базе
+                await updateUserData(userData.id, { card: updatedCardsString });
+
+                // Обновляем локальные данные
+                currentUserData.card = updatedCardsString;
+                userCards = remainingCards;
+                
+                // Сбрасываем выбор
+                selectedCards = [];
+                selectedRarity = null;
+                
+                // Обновляем отображение
+                displayInventory(userCards);
+                updateSelectionInfo();
+                updateCraftButton();
+
+                // Показываем результат
+                document.getElementById('resultTitle').textContent = 'Крафт успешен!';
+                document.getElementById('resultText').textContent = 
+                    `Вы получили карту "${newPlayerName}" редкости "${rule.result}"!`;
+                
+                closeModal();
+                document.getElementById('resultModal').style.display = 'block';
+
+            } catch (error) {
+                console.error('Ошибка крафта:', error);
+                document.getElementById('resultTitle').textContent = 'Ошибка крафта';
+                document.getElementById('resultText').textContent = 'Произошла ошибка при крафте карт';
+                
+                closeModal();
+                document.getElementById('resultModal').style.display = 'block';
+            }
+        }
+
+        // Закрыть модальное окно
+        function closeModal() {
+            document.getElementById('craftModal').style.display = 'none';
+            document.getElementById('resultModal').style.display = 'none';
+        }
+
+        // Закрытие модалки по клику вне её
+        window.onclick = function(event) {
+            const craftModal = document.getElementById('craftModal');
+            const resultModal = document.getElementById('resultModal');
+            if (event.target === craftModal || event.target === resultModal) {
+                closeModal();
+            }
+        }
+
+        // Инициализация крафта
+        async function initCraft() {
+            try {
+                if (tg) {
+                    tg.ready();
+                    tg.expand();
+                }
+
+                userData = getTelegramUserData();
+                console.log('Данные пользователя:', userData);
+
+                // Получаем данные из базы
+                currentUserData = await getUserData(userData.id);
+                
+                if (currentUserData) {
+                    // Парсим и отображаем карточки
+                    const cards = parseCards(currentUserData.card);
+                    userCards = cards.map((card, index) => ({ ...card, id: index }));
+                    displayInventory(userCards);
+                } else {
+                    displayInventory([]);
+                }
+
+            } catch (error) {
+                console.error('Ошибка инициализации крафта:', error);
+                document.getElementById('inventoryContainer').innerHTML = '<div class="error">Ошибка загрузки данных</div>';
+            }
+        }
+
+        // Запускаем инициализацию после загрузки DOM
+        document.addEventListener('DOMContentLoaded', initCraft);
     </script>
 </body>
 </html>
