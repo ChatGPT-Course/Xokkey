@@ -324,6 +324,31 @@
             background: #3498db;
         }
 
+        .loading-dots {
+            display: inline-block;
+            position: relative;
+            width: 20px;
+            height: 20px;
+        }
+
+        .loading-dots:after {
+            content: '...';
+            display: inline-block;
+            animation: dots 1.5s infinite;
+        }
+
+        @keyframes dots {
+            0%, 20% {
+                content: '.';
+            }
+            40% {
+                content: '..';
+            }
+            60%, 100% {
+                content: '...';
+            }
+        }
+
         /* Модальные окна */
         .modal {
             display: none;
@@ -882,10 +907,44 @@
                     const userData = await userAPI.findUserById(this.currentUser.telegram_id);
                     this.userBalance = userData ? (userData.money || 0) : 0;
                     console.log('User balance loaded:', this.userBalance);
+                    
+                    // Обновляем отображение баланса во всех модальных окнах
+                    this.updateBalanceDisplay();
                 } catch (error) {
                     console.error('Failed to load user balance:', error);
                     this.userBalance = 0;
+                    this.updateBalanceDisplay();
                 }
+            }
+
+            updateBalanceDisplay() {
+                const balanceElements = [
+                    'createModalBalance',
+                    'joinModalBalance', 
+                    'roomInfoBalance'
+                ];
+                
+                balanceElements.forEach(elementId => {
+                    const element = document.getElementById(elementId);
+                    if (element) {
+                        element.textContent = this.userBalance;
+                    }
+                });
+            }
+
+            showBalanceLoading() {
+                const balanceElements = [
+                    'createModalBalance',
+                    'joinModalBalance', 
+                    'roomInfoBalance'
+                ];
+                
+                balanceElements.forEach(elementId => {
+                    const element = document.getElementById(elementId);
+                    if (element) {
+                        element.innerHTML = '<span class="loading-dots">...</span>';
+                    }
+                });
             }
 
             generateRoomCode() {
@@ -904,9 +963,10 @@
                 }
             }
 
-            showCreateGameModal() {
-                document.getElementById('createModalBalance').textContent = this.userBalance;
+            async showCreateGameModal() {
+                this.showBalanceLoading();
                 document.getElementById('createGameModal').style.display = 'block';
+                await this.loadUserBalance();
             }
 
             closeCreateGameModal() {
@@ -984,9 +1044,10 @@
                 }
             }
 
-            showJoinGameModal() {
-                document.getElementById('joinModalBalance').textContent = this.userBalance;
+            async showJoinGameModal() {
+                this.showBalanceLoading();
                 document.getElementById('joinGameModal').style.display = 'block';
+                await this.loadUserBalance();
             }
 
             closeJoinGameModal() {
@@ -1040,9 +1101,12 @@
 
             async showRoomInfo(room) {
                 try {
-                    // Получаем информацию о создателе
+                    this.showBalanceLoading();
+                    await this.loadUserBalance();
+                    
+                    // Получаем информацию о создателе по player1 ID
                     const creatorData = await userAPI.findUserById(room.player1);
-                    const creatorName = creatorData ? creatorData.display_name || 'Неизвестный игрок' : 'Неизвестный игрок';
+                    const creatorName = creatorData ? (creatorData.display_name || creatorData.username || 'Неизвестный игрок') : 'Неизвестный игрок';
 
                     document.getElementById('roomCreator').textContent = creatorName;
                     
@@ -1171,26 +1235,31 @@
                     clearInterval(this.localTimerInterval);
                 }
 
-                // Устанавливаем sec = 0 (время вышло, подводим итоги)
-                await gameAPI.updateRoom(this.gameId, { sec: 0 });
+                try {
+                    // Устанавливаем sec = 0 (время вышло, подводим итоги)
+                    await gameAPI.updateRoom(this.gameId, { sec: 0 });
 
-                // Автоматически делаем случайные ходы для тех, кто не успел
-                if (!this.movesSubmitted) {
-                    await this.submitRandomMove();
-                }
+                    // Автоматически делаем случайные ходы для тех, кто не успел
+                    if (!this.movesSubmitted) {
+                        await this.submitRandomMove();
+                    }
 
-                this.disableZoneSelection();
-                const submitBtn = document.getElementById('submitMove');
-                if (submitBtn) {
-                    submitBtn.disabled = true;
-                    submitBtn.textContent = 'Время вышло!';
-                }
+                    this.disableZoneSelection();
+                    const submitBtn = document.getElementById('submitMove');
+                    if (submitBtn) {
+                        submitBtn.disabled = true;
+                        submitBtn.textContent = 'Время вышло!';
+                    }
 
-                // Player1 сразу делает запрос, Player2 - через секунду
-                if (this.isPlayer1) {
-                    setTimeout(() => this.processGameResult(), 100);
-                } else {
-                    setTimeout(() => this.processGameResult(), 1100);
+                    // Добавляем рассинхрон: Player1 через 1 сек, Player2 через 2.5 сек
+                    if (this.isPlayer1) {
+                        setTimeout(() => this.processGameResult(), 1000);
+                    } else {
+                        setTimeout(() => this.processGameResult(), 2500);
+                    }
+                } catch (error) {
+                    console.error('Error in handleTimeUp:', error);
+                    this.showMessage('Ошибка завершения времени', 'error');
                 }
             }
 
@@ -1462,11 +1531,30 @@
                 try {
                     console.log('Processing game result...');
 
-                    // Получаем свежие данные из таблицы
-                    const currentGameData = await gameAPI.getRoom(this.gameId);
+                    // Максимум 5 попыток получить данные
+                    let attempts = 0;
+                    let currentGameData = null;
+                    
+                    while (attempts < 5) {
+                        try {
+                            currentGameData = await gameAPI.getRoom(this.gameId);
+                            if (currentGameData && currentGameData.zone_sender && 
+                                currentGameData.zone1_protect && currentGameData.zone2_protect) {
+                                break;
+                            }
+                        } catch (error) {
+                            console.log(`Attempt ${attempts + 1} failed:`, error);
+                        }
+                        
+                        attempts++;
+                        if (attempts < 5) {
+                            console.log(`Waiting before attempt ${attempts + 1}...`);
+                            await new Promise(resolve => setTimeout(resolve, 1000));
+                        }
+                    }
+
                     if (!currentGameData) {
-                        console.log('Game data not found');
-                        return;
+                        throw new Error('Не удалось получить данные игры после 5 попыток');
                     }
 
                     this.currentGame = currentGameData;
@@ -1474,9 +1562,7 @@
 
                     // Проверяем, есть ли все необходимые данные для обработки
                     if (!this.currentGame.zone_sender || !this.currentGame.zone1_protect || !this.currentGame.zone2_protect) {
-                        console.log('Not all moves submitted yet');
-                        setTimeout(() => this.processGameResult(), 500);
-                        return;
+                        throw new Error('Недостаточно данных для обработки результата');
                     }
 
                     const attackerZone = this.currentGame.zone_sender;
@@ -1495,46 +1581,57 @@
                     if (amIWinner && betAmount > 0) {
                         winAmount = betAmount * 2; // Победитель получает удвоенную ставку
                         
-                        // Начисляем выигрыш
-                        await userAPI.updateUser(this.currentUser.telegram_id, {
-                            money: this.userBalance + winAmount
-                        });
-                        this.userBalance += winAmount;
+                        try {
+                            // Начисляем выигрыш с повторными попытками
+                            await this.updateUserBalanceWithRetry(this.userBalance + winAmount);
+                            this.userBalance += winAmount;
+                        } catch (error) {
+                            console.error('Failed to update balance:', error);
+                            // Продолжаем даже если не удалось обновить баланс
+                        }
                     }
 
                     // Показываем результат в модальном окне
                     this.showGameResult(amIWinner, winAmount);
 
-                    // Удаляем комнату и через 5 секунд переходим в меню
-                    setTimeout(async () => {
-                        try {
-                            await gameAPI.deleteRoom(this.gameId);
-                            console.log('Room deleted');
-                        } catch (error) {
-                            console.error('Error deleting room:', error);
-                        }
-
-                        // Переходим в главное меню
-                        window.location.href = 'index.html';
-                    }, 5000);
-
                 } catch (error) {
                     console.error('Failed to process game result:', error);
                     this.showMessage('Ошибка обработки результата', 'error');
-
-                    // В случае ошибки тоже переходим в меню через 2 секунды
-                    setTimeout(() => {
-                        window.location.href = 'index.html';
-                    }, 2000);
+                    
+                    // Показываем модальное окно с ошибкой
+                    this.showGameResult(false, 0, true);
                 }
             }
 
-            showGameResult(isWinner, winAmount) {
+            async updateUserBalanceWithRetry(newBalance) {
+                let attempts = 0;
+                while (attempts < 3) {
+                    try {
+                        await userAPI.updateUser(this.currentUser.telegram_id, {
+                            money: newBalance
+                        });
+                        return;
+                    } catch (error) {
+                        attempts++;
+                        if (attempts < 3) {
+                            await new Promise(resolve => setTimeout(resolve, 500));
+                        } else {
+                            throw error;
+                        }
+                    }
+                }
+            }
+
+            showGameResult(isWinner, winAmount, isError = false) {
                 const resultTitle = document.getElementById('resultTitle');
                 const resultMessage = document.getElementById('resultMessage');
                 const winAmountInfo = document.getElementById('winAmountInfo');
 
-                if (isWinner) {
+                if (isError) {
+                    resultTitle.textContent = '⚠️ ОШИБКА';
+                    resultMessage.textContent = 'Произошла ошибка при обработке результата игры';
+                    winAmountInfo.classList.add('hidden');
+                } else if (isWinner) {
                     resultTitle.textContent = '🎉 ПОБЕДА!';
                     resultMessage.textContent = 'Поздравляем! Вы выиграли!';
                     
@@ -1551,10 +1648,33 @@
                 }
 
                 document.getElementById('resultModal').style.display = 'block';
+                
+                // Удаляем комнату в фоне (только для player1 чтобы избежать двойного удаления)
+                if (this.isPlayer1 && !isError) {
+                    setTimeout(async () => {
+                        try {
+                            await gameAPI.deleteRoom(this.gameId);
+                            console.log('Room deleted');
+                        } catch (error) {
+                            console.error('Error deleting room:', error);
+                        }
+                    }, 1000);
+                }
             }
 
             closeResultModal() {
                 document.getElementById('resultModal').style.display = 'none';
+                
+                // Останавливаем все интервалы
+                if (this.gameUpdateInterval) {
+                    clearInterval(this.gameUpdateInterval);
+                }
+                if (this.localTimerInterval) {
+                    clearInterval(this.localTimerInterval);
+                }
+                
+                // Сразу переходим в главное меню
+                window.location.href = 'index.html';
             }
 
             clearZoneStyles() {
@@ -1688,7 +1808,9 @@
 
         // Global functions
         function showCreateGameModal() {
-            window.gameManager.showCreateGameModal();
+            if (window.gameManager) {
+                window.gameManager.showCreateGameModal();
+            }
         }
 
         function toggleBetAmount() {
@@ -1704,7 +1826,9 @@
         }
 
         function showJoinGameModal() {
-            window.gameManager.showJoinGameModal();
+            if (window.gameManager) {
+                window.gameManager.showJoinGameModal();
+            }
         }
 
         function closeJoinGameModal() {
