@@ -779,24 +779,34 @@
             orgs: 'wf52x8bf',
             projectName: 'pawgl0ouxic497w',
             tableName: 'mtfr4e3wywjtyua',
-            token: '4lZnGEoWEQeBswBHzzp_lPPYDFFkNc7s2BlWClxb'
+            apiTokens: [
+                'TowDsj9CjbcU97wkk8ojrFmLChpZT6-KkHrYlpu8', // T1
+                'TowDsj9CjbcU97wkk8ojrFmLChpZT6-KkHrYlpu8', // T2
+                'hwE0I5dS4sDwPhrPS6JIjtgH62pPHU0tjqbRtGff', // T3
+                'kVGhgZD0SzJPmt8MLqeapHIfoa-QcGnc56ZgLGiL'  // T4
+            ]
         };
 
         class NocoDBAPI {
             constructor(config) {
                 this.config = config;
-                this.headers = {
-                    'Content-Type': 'application/json',
-                    'xc-token': config.token
-                };
             }
 
             async makeRequest(endpoint, method = 'GET', data = null) {
                 const url = `${this.config.baseUrl}/${this.config.orgs}/${this.config.projectName}/${this.config.tableName}${endpoint}`;
-
+                
+                // Если есть множественные ключи, используем их
+                if (this.config.apiTokens) {
+                    return await this.makeRequestWithMultipleTokens(url, method, data);
+                }
+                
+                // Иначе используем единственный токен
                 const options = {
                     method,
-                    headers: this.headers
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'xc-token': this.config.token
+                    }
                 };
 
                 if (data && (method === 'POST' || method === 'PATCH')) {
@@ -819,6 +829,45 @@
                 } catch (error) {
                     console.error('API Request failed:', error);
                     throw error;
+                }
+            }
+
+            async makeRequestWithMultipleTokens(url, method, data) {
+                for (let i = 0; i < this.config.apiTokens.length; i++) {
+                    try {
+                        const options = {
+                            method,
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'xc-token': this.config.apiTokens[i]
+                            }
+                        };
+
+                        if (data && (method === 'POST' || method === 'PATCH')) {
+                            options.body = JSON.stringify(data);
+                        }
+
+                        console.log(`Making ${method} request with token T${i + 1} to: ${url}`, data);
+                        const response = await fetch(url, options);
+
+                        if (response.ok) {
+                            const result = await response.json();
+                            console.log(`${method} response with T${i + 1}:`, result);
+                            return result;
+                        } else {
+                            throw new Error(`HTTP ${response.status}`);
+                        }
+                    } catch (error) {
+                        console.log(`Ошибка с ключом T${i + 1}:`, error);
+                        
+                        // Если это последний ключ, выбрасываем ошибку
+                        if (i === this.config.apiTokens.length - 1) {
+                            throw new Error(`Все API ключи недоступны. Последняя ошибка: ${error.message}`);
+                        }
+                        
+                        // Небольшая задержка перед следующей попыткой
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                    }
                 }
             }
 
