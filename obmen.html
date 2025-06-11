@@ -396,17 +396,21 @@
         </div>
     </div>
 
-    <script src="d1-api.js"></script>
     <script>
-        // Конфигурация Cloudflare D1
-        const D1_CONFIG = {
-            accountId: 'YOUR_CLOUDFLARE_ACCOUNT_ID', // Замените на ваш Account ID
-            databaseId: 'YOUR_D1_DATABASE_ID', // Замените на ваш Database ID
-            apiToken: 'YOUR_CLOUDFLARE_API_TOKEN' // Замените на ваш API Token
+        // Конфигурация NocoDB с множественными API ключами
+        const config = {
+            orgs: 'wf52x8bf',
+            projectName: 'pawgl0ouxic497w',
+            tableName: 'mtfr4e3wywjtyua',
+            apiTokens: [
+                'TowDsj9CjbcU97wkk8ojrFmLChpZT6-KkHrYlpu8', // T1
+                'TowDsj9CjbcU97wkk8ojrFmLChpZT6-KkHrYlpu8', // T2
+                'hwE0I5dS4sDwPhrPS6JIjtgH62pPHU0tjqbRtGff', // T3
+                'kVGhgZD0SzJPmt8MLqeapHIfoa-QcGnc56ZgLGiL'  // T4
+            ],
+            baseUrl: 'https://app.nocodb.com/api/v1/db/data'
         };
 
-        const d1API = new CloudflareD1API(D1_CONFIG.accountId, D1_CONFIG.databaseId, D1_CONFIG.apiToken);
-        
         let tg = window.Telegram.WebApp;
         let userData = null;
         let currentUserData = null;
@@ -501,26 +505,103 @@
             }
         }
 
-        // Получить данные пользователя из базы D1
+        // Показать уведомление о статусе API
+        function showApiStatus(message, type = 'info') {
+            const statusDiv = document.createElement('div');
+            statusDiv.style.cssText = `
+                position: fixed;
+                top: 70px;
+                right: 20px;
+                background: ${type === 'error' ? '#e74c3c' : type === 'success' ? '#27ae60' : '#3498db'};
+                color: white;
+                padding: 10px 15px;
+                border-radius: 8px;
+                font-size: 0.9rem;
+                z-index: 1001;
+                max-width: 300px;
+            `;
+            statusDiv.textContent = message;
+            document.body.appendChild(statusDiv);
+            
+            setTimeout(() => {
+                if (document.body.contains(statusDiv)) {
+                    document.body.removeChild(statusDiv);
+                }
+            }, 3000);
+        }
+
+        // Функция для запросов с множественными API ключами
+        async function makeApiRequest(url, options = {}) {
+            for (let i = 0; i < config.apiTokens.length; i++) {
+                const tokenIndex = i + 1;
+                showApiStatus(`Отправка запроса по ключу T${tokenIndex}`, 'info');
+                
+                try {
+                    const requestOptions = {
+                        ...options,
+                        headers: {
+                            'xc-token': config.apiTokens[i],
+                            'Content-Type': 'application/json',
+                            ...options.headers
+                        }
+                    };
+
+                    const response = await fetch(url, requestOptions);
+                    
+                    if (response.ok) {
+                        showApiStatus(`Успех по ключу T${tokenIndex}`, 'success');
+                        return await response.json();
+                    } else {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+                } catch (error) {
+                    showApiStatus(`Ошибка по ключу T${tokenIndex}: ${error.message}`, 'error');
+                    console.log(`Ошибка с ключом T${tokenIndex}:`, error);
+                    
+                    // Если это последний ключ, выбрасываем ошибку
+                    if (i === config.apiTokens.length - 1) {
+                        throw new Error(`Все API ключи недоступны. Последняя ошибка: ${error.message}`);
+                    }
+                    
+                    // Небольшая задержка перед следующей попыткой
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                }
+            }
+        }
+
+        // Получить данные пользователя из базы
         async function getUserData(userId) {
             try {
-                return await d1API.findUserById(userId);
+                const url = `${config.baseUrl}/${config.orgs}/${config.projectName}/${config.tableName}`;
+                const data = await makeApiRequest(url, { method: 'GET' });
+                const user = data.list ? data.list.find(u => u.user_id && u.user_id.toString() === userId.toString()) : null;
+                
+                return user;
             } catch (error) {
                 console.log('Ошибка получения данных пользователя:', error);
+                showApiStatus('Не удалось загрузить данные пользователя', 'error');
                 return null;
             }
         }
 
-        // Обновить данные пользователя в базе D1
+        // Обновить данные пользователя в базе
         async function updateUserData(userId, updates) {
             try {
-                const success = await d1API.updateUser(userId, updates);
-                if (!success) {
-                    throw new Error('Пользователь не найден или не удалось обновить');
+                const dbUser = await getUserData(userId);
+                if (!dbUser) {
+                    throw new Error('Пользователь не найден в базе данных');
                 }
-                return true;
+
+                const url = `${config.baseUrl}/${config.orgs}/${config.projectName}/${config.tableName}/${dbUser.Id}`;
+                const result = await makeApiRequest(url, {
+                    method: 'PATCH',
+                    body: JSON.stringify(updates)
+                });
+
+                return result;
             } catch (error) {
                 console.error('Ошибка обновления данных пользователя:', error);
+                showApiStatus('Ошибка обновления данных', 'error');
                 throw error;
             }
         }
