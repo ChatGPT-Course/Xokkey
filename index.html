@@ -85,6 +85,24 @@
             font-size: 1.2rem;
             font-weight: 600;
             backdrop-filter: blur(5px);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .currency-display.loading::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+            animation: shimmer 1.5s infinite;
+        }
+
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
         }
 
         .currency-display .stick-icon {
@@ -279,37 +297,9 @@
             console.log('Данные пользователя сохранены в cookies');
         }
 
-        // Показать уведомление о статусе API
-        function showApiStatus(message, type = 'info') {
-            const statusDiv = document.createElement('div');
-            statusDiv.style.cssText = `
-                position: fixed;
-                top: 70px;
-                right: 20px;
-                background: ${type === 'error' ? '#e74c3c' : type === 'success' ? '#27ae60' : '#3498db'};
-                color: white;
-                padding: 10px 15px;
-                border-radius: 8px;
-                font-size: 0.9rem;
-                z-index: 1001;
-                max-width: 300px;
-            `;
-            statusDiv.textContent = message;
-            document.body.appendChild(statusDiv);
-            
-            setTimeout(() => {
-                if (document.body.contains(statusDiv)) {
-                    document.body.removeChild(statusDiv);
-                }
-            }, 3000);
-        }
-
         // Функция для запросов с множественными API ключами
         async function makeApiRequest(url, options = {}) {
             for (let i = 0; i < config.apiTokens.length; i++) {
-                const tokenIndex = i + 1;
-                showApiStatus(`Отправка запроса по ключу T${tokenIndex}`, 'info');
-                
                 try {
                     const requestOptions = {
                         ...options,
@@ -323,14 +313,12 @@
                     const response = await fetch(url, requestOptions);
                     
                     if (response.ok) {
-                        showApiStatus(`Успех по ключу T${tokenIndex}`, 'success');
                         return await response.json();
                     } else {
                         throw new Error(`HTTP ${response.status}`);
                     }
                 } catch (error) {
-                    showApiStatus(`Ошибка по ключу T${tokenIndex}: ${error.message}`, 'error');
-                    console.log(`Ошибка с ключом T${tokenIndex}:`, error);
+                    console.log(`Ошибка с ключом T${i + 1}:`, error);
                     
                     // Если это последний ключ, выбрасываем ошибку
                     if (i === config.apiTokens.length - 1) {
@@ -353,7 +341,6 @@
                 return user;
             } catch (error) {
                 console.log('Ошибка получения данных пользователя:', error);
-                showApiStatus('Не удалось загрузить данные пользователя', 'error');
                 return null;
             }
         }
@@ -381,16 +368,40 @@
             initialElement.style.display = 'block';
         }
 
+        // Защита от спама - блокировка кнопок
+        function enableButtonsAfterDelay() {
+            // Разблокируем все кнопки через 1 секунду
+            setTimeout(() => {
+                document.querySelectorAll('.btn').forEach(btn => {
+                    btn.style.pointerEvents = 'auto';
+                    btn.style.opacity = '1';
+                });
+            }, 1000);
+        }
+
+        // Блокировка кнопок при загрузке
+        function disableButtons() {
+            document.querySelectorAll('.btn').forEach(btn => {
+                btn.style.pointerEvents = 'none';
+                btn.style.opacity = '0.5';
+            });
+        }
+
         // Проверить пользователя в базе данных
         async function checkUserInDatabase(userData) {
             console.log('Проверяем пользователя в базе данных:', userData);
+
+            // Показываем анимацию загрузки для баланса
+            const currencyDisplay = document.querySelector('.currency-display');
+            currencyDisplay.classList.add('loading');
 
             try {
                 const existingUser = await getUserData(userData.id);
 
                 if (existingUser) {
                     console.log('Пользователь найден в базе данных:', existingUser);
-                    // Отображаем количество клюшек
+                    // Убираем анимацию загрузки и отображаем количество клюшек
+                    currencyDisplay.classList.remove('loading');
                     document.getElementById('userMoney').textContent = existingUser.money || 0;
                     return true;
                 }
@@ -401,6 +412,7 @@
                 const doubleCheck = await getUserData(userData.id);
                 if (doubleCheck) {
                     console.log('Пользователь уже создан другим процессом');
+                    currencyDisplay.classList.remove('loading');
                     document.getElementById('userMoney').textContent = doubleCheck.money || 0;
                     return true;
                 }
@@ -425,12 +437,14 @@
                 const createdUser = createResponse;
                 console.log('Пользователь успешно создан:', createdUser);
                 
-                // Отображаем начальное количество клюшек
+                // Убираем анимацию загрузки и отображаем начальное количество клюшек
+                currencyDisplay.classList.remove('loading');
                 document.getElementById('userMoney').textContent = 100;
                 return true;
 
             } catch (error) {
                 console.log('Ошибка при работе с базой данных:', error);
+                currencyDisplay.classList.remove('loading');
                 document.getElementById('userMoney').textContent = 0;
                 return true; // Позволяем продолжить работу даже с ошибками
             }
@@ -440,6 +454,9 @@
         async function initApp() {
             try {
                 console.log('Начинаем инициализацию приложения...');
+
+                // Блокируем кнопки при загрузке
+                disableButtons();
 
                 if (window.Telegram && window.Telegram.WebApp) {
                     tg.ready();
@@ -459,13 +476,21 @@
                 console.log('Инициализация завершена успешно');
                 isInitialized = true;
 
+                // Разблокируем кнопки через 1 секунду
+                enableButtonsAfterDelay();
+
             } catch (error) {
                 console.log('Ошибка инициализации:', error);
                 isInitialized = true;
 
                 // Показываем тестовые данные при ошибке
+                const currencyDisplay = document.querySelector('.currency-display');
+                currencyDisplay.classList.remove('loading');
                 document.getElementById('userMoney').textContent = 0;
                 getUserAvatar(userData || {});
+
+                // Разблокируем кнопки даже при ошибке
+                enableButtonsAfterDelay();
             }
         }
 
