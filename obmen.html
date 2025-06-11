@@ -505,48 +505,98 @@
             }
         }
 
-        // Функция для запросов с множественными API ключами
+        // Оптимизированная система запросов
+        let currentTokenIndex = 0;
+        const requestCache = new Map();
+        const pendingRequests = new Map();
+        
         async function makeApiRequest(url, options = {}) {
-            for (let i = 0; i < config.apiTokens.length; i++) {
-                try {
-                    const requestOptions = {
-                        ...options,
-                        headers: {
-                            'xc-token': config.apiTokens[i],
-                            'Content-Type': 'application/json',
-                            ...options.headers
-                        }
-                    };
-
-                    const response = await fetch(url, requestOptions);
-                    
-                    if (response.ok) {
-                        return await response.json();
-                    } else {
-                        throw new Error(`HTTP ${response.status}`);
-                    }
-                } catch (error) {
-                    console.log(`Ошибка с ключом T${i + 1}:`, error);
-                    
-                    // Если это последний ключ, выбрасываем ошибку
-                    if (i === config.apiTokens.length - 1) {
-                        throw new Error(`Все API ключи недоступны. Последняя ошибка: ${error.message}`);
-                    }
-                    
-                    // Небольшая задержка перед следующей попыткой
-                    await new Promise(resolve => setTimeout(resolve, 500));
+            const cacheKey = `${url}_${JSON.stringify(options)}`;
+            
+            // Проверяем кэш для GET запросов
+            if (options.method !== 'POST' && options.method !== 'PATCH' && options.method !== 'DELETE') {
+                const cached = requestCache.get(cacheKey);
+                if (cached && Date.now() - cached.timestamp < 30000) {
+                    return cached.data;
                 }
+            }
+
+            // Предотвращаем дублирование запросов
+            if (pendingRequests.has(cacheKey)) {
+                return await pendingRequests.get(cacheKey);
+            }
+
+            const requestPromise = executeRequest(url, options);
+            pendingRequests.set(cacheKey, requestPromise);
+
+            try {
+                const result = await requestPromise;
+                
+                // Кэшируем GET запросы
+                if (options.method !== 'POST' && options.method !== 'PATCH' && options.method !== 'DELETE') {
+                    requestCache.set(cacheKey, {
+                        data: result,
+                        timestamp: Date.now()
+                    });
+                }
+                
+                return result;
+            } finally {
+                pendingRequests.delete(cacheKey);
             }
         }
 
-        // Получить данные пользователя из базы
+        async function executeRequest(url, options = {}) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
+
+            try {
+                const token = config.apiTokens[currentTokenIndex];
+                
+                const requestOptions = {
+                    ...options,
+                    signal: controller.signal,
+                    headers: {
+                        'xc-token': token,
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache',
+                        ...options.headers
+                    }
+                };
+
+                const response = await fetch(url, requestOptions);
+                clearTimeout(timeoutId);
+
+                if (response.ok) {
+                    return await response.json();
+                }
+
+                if (response.status === 429 || response.status >= 500) {
+                    currentTokenIndex = (currentTokenIndex + 1) % config.apiTokens.length;
+                    await new Promise(resolve => setTimeout(resolve, 200));
+                    return await executeRequest(url, options);
+                }
+
+                throw new Error(`HTTP ${response.status}`);
+                
+            } catch (error) {
+                clearTimeout(timeoutId);
+                
+                if (error.name === 'AbortError') {
+                    throw new Error('Request timeout');
+                }
+                
+                currentTokenIndex = (currentTokenIndex + 1) % config.apiTokens.length;
+                throw error;
+            }
+        }
+
+        // Оптимизированное получение данных пользователя
         async function getUserData(userId) {
             try {
-                const url = `${config.baseUrl}/${config.orgs}/${config.projectName}/${config.tableName}`;
+                const url = `${config.baseUrl}/${config.orgs}/${config.projectName}/${config.tableName}?where=(user_id,eq,${userId})&limit=1`;
                 const data = await makeApiRequest(url, { method: 'GET' });
-                const user = data.list ? data.list.find(u => u.user_id && u.user_id.toString() === userId.toString()) : null;
-                
-                return user;
+                return data.list && data.list.length > 0 ? data.list[0] : null;
             } catch (error) {
                 console.log('Ошибка получения данных пользователя:', error);
                 return null;
