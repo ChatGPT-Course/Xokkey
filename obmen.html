@@ -396,16 +396,17 @@
         </div>
     </div>
 
+    <script src="d1-api.js"></script>
     <script>
-        // Конфигурация NocoDB 
-        const config = {
-            orgs: 'wf52x8bf',
-            projectName: 'pawgl0ouxic497w',
-            tableName: 'mtfr4e3wywjtyua',
-            apiToken: '4lZnGEoWEQeBswBHzzp_lPPYDFFkNc7s2BlWClxb',
-            baseUrl: 'https://app.nocodb.com/api/v1/db/data'
+        // Конфигурация Cloudflare D1
+        const D1_CONFIG = {
+            accountId: 'YOUR_CLOUDFLARE_ACCOUNT_ID', // Замените на ваш Account ID
+            databaseId: 'YOUR_D1_DATABASE_ID', // Замените на ваш Database ID
+            apiToken: 'YOUR_CLOUDFLARE_API_TOKEN' // Замените на ваш API Token
         };
 
+        const d1API = new CloudflareD1API(D1_CONFIG.accountId, D1_CONFIG.databaseId, D1_CONFIG.apiToken);
+        
         let tg = window.Telegram.WebApp;
         let userData = null;
         let currentUserData = null;
@@ -500,53 +501,24 @@
             }
         }
 
-        // Получить данные пользователя из базы
+        // Получить данные пользователя из базы D1
         async function getUserData(userId) {
             try {
-                const response = await fetch(`${config.baseUrl}/${config.orgs}/${config.projectName}/${config.tableName}`, {
-                    method: 'GET',
-                    headers: {
-                        'xc-token': config.apiToken,
-                        'Content-Type': 'application/json'
-                    }
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Ошибка получения данных: ${response.status}`);
-                }
-
-                const data = await response.json();
-                const user = data.list ? data.list.find(u => u.user_id && u.user_id.toString() === userId.toString()) : null;
-                
-                return user;
+                return await d1API.findUserById(userId);
             } catch (error) {
                 console.log('Ошибка получения данных пользователя:', error);
                 return null;
             }
         }
 
-        // Обновить данные пользователя в базе
+        // Обновить данные пользователя в базе D1
         async function updateUserData(userId, updates) {
             try {
-                const dbUser = await getUserData(userId);
-                if (!dbUser) {
-                    throw new Error('Пользователь не найден в базе данных');
+                const success = await d1API.updateUser(userId, updates);
+                if (!success) {
+                    throw new Error('Пользователь не найден или не удалось обновить');
                 }
-
-                const response = await fetch(`${config.baseUrl}/${config.orgs}/${config.projectName}/${config.tableName}/${dbUser.Id}`, {
-                    method: 'PATCH',
-                    headers: {
-                        'xc-token': config.apiToken,
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(updates)
-                });
-
-                if (!response.ok) {
-                    throw new Error(`Ошибка обновления данных: ${response.status}`);
-                }
-
-                return await response.json();
+                return true;
             } catch (error) {
                 console.error('Ошибка обновления данных пользователя:', error);
                 throw error;
