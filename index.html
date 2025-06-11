@@ -211,23 +211,132 @@
     </div>
 
     <script>
-        // Конфигурация NocoDB с множественными API ключами
+        // Оптимизированная конфигурация NocoDB
         const config = {
             orgs: 'wf52x8bf',
             projectName: 'pawgl0ouxic497w',
             tableName: 'mtfr4e3wywjtyua',
             apiTokens: [
-                'TowDsj9CjbcU97wkk8ojrFmLChpZT6-KkHrYlpu8', // T1
-                'TowDsj9CjbcU97wkk8ojrFmLChpZT6-KkHrYlpu8', // T2
-                'hwE0I5dS4sDwPhrPS6JIjtgH62pPHU0tjqbRtGff', // T3
-                'kVGhgZD0SzJPmt8MLqeapHIfoa-QcGnc56ZgLGiL'  // T4
+                'TowDsj9CjbcU97wkk8ojrFmLChpZT6-KkHrYlpu8',
+                'hwE0I5dS4sDwPhrPS6JIjtgH62pPHU0tjqbRtGff',
+                'kVGhgZD0SzJPmt8MLqeapHIfoa-QcGnc56ZgLGiL'
             ],
-            baseUrl: 'https://app.nocodb.com/api/v1/db/data'
+            baseUrl: 'https://app.nocodb.com/api/v1/db/data',
+            // Конфигурация для оптимизации
+            timeout: 10000,
+            retryDelay: 200,
+            maxRetries: 2,
+            cacheTimeout: 30000 // 30 секунд кэш
         };
 
+        // Кэш для запросов
+        const requestCache = new Map();
+        const pendingRequests = new Map();
+        
         let tg = window.Telegram.WebApp;
         let userData = null;
         let isInitialized = false;
+        let currentTokenIndex = 0;
+
+        // Оптимизированная функция для запросов
+        async function makeApiRequest(url, options = {}) {
+            const cacheKey = `${url}_${JSON.stringify(options)}`;
+            
+            // Проверяем кэш для GET запросов
+            if (options.method !== 'POST' && options.method !== 'PATCH' && options.method !== 'DELETE') {
+                const cached = requestCache.get(cacheKey);
+                if (cached && Date.now() - cached.timestamp < config.cacheTimeout) {
+                    return cached.data;
+                }
+            }
+
+            // Предотвращаем дублирование запросов
+            if (pendingRequests.has(cacheKey)) {
+                return await pendingRequests.get(cacheKey);
+            }
+
+            const requestPromise = executeRequest(url, options);
+            pendingRequests.set(cacheKey, requestPromise);
+
+            try {
+                const result = await requestPromise;
+                
+                // Кэшируем успешные GET запросы
+                if (options.method !== 'POST' && options.method !== 'PATCH' && options.method !== 'DELETE') {
+                    requestCache.set(cacheKey, {
+                        data: result,
+                        timestamp: Date.now()
+                    });
+                }
+                
+                return result;
+            } finally {
+                pendingRequests.delete(cacheKey);
+            }
+        }
+
+        async function executeRequest(url, options = {}) {
+            const controller = new AbortController();
+            const timeoutId = setTimeout(() => controller.abort(), config.timeout);
+
+            try {
+                // Используем текущий токен, а не перебираем все
+                const token = config.apiTokens[currentTokenIndex];
+                
+                const requestOptions = {
+                    ...options,
+                    signal: controller.signal,
+                    headers: {
+                        'xc-token': token,
+                        'Content-Type': 'application/json',
+                        'Cache-Control': 'no-cache',
+                        ...options.headers
+                    }
+                };
+
+                const response = await fetch(url, requestOptions);
+                clearTimeout(timeoutId);
+
+                if (response.ok) {
+                    return await response.json();
+                }
+
+                // При ошибке переключаемся на следующий токен
+                if (response.status === 429 || response.status >= 500) {
+                    currentTokenIndex = (currentTokenIndex + 1) % config.apiTokens.length;
+                    await new Promise(resolve => setTimeout(resolve, config.retryDelay));
+                    
+                    // Повторяем с новым токеном
+                    return await executeRequest(url, options);
+                }
+
+                throw new Error(`HTTP ${response.status}`);
+                
+            } catch (error) {
+                clearTimeout(timeoutId);
+                
+                if (error.name === 'AbortError') {
+                    throw new Error('Request timeout');
+                }
+                
+                // При сетевой ошибке пробуем следующий токен
+                currentTokenIndex = (currentTokenIndex + 1) % config.apiTokens.length;
+                throw error;
+            }
+        }
+
+        // Дебаунс для предотвращения частых запросов
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
 
         // Установить cookie
         function setCookie(name, value, days = 365) {
@@ -251,8 +360,6 @@
 
                 if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
                     const user = tg.initDataUnsafe.user;
-                    console.log('Получены данные пользователя Telegram:', user);
-
                     return {
                         id: user.id.toString(),
                         username: user.username || '',
@@ -260,6 +367,19 @@
                         last_name: user.last_name || '',
                         display_name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Игрок',
                         language_code: user.language_code || 'ru'
+                    };
+                }
+
+                // Используем сохраненные данные если есть
+                const savedUserId = getCookie('tg_user_id');
+                if (savedUserId) {
+                    return {
+                        id: savedUserId,
+                        username: getCookie('tg_username') || 'test_user',
+                        first_name: getCookie('tg_name') || 'Игрок',
+                        last_name: '',
+                        display_name: getCookie('tg_name') || 'Игрок',
+                        language_code: 'ru'
                     };
                 }
 
@@ -293,55 +413,39 @@
             setCookie('tg_username', userData.username);
             setCookie('tg_name', userData.display_name);
             setCookie('tg_language', userData.language_code);
-
-            console.log('Данные пользователя сохранены в cookies');
         }
 
-        // Функция для запросов с множественными API ключами
-        async function makeApiRequest(url, options = {}) {
-            for (let i = 0; i < config.apiTokens.length; i++) {
-                try {
-                    const requestOptions = {
-                        ...options,
-                        headers: {
-                            'xc-token': config.apiTokens[i],
-                            'Content-Type': 'application/json',
-                            ...options.headers
-                        }
-                    };
-
-                    const response = await fetch(url, requestOptions);
-                    
-                    if (response.ok) {
-                        return await response.json();
-                    } else {
-                        throw new Error(`HTTP ${response.status}`);
-                    }
-                } catch (error) {
-                    console.log(`Ошибка с ключом T${i + 1}:`, error);
-                    
-                    // Если это последний ключ, выбрасываем ошибку
-                    if (i === config.apiTokens.length - 1) {
-                        throw new Error(`Все API ключи недоступны. Последняя ошибка: ${error.message}`);
-                    }
-                    
-                    // Небольшая задержка перед следующей попыткой
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                }
-            }
-        }
-
-        // Получить данные пользователя из базы
+        // Оптимизированное получение данных пользователя из базы
         async function getUserData(userId) {
             try {
-                const url = `${config.baseUrl}/${config.orgs}/${config.projectName}/${config.tableName}`;
+                const url = `${config.baseUrl}/${config.orgs}/${config.projectName}/${config.tableName}?where=(user_id,eq,${userId})&limit=1`;
                 const data = await makeApiRequest(url, { method: 'GET' });
-                const user = data.list ? data.list.find(u => u.user_id && u.user_id.toString() === userId.toString()) : null;
-                
-                return user;
+                return data.list && data.list.length > 0 ? data.list[0] : null;
             } catch (error) {
                 console.log('Ошибка получения данных пользователя:', error);
                 return null;
+            }
+        }
+
+        // Создание пользователя с проверкой дубликатов
+        async function createUser(userData) {
+            try {
+                const newUserData = {
+                    user_id: userData.id,
+                    user_name: userData.display_name,
+                    user_username: userData.username,
+                    money: 100,
+                    card: ''
+                };
+
+                const url = `${config.baseUrl}/${config.orgs}/${config.projectName}/${config.tableName}`;
+                return await makeApiRequest(url, {
+                    method: 'POST',
+                    body: JSON.stringify(newUserData)
+                });
+            } catch (error) {
+                console.log('Ошибка создания пользователя:', error);
+                throw error;
             }
         }
 
@@ -350,7 +454,6 @@
             const photoElement = document.getElementById('userPhoto');
             const initialElement = document.getElementById('userInitial');
             
-            // Проверяем, есть ли фото профиля Telegram
             if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.photo_url) {
                 photoElement.src = tg.initDataUnsafe.user.photo_url;
                 photoElement.style.display = 'block';
@@ -358,7 +461,6 @@
                 return;
             }
             
-            // Показываем инициал
             if (userData.first_name) {
                 initialElement.textContent = userData.first_name.charAt(0).toUpperCase();
             } else {
@@ -370,16 +472,14 @@
 
         // Защита от спама - блокировка кнопок
         function enableButtonsAfterDelay() {
-            // Разблокируем все кнопки через 1 секунду
             setTimeout(() => {
                 document.querySelectorAll('.btn').forEach(btn => {
                     btn.style.pointerEvents = 'auto';
                     btn.style.opacity = '1';
                 });
-            }, 1000);
+            }, 500); // Уменьшили с 1000мс до 500мс
         }
 
-        // Блокировка кнопок при загрузке
         function disableButtons() {
             document.querySelectorAll('.btn').forEach(btn => {
                 btn.style.pointerEvents = 'none';
@@ -387,125 +487,83 @@
             });
         }
 
-        // Проверить пользователя в базе данных
+        // Оптимизированная проверка пользователя в базе данных
         async function checkUserInDatabase(userData) {
-            console.log('Проверяем пользователя в базе данных:', userData);
-
-            // Показываем анимацию загрузки для баланса
             const currencyDisplay = document.querySelector('.currency-display');
             currencyDisplay.classList.add('loading');
 
             try {
-                const existingUser = await getUserData(userData.id);
+                let existingUser = await getUserData(userData.id);
 
                 if (existingUser) {
-                    console.log('Пользователь найден в базе данных:', existingUser);
-                    // Убираем анимацию загрузки и отображаем количество клюшек
                     currencyDisplay.classList.remove('loading');
                     document.getElementById('userMoney').textContent = existingUser.money || 0;
                     return true;
                 }
 
-                console.log('Пользователь не найден, создаем новую запись...');
-
-                // Проверяем еще раз перед созданием
-                const doubleCheck = await getUserData(userData.id);
-                if (doubleCheck) {
-                    console.log('Пользователь уже создан другим процессом');
+                // Создаем пользователя только если его нет
+                const createdUser = await createUser(userData);
+                if (createdUser) {
                     currencyDisplay.classList.remove('loading');
-                    document.getElementById('userMoney').textContent = doubleCheck.money || 0;
+                    document.getElementById('userMoney').textContent = 100;
                     return true;
                 }
-
-                // Создаем нового пользователя согласно структуре таблицы
-                const newUserData = {
-                    user_id: userData.id,
-                    user_name: userData.display_name,
-                    user_username: userData.username,
-                    money: 100,
-                    card: ''
-                };
-
-                console.log('Данные для создания пользователя:', newUserData);
-
-                const url = `${config.baseUrl}/${config.orgs}/${config.projectName}/${config.tableName}`;
-                const createResponse = await makeApiRequest(url, {
-                    method: 'POST',
-                    body: JSON.stringify(newUserData)
-                });
-
-                const createdUser = createResponse;
-                console.log('Пользователь успешно создан:', createdUser);
-                
-                // Убираем анимацию загрузки и отображаем начальное количество клюшек
-                currencyDisplay.classList.remove('loading');
-                document.getElementById('userMoney').textContent = 100;
-                return true;
 
             } catch (error) {
                 console.log('Ошибка при работе с базой данных:', error);
                 currencyDisplay.classList.remove('loading');
                 document.getElementById('userMoney').textContent = 0;
-                return true; // Позволяем продолжить работу даже с ошибками
             }
+            
+            return true;
         }
 
-        // Инициализация приложения
+        // Оптимизированная инициализация приложения
         async function initApp() {
+            if (isInitialized) return;
+            
             try {
-                console.log('Начинаем инициализацию приложения...');
-
-                // Блокируем кнопки при загрузке
                 disableButtons();
 
                 if (window.Telegram && window.Telegram.WebApp) {
                     tg.ready();
-                    console.log('Telegram WebApp инициализирован');
-
                     userData = getTelegramUserData();
-                    console.log('Полученные данные пользователя:', userData);
-
                     saveUserData(userData);
-
-                    // Отображаем данные пользователя
                     getUserAvatar(userData);
-
                     await checkUserInDatabase(userData);
                 }
 
-                console.log('Инициализация завершена успешно');
                 isInitialized = true;
-
-                // Разблокируем кнопки через 1 секунду
                 enableButtonsAfterDelay();
 
             } catch (error) {
                 console.log('Ошибка инициализации:', error);
-                isInitialized = true;
-
-                // Показываем тестовые данные при ошибке
                 const currencyDisplay = document.querySelector('.currency-display');
                 currencyDisplay.classList.remove('loading');
                 document.getElementById('userMoney').textContent = 0;
                 getUserAvatar(userData || {});
-
-                // Разблокируем кнопки даже при ошибке
                 enableButtonsAfterDelay();
+                isInitialized = true;
             }
         }
 
-        // Запускаем инициализацию после загрузки DOM
-        document.addEventListener('DOMContentLoaded', initApp);
-
-        // Дополнительная проверка на случай, если скрипт Telegram не загрузился
-        window.addEventListener('load', function() {
-            setTimeout(() => {
-                if (!isInitialized && window.Telegram && window.Telegram.WebApp) {
-                    console.log('Повторная попытка инициализации...');
-                    initApp();
+        // Очистка кэша каждые 5 минут
+        setInterval(() => {
+            const now = Date.now();
+            for (const [key, value] of requestCache.entries()) {
+                if (now - value.timestamp > config.cacheTimeout) {
+                    requestCache.delete(key);
                 }
-            }, 1000);
-        });
+            }
+        }, 300000);
+
+        // Оптимизированная инициализация
+        document.addEventListener('DOMContentLoaded', initApp);
+        
+        // Убираем повторную инициализацию через window.load
+        if (document.readyState === 'complete') {
+            initApp();
+        }
     </script>
 </body>
 </html>
