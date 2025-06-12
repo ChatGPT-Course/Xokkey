@@ -213,7 +213,7 @@
     <script>
         // Конфигурация для Cloudflare D1 API
         const config = {
-            baseUrl: 'https://hockey-d1-api.egorspirin10.workers.dev', // URL вашего D1 API worker'а
+            baseUrl: 'https://hockey-d1-api.egorspirin10.workers.dev', // URL вашего развернутого Worker'а
             timeout: 10000,
             retryDelay: 200,
             maxRetries: 3,
@@ -503,17 +503,24 @@
         async function testApiConnection() {
             try {
                 console.log('Тестирование подключения к API...');
+                console.log('URL:', config.baseUrl);
                 const response = await fetch(config.baseUrl);
                 console.log('Статус ответа от API:', response.status);
                 console.log('Headers ответа:', [...response.headers.entries()]);
                 
                 if (!response.ok) {
-                    console.log('API недоступен. Ответ:', await response.text());
+                    const responseText = await response.text();
+                    console.log('API недоступен. Ответ:', responseText);
+                    console.log('Проверьте:');
+                    console.log('1. Правильность URL Worker\'а');
+                    console.log('2. Что Worker развернут и активен');
+                    console.log('3. Что привязана D1 база данных');
                     return false;
                 }
                 return true;
             } catch (error) {
                 console.log('API недоступен. Ошибка подключения:', error);
+                console.log('Проверьте URL Worker\'а в настройках');
                 return false;
             }
         }
