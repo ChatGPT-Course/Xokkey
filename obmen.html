@@ -591,7 +591,39 @@
             }
         }
 
-        // Оптимизированное получение данных пользователя
+        // Получить данные пользователя из localStorage
+        function getUserFromLocalStorage() {
+            try {
+                const saved = localStorage.getItem('hockey_user_data');
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    console.log('Данные пользователя из localStorage:', data);
+                    return data;
+                }
+            } catch (error) {
+                console.log('Ошибка чтения из localStorage:', error);
+            }
+            return null;
+        }
+
+        // Сохранить данные пользователя в localStorage
+        function saveUserToLocalStorage(userData) {
+            try {
+                const dataToSave = {
+                    user_id: userData.user_id || userData.id,
+                    user_name: userData.user_name || userData.display_name,
+                    money: userData.money || 0,
+                    card: userData.card || '',
+                    lastUpdated: Date.now()
+                };
+                localStorage.setItem('hockey_user_data', JSON.stringify(dataToSave));
+                console.log('Данные пользователя обновлены в localStorage:', dataToSave);
+            } catch (error) {
+                console.log('Ошибка сохранения в localStorage:', error);
+            }
+        }
+
+        // Оптимизированное получение данных пользователя (fallback)
         async function getUserData(userId) {
             try {
                 const url = `${config.baseUrl}/${config.orgs}/${config.projectName}/${config.tableName}?where=(user_id,eq,${userId})&limit=1`;
@@ -729,17 +761,22 @@
                 allCards.push(newCard);
                 const updatedCardsString = allCards.join(', ');
 
-                // Обновляем данные в базе
+                // Обновляем локальные данные
+                currentUserData.money = currentMoney - price;
+                currentUserData.card = updatedCardsString;
+
+                // Сохраняем в localStorage
+                saveUserToLocalStorage(currentUserData);
+
+                // Обновляем данные в базе (в фоне, без ожидания)
                 const updates = {
                     money: currentMoney - price,
                     card: updatedCardsString
                 };
 
-                await updateUserData(userData.id, updates);
-
-                // Обновляем локальные данные
-                currentUserData.money = currentMoney - price;
-                currentUserData.card = updatedCardsString;
+                updateUserData(userData.id, updates).catch(error => {
+                    console.log('Ошибка обновления данных в базе:', error);
+                });
                 
                 // Обновляем отображение
                 document.getElementById('userMoney').textContent = currentUserData.money;
@@ -788,8 +825,14 @@
                 const currencyDisplay = document.getElementById('currencyDisplay');
                 currencyDisplay.classList.add('loading');
 
-                // Получаем данные из базы
-                currentUserData = await getUserData(userData.id);
+                // Сначала пытаемся получить данные из localStorage
+                currentUserData = getUserFromLocalStorage();
+                
+                // Если нет данных в localStorage, пытаемся загрузить из базы
+                if (!currentUserData) {
+                    console.log('Данных в localStorage нет, загружаем из базы...');
+                    currentUserData = await getUserData(userData.id);
+                }
                 
                 // Убираем анимацию загрузки
                 currencyDisplay.classList.remove('loading');
