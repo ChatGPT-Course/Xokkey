@@ -581,7 +581,39 @@
             }
         }
 
-        // Получить данные пользователя из базы
+        // Получить данные пользователя из localStorage
+        function getUserFromLocalStorage() {
+            try {
+                const saved = localStorage.getItem('hockey_user_data');
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    console.log('Данные пользователя из localStorage:', data);
+                    return data;
+                }
+            } catch (error) {
+                console.log('Ошибка чтения из localStorage:', error);
+            }
+            return null;
+        }
+
+        // Сохранить данные пользователя в localStorage
+        function saveUserToLocalStorage(userData) {
+            try {
+                const dataToSave = {
+                    user_id: userData.user_id || userData.id,
+                    user_name: userData.user_name || userData.display_name,
+                    money: userData.money || 0,
+                    card: userData.card || '',
+                    lastUpdated: Date.now()
+                };
+                localStorage.setItem('hockey_user_data', JSON.stringify(dataToSave));
+                console.log('Данные пользователя обновлены в localStorage:', dataToSave);
+            } catch (error) {
+                console.log('Ошибка сохранения в localStorage:', error);
+            }
+        }
+
+        // Получить данные пользователя из базы (fallback)
         async function getUserData(userId) {
             try {
                 const url = `${config.baseUrl}/${config.orgs}/${config.projectName}/${config.tableName}`;
@@ -827,12 +859,17 @@
                 // Формируем строку для базы данных
                 const updatedCardsString = remainingCards.map(c => `${c.name}(${c.rarity})`).join(', ');
 
-                // Обновляем данные в базе
-                await updateUserData(userData.id, { card: updatedCardsString });
-
                 // Обновляем локальные данные
                 currentUserData.card = updatedCardsString;
                 userCards = remainingCards;
+
+                // Сохраняем в localStorage
+                saveUserToLocalStorage(currentUserData);
+
+                // Обновляем данные в базе (в фоне, без ожидания)
+                updateUserData(userData.id, { card: updatedCardsString }).catch(error => {
+                    console.log('Ошибка обновления данных в базе:', error);
+                });
                 
                 // Сбрасываем выбор
                 selectedCards = [];
@@ -887,8 +924,14 @@
                 userData = getTelegramUserData();
                 console.log('Данные пользователя:', userData);
 
-                // Получаем данные из базы
-                currentUserData = await getUserData(userData.id);
+                // Сначала пытаемся получить данные из localStorage
+                currentUserData = getUserFromLocalStorage();
+                
+                // Если нет данных в localStorage, пытаемся загрузить из базы
+                if (!currentUserData) {
+                    console.log('Данных в localStorage нет, загружаем из базы...');
+                    currentUserData = await getUserData(userData.id);
+                }
                 
                 if (currentUserData) {
                     // Парсим и отображаем карточки
