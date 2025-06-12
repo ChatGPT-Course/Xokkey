@@ -588,7 +588,22 @@
             }
         }
 
-        // Получить данные пользователя из базы
+        // Получить данные пользователя из localStorage
+        function getUserFromLocalStorage() {
+            try {
+                const saved = localStorage.getItem('hockey_user_data');
+                if (saved) {
+                    const data = JSON.parse(saved);
+                    console.log('Данные пользователя из localStorage:', data);
+                    return data;
+                }
+            } catch (error) {
+                console.log('Ошибка чтения из localStorage:', error);
+            }
+            return null;
+        }
+
+        // Получить данные пользователя из базы (fallback)
         async function getUserData(userId) {
             try {
                 const url = `${config.baseUrl}/${config.orgs}/${config.projectName}/${config.tableName}`;
@@ -727,8 +742,14 @@
                 // Получаем аватар
                 getUserAvatar(userData);
 
-                // Получаем данные из базы
-                const dbUser = await getUserData(userData.id);
+                // Сначала пытаемся получить данные из localStorage
+                let dbUser = getUserFromLocalStorage();
+                
+                // Если нет данных в localStorage, пытаемся загрузить из базы
+                if (!dbUser) {
+                    console.log('Данных в localStorage нет, загружаем из базы...');
+                    dbUser = await getUserData(userData.id);
+                }
                 
                 // Убираем анимацию загрузки
                 currencyDisplay.classList.remove('loading');
