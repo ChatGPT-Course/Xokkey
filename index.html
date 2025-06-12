@@ -211,21 +211,12 @@
     </div>
 
     <script>
-        // Оптимизированная конфигурация NocoDB
+        // Конфигурация для Cloudflare D1 API
         const config = {
-            orgs: 'wf52x8bf',
-            projectName: 'pawgl0ouxic497w',
-            tableName: 'mtfr4e3wywjtyua',
-            apiTokens: [
-                'TowDsj9CjbcU97wkk8ojrFmLChpZT6-KkHrYlpu8',
-                'hwE0I5dS4sDwPhrPS6JIjtgH62pPHU0tjqbRtGff',
-                'kVGhgZD0SzJPmt8MLqeapHIfoa-QcGnc56ZgLGiL'
-            ],
-            baseUrl: 'https://app.nocodb.com/api/v1/db/data',
-            // Конфигурация для оптимизации
+            baseUrl: 'https://hockey-d1-api.egorspirin10.workers.dev/', // Замените на ваш реальный URL worker'а
             timeout: 10000,
             retryDelay: 200,
-            maxRetries: 2,
+            maxRetries: 3,
             cacheTimeout: 30000 // 30 секунд кэш
         };
 
@@ -236,14 +227,14 @@
         let tg = window.Telegram.WebApp;
         let userData = null;
         let isInitialized = false;
-        let currentTokenIndex = 0;
+        
 
-        // Оптимизированная функция для запросов
-        async function makeApiRequest(url, options = {}) {
-            const cacheKey = `${url}_${JSON.stringify(options)}`;
+        // Функция для работы с D1 API
+        async function makeApiRequest(endpoint, options = {}) {
+            const cacheKey = `${endpoint}_${JSON.stringify(options)}`;
             
             // Проверяем кэш для GET запросов
-            if (options.method !== 'POST' && options.method !== 'PATCH' && options.method !== 'DELETE') {
+            if (options.method !== 'POST' && options.method !== 'PUT' && options.method !== 'DELETE') {
                 const cached = requestCache.get(cacheKey);
                 if (cached && Date.now() - cached.timestamp < config.cacheTimeout) {
                     return cached.data;
@@ -255,14 +246,14 @@
                 return await pendingRequests.get(cacheKey);
             }
 
-            const requestPromise = executeRequest(url, options);
+            const requestPromise = executeRequest(endpoint, options);
             pendingRequests.set(cacheKey, requestPromise);
 
             try {
                 const result = await requestPromise;
                 
                 // Кэшируем успешные GET запросы
-                if (options.method !== 'POST' && options.method !== 'PATCH' && options.method !== 'DELETE') {
+                if (options.method !== 'POST' && options.method !== 'PUT' && options.method !== 'DELETE') {
                     requestCache.set(cacheKey, {
                         data: result,
                         timestamp: Date.now()
@@ -275,19 +266,17 @@
             }
         }
 
-        async function executeRequest(url, options = {}) {
+        async function executeRequest(endpoint, options = {}) {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), config.timeout);
 
             try {
-                // Используем текущий токен, а не перебираем все
-                const token = config.apiTokens[currentTokenIndex];
+                const url = `${config.baseUrl}${endpoint}`;
                 
                 const requestOptions = {
                     ...options,
                     signal: controller.signal,
                     headers: {
-                        'xc-token': token,
                         'Content-Type': 'application/json',
                         'Cache-Control': 'no-cache',
                         ...options.headers
@@ -301,16 +290,13 @@
                     return await response.json();
                 }
 
-                // При ошибке переключаемся на следующий токен
+                // При ошибке ретрай
                 if (response.status === 429 || response.status >= 500) {
-                    currentTokenIndex = (currentTokenIndex + 1) % config.apiTokens.length;
                     await new Promise(resolve => setTimeout(resolve, config.retryDelay));
-                    
-                    // Повторяем с новым токеном
-                    return await executeRequest(url, options);
+                    return await executeRequest(endpoint, options);
                 }
 
-                throw new Error(`HTTP ${response.status}`);
+                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 
             } catch (error) {
                 clearTimeout(timeoutId);
@@ -319,8 +305,6 @@
                     throw new Error('Request timeout');
                 }
                 
-                // При сетевой ошибке пробуем следующий токен
-                currentTokenIndex = (currentTokenIndex + 1) % config.apiTokens.length;
                 throw error;
             }
         }
@@ -415,36 +399,50 @@
             setCookie('tg_language', userData.language_code);
         }
 
-        // Оптимизированное получение данных пользователя из базы
+        // Получение данных пользователя из D1
         async function getUserData(userId) {
             try {
-                const url = `${config.baseUrl}/${config.orgs}/${config.projectName}/${config.tableName}?where=(user_id,eq,${userId})&limit=1`;
-                const data = await makeApiRequest(url, { method: 'GET' });
-                return data.list && data.list.length > 0 ? data.list[0] : null;
+                const data = await makeApiRequest(`/api/user?user_id=${userId}`, { method: 'GET' });
+                return data.success ? data.user : null;
             } catch (error) {
                 console.log('Ошибка получения данных пользователя:', error);
                 return null;
             }
         }
 
-        // Создание пользователя с проверкой дубликатов
+        // Создание пользователя в D1
         async function createUser(userData) {
             try {
                 const newUserData = {
                     user_id: userData.id,
                     user_name: userData.display_name,
-                    user_username: userData.username,
                     money: 100,
                     card: ''
                 };
 
-                const url = `${config.baseUrl}/${config.orgs}/${config.projectName}/${config.tableName}`;
-                return await makeApiRequest(url, {
+                const result = await makeApiRequest('/api/user', {
                     method: 'POST',
                     body: JSON.stringify(newUserData)
                 });
+
+                return result.success ? result.user : null;
             } catch (error) {
                 console.log('Ошибка создания пользователя:', error);
+                throw error;
+            }
+        }
+
+        // Обновление данных пользователя в D1
+        async function updateUserData(userId, updates) {
+            try {
+                const result = await makeApiRequest('/api/user', {
+                    method: 'PUT',
+                    body: JSON.stringify({ user_id: userId, ...updates })
+                });
+
+                return result.success ? result.user : null;
+            } catch (error) {
+                console.log('Ошибка обновления данных пользователя:', error);
                 throw error;
             }
         }
