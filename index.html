@@ -213,7 +213,7 @@
     <script>
         // Конфигурация для Cloudflare D1 API
         const config = {
-            baseUrl: 'https://hockey-d1-api.egorspirin10.workers.dev/', // Замените на ваш реальный URL worker'а
+            baseUrl: 'https://hockey-d1-api.egorspirin10.workers.dev', // URL вашего D1 API worker'а
             timeout: 10000,
             retryDelay: 200,
             maxRetries: 3,
@@ -402,10 +402,17 @@
         // Получение данных пользователя из D1
         async function getUserData(userId) {
             try {
+                console.log('Запрос данных пользователя для ID:', userId);
+                console.log('URL запроса:', `${config.baseUrl}/api/user?user_id=${userId}`);
+                
                 const data = await makeApiRequest(`/api/user?user_id=${userId}`, { method: 'GET' });
+                console.log('Ответ от API при получении пользователя:', data);
                 return data.success ? data.user : null;
             } catch (error) {
-                console.log('Ошибка получения данных пользователя:', error);
+                console.log('Ошибка получения данных пользователя:');
+                console.log('Error message:', error.message);
+                console.log('Error stack:', error.stack);
+                console.log('Full error:', error);
                 return null;
             }
         }
@@ -420,14 +427,21 @@
                     card: ''
                 };
 
+                console.log('Создание пользователя с данными:', newUserData);
+                console.log('URL запроса:', `${config.baseUrl}/api/user`);
+
                 const result = await makeApiRequest('/api/user', {
                     method: 'POST',
                     body: JSON.stringify(newUserData)
                 });
 
+                console.log('Ответ от API при создании пользователя:', result);
                 return result.success ? result.user : null;
             } catch (error) {
-                console.log('Ошибка создания пользователя:', error);
+                console.log('Ошибка создания пользователя:');
+                console.log('Error message:', error.message);
+                console.log('Error stack:', error.stack);
+                console.log('Full error:', error);
                 throw error;
             }
         }
@@ -485,12 +499,40 @@
             });
         }
 
+        // Тест доступности API
+        async function testApiConnection() {
+            try {
+                console.log('Тестирование подключения к API...');
+                const response = await fetch(config.baseUrl);
+                console.log('Статус ответа от API:', response.status);
+                console.log('Headers ответа:', [...response.headers.entries()]);
+                
+                if (!response.ok) {
+                    console.log('API недоступен. Ответ:', await response.text());
+                    return false;
+                }
+                return true;
+            } catch (error) {
+                console.log('API недоступен. Ошибка подключения:', error);
+                return false;
+            }
+        }
+
         // Оптимизированная проверка пользователя в базе данных
         async function checkUserInDatabase(userData) {
             const currencyDisplay = document.querySelector('.currency-display');
             currencyDisplay.classList.add('loading');
 
             try {
+                // Сначала проверяем доступность API
+                const apiAvailable = await testApiConnection();
+                if (!apiAvailable) {
+                    console.log('API недоступен, пропускаем проверку базы данных');
+                    currencyDisplay.classList.remove('loading');
+                    document.getElementById('userMoney').textContent = 0;
+                    return false;
+                }
+
                 let existingUser = await getUserData(userData.id);
 
                 if (existingUser) {
@@ -508,7 +550,10 @@
                 }
 
             } catch (error) {
-                console.log('Ошибка при работе с базой данных:', error);
+                console.log('Ошибка при работе с базой данных:');
+                console.log('Error message:', error.message);
+                console.log('Error stack:', error.stack);
+                console.log('Full error:', error);
                 currencyDisplay.classList.remove('loading');
                 document.getElementById('userMoney').textContent = 0;
             }
