@@ -251,7 +251,7 @@
                     Крафт
                 </a>
                 <a href="obmen.html" class="btn btn-secondary">
-                    Обмен
+                    Магазин
                 </a>
             </div>
 
@@ -407,6 +407,34 @@
             }, 300);
         }
 
+        // Кэширование данных пользователя
+        function cacheUserData(userData) {
+            localStorage.setItem('userCache', JSON.stringify({
+                data: userData,
+                timestamp: Date.now()
+            }));
+        }
+
+        function getCachedUserData() {
+            try {
+                const cached = localStorage.getItem('userCache');
+                if (cached) {
+                    const { data, timestamp } = JSON.parse(cached);
+                    // Кэш валиден 5 минут
+                    if (Date.now() - timestamp < 5 * 60 * 1000) {
+                        return data;
+                    }
+                }
+            } catch (error) {
+                console.log('Ошибка чтения кэша:', error);
+            }
+            return null;
+        }
+
+        function clearUserCache() {
+            localStorage.removeItem('userCache');
+        }
+
         // Проверка пользователя в базе данных
         async function checkUserInDatabase(userData) {
             try {
@@ -414,6 +442,7 @@
 
                 if (existingUser) {
                     document.getElementById('userMoney').textContent = existingUser.balance || 0;
+                    cacheUserData(existingUser); // Кэшируем данные
                     return existingUser;
                 }
 
@@ -421,6 +450,7 @@
                 const createdUser = await createUser(userData);
                 if (createdUser) {
                     document.getElementById('userMoney').textContent = createdUser.balance || 100;
+                    cacheUserData(createdUser); // Кэшируем данные
                     return createdUser;
                 }
 
