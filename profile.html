@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -265,7 +264,6 @@
             border-color: #f39c12;
         }
 
-        /* Эффекты для карточек разной редкости */
         .card-item.легендарный {
             background: rgba(44, 62, 80, 0.8);
             border: 1px solid rgba(243, 156, 18, 0.3);
@@ -369,7 +367,6 @@
             padding: 20px;
         }
 
-        /* Стили прокрутки */
         .inventory-grid::-webkit-scrollbar {
             width: 6px;
         }
@@ -405,7 +402,7 @@
                     <div class="user-id" id="userId">ID: загрузка...</div>
                 </div>
             </div>
-            
+
             <div class="currency-display">
                 <span>Клюшек: <span id="userMoney">0</span></span>
                 <span class="stick-icon">🏒</span>
@@ -421,19 +418,7 @@
     </div>
 
     <script>
-        // Конфигурация NocoDB с множественными API ключами
-        const config = {
-            orgs: 'wf52x8bf',
-            projectName: 'pawgl0ouxic497w',
-            tableName: 'mtfr4e3wywjtyua',
-            apiTokens: [
-                'TowDsj9CjbcU97wkk8ojrFmLChpZT6-KkHrYlpu8', // T1
-                'TowDsj9CjbcU97wkk8ojrFmLChpZT6-KkHrYlpu8', // T2
-                'hwE0I5dS4sDwPhrPS6JIjtgH62pPHU0tjqbRtGff', // T3
-                'kVGhgZD0SzJPmt8MLqeapHIfoa-QcGnc56ZgLGiL'  // T4
-            ],
-            baseUrl: 'https://app.nocodb.com/api/v1/db/data'
-        };
+        const WORKER_URL = 'https://googletest.egorspirin10.workers.dev/';
 
         let tg = window.Telegram.WebApp;
         let userData = null;
@@ -441,21 +426,13 @@
         // Нормализация редкости для CSS классов
         function normalizeRarity(rarity) {
             const rarityText = rarity.toLowerCase().trim();
-            
+
             if (rarityText.includes('легендар')) return 'легендарный';
             if (rarityText.includes('мифич')) return 'мифический';
             if (rarityText.includes('эпич')) return 'эпический';
             if (rarityText.includes('прост')) return 'простой';
-            
-            return 'простой'; // по умолчанию
-        }
 
-        // Получить cookie
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-            return null;
+            return 'простой';
         }
 
         // Получить данные пользователя из Telegram WebApp
@@ -472,23 +449,9 @@
                     };
                 }
 
-                // Fallback из cookies
-                const savedUserId = getCookie('tg_user_id');
-                const savedUsername = getCookie('tg_username');
-                const savedName = getCookie('tg_name');
-
-                if (savedUserId) {
-                    return {
-                        id: savedUserId,
-                        username: savedUsername || 'unknown',
-                        display_name: savedName || 'Игрок',
-                        first_name: savedName ? savedName.split(' ')[0] : 'Игрок'
-                    };
-                }
-
                 // Fallback для тестирования
                 return {
-                    id: Date.now().toString(),
+                    id: '123456789',
                     username: 'test_user',
                     display_name: 'Тестовый игрок',
                     first_name: 'Тестовый'
@@ -496,11 +459,45 @@
             } catch (error) {
                 console.log('Ошибка получения данных пользователя:', error);
                 return {
-                    id: Date.now().toString(),
+                    id: '123456789',
                     username: 'test_user',
                     display_name: 'Тестовый игрок',
                     first_name: 'Тестовый'
                 };
+            }
+        }
+
+        // Запрос к Worker API
+        async function makeRequest(endpoint, options = {}) {
+            try {
+                const response = await fetch(`${WORKER_URL}${endpoint}`, {
+                    method: options.method || 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    body: options.body ? JSON.stringify(options.body) : undefined
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                return await response.json();
+            } catch (error) {
+                console.error('Request failed:', error);
+                throw error;
+            }
+        }
+
+        // Получить данные пользователя из базы
+        async function getUserData(userId) {
+            try {
+                const data = await makeRequest(`api/user/${userId}`);
+                return data.success ? data.user : null;
+            } catch (error) {
+                console.log('Ошибка получения данных пользователя:', error);
+                return null;
             }
         }
 
@@ -509,23 +506,6 @@
             const avatarElement = document.getElementById('userAvatar');
             avatarElement.classList.add('loading');
 
-            // Проверяем сохраненное фото из localStorage
-            const savedPhoto = localStorage.getItem('user_photo');
-            if (savedPhoto) {
-                const img = document.createElement('img');
-                img.src = savedPhoto;
-                img.onload = function() {
-                    avatarElement.innerHTML = '';
-                    avatarElement.appendChild(img);
-                    avatarElement.classList.remove('loading');
-                };
-                img.onerror = function() {
-                    showInitial();
-                };
-                return;
-            }
-
-            // Проверяем Telegram фото
             if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.photo_url) {
                 const img = document.createElement('img');
                 img.src = tg.initDataUnsafe.user.photo_url;
@@ -533,8 +513,6 @@
                     avatarElement.innerHTML = '';
                     avatarElement.appendChild(img);
                     avatarElement.classList.remove('loading');
-                    // Сохраняем фото в localStorage
-                    localStorage.setItem('user_photo', tg.initDataUnsafe.user.photo_url);
                 };
                 img.onerror = function() {
                     showInitial();
@@ -552,69 +530,6 @@
             }
 
             showInitial();
-        }
-
-        // Функция для запросов с множественными API ключами
-        async function makeApiRequest(url, options = {}) {
-            for (let i = 0; i < config.apiTokens.length; i++) {
-                try {
-                    const requestOptions = {
-                        ...options,
-                        headers: {
-                            'xc-token': config.apiTokens[i],
-                            'Content-Type': 'application/json',
-                            ...options.headers
-                        }
-                    };
-
-                    const response = await fetch(url, requestOptions);
-                    
-                    if (response.ok) {
-                        return await response.json();
-                    } else {
-                        throw new Error(`HTTP ${response.status}`);
-                    }
-                } catch (error) {
-                    console.log(`Ошибка с ключом T${i + 1}:`, error);
-                    
-                    // Если это последний ключ, выбрасываем ошибку
-                    if (i === config.apiTokens.length - 1) {
-                        throw new Error(`Все API ключи недоступны. Последняя ошибка: ${error.message}`);
-                    }
-                    
-                    // Небольшая задержка перед следующей попыткой
-                    await new Promise(resolve => setTimeout(resolve, 500));
-                }
-            }
-        }
-
-        // Получить данные пользователя из localStorage
-        function getUserFromLocalStorage() {
-            try {
-                const saved = localStorage.getItem('hockey_user_data');
-                if (saved) {
-                    const data = JSON.parse(saved);
-                    console.log('Данные пользователя из localStorage:', data);
-                    return data;
-                }
-            } catch (error) {
-                console.log('Ошибка чтения из localStorage:', error);
-            }
-            return null;
-        }
-
-        // Получить данные пользователя из базы (fallback)
-        async function getUserData(userId) {
-            try {
-                const url = `${config.baseUrl}/${config.orgs}/${config.projectName}/${config.tableName}`;
-                const data = await makeApiRequest(url, { method: 'GET' });
-                const user = data.list ? data.list.find(u => u.user_id && u.user_id.toString() === userId.toString()) : null;
-                
-                return user;
-            } catch (error) {
-                console.log('Ошибка получения данных пользователя:', error);
-                return null;
-            }
         }
 
         // Парсинг карточек из строки
@@ -646,7 +561,7 @@
                 'Рушан': 'https://raw.githubusercontent.com/ChatGPT-Course/Xokkey/main/avatar/Rushan_rafikov.jpg',
                 'Сериков': 'https://raw.githubusercontent.com/ChatGPT-Course/Xokkey/main/avatar/artem_serikov.jpg'
             };
-            
+
             return avatarMap[name] || null;
         }
 
@@ -674,13 +589,12 @@
         // Отобразить инвентарь
         function displayInventory(cards) {
             const container = document.getElementById('inventoryContainer');
-            
+
             if (cards.length === 0) {
                 container.innerHTML = '<div class="empty-inventory">Инвентарь пуст<br>Получите карточки в разделе "Обмен"</div>';
                 return;
             }
 
-            // Сортируем карточки по редкости
             const sortedCards = sortCardsByRarity(cards);
 
             const inventoryGrid = document.createElement('div');
@@ -690,15 +604,14 @@
                 const cardElement = document.createElement('div');
                 const rarityClass = getRarityClass(card.rarity);
                 cardElement.className = `card-item ${rarityClass}`;
-                
+
                 const avatarUrl = getCardAvatar(card.name);
-                
+
                 if (avatarUrl) {
                     cardElement.innerHTML = `
                         <div class="card-rarity-badge ${normalizeRarity(card.rarity)}">${card.rarity}</div>
                         <img src="${avatarUrl}" alt="${card.name}" class="card-avatar" 
-                             onload="console.log('Аватар загружен:', '${card.name}');"
-                             onerror="console.log('Ошибка загрузки аватара:', '${card.name}'); this.style.display='none'; this.nextElementSibling.style.display='block';">
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                         <div class="card-icon" style="display: none;">🏒</div>
                         <div class="card-name">${card.name}</div>
                         <button class="card-manage-btn">Управление</button>
@@ -711,7 +624,7 @@
                         <button class="card-manage-btn">Управление</button>
                     `;
                 }
-                
+
                 inventoryGrid.appendChild(cardElement);
             });
 
@@ -734,29 +647,23 @@
                 document.getElementById('userName').textContent = userData.display_name;
                 document.getElementById('userUsername').textContent = `@${userData.username}`;
                 document.getElementById('userId').textContent = `ID: ${userData.id}`;
-                
+
                 // Устанавливаем анимацию загрузки для валюты
                 const currencyDisplay = document.querySelector('.currency-display');
                 currencyDisplay.classList.add('loading');
-                
+
                 // Получаем аватар
                 getUserAvatar(userData);
 
-                // Сначала пытаемся получить данные из localStorage
-                let dbUser = getUserFromLocalStorage();
-                
-                // Если нет данных в localStorage, пытаемся загрузить из базы
-                if (!dbUser) {
-                    console.log('Данных в localStorage нет, загружаем из базы...');
-                    dbUser = await getUserData(userData.id);
-                }
-                
+                // Получаем данные из базы
+                const dbUser = await getUserData(userData.id);
+
                 // Убираем анимацию загрузки
                 currencyDisplay.classList.remove('loading');
-                
+
                 if (dbUser) {
-                    document.getElementById('userMoney').textContent = dbUser.money || 0;
-                    
+                    document.getElementById('userMoney').textContent = dbUser.balance || 0;
+
                     // Парсим и отображаем карточки
                     const cards = parseCards(dbUser.card);
                     displayInventory(cards);
