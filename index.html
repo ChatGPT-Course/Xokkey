@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -59,6 +58,54 @@
             justify-content: center;
         }
 
+        /* Загрузочный экран */
+        .loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+        }
+
+        .loading-spinner {
+            width: 60px;
+            height: 60px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid #e74c3c;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading-text {
+            font-size: 1.2rem;
+            color: white;
+            text-align: center;
+        }
+
+        /* Основной контент */
+        .main-content {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: all 0.5s ease;
+        }
+
+        .main-content.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
         .user-avatar {
             width: 120px;
             height: 120px;
@@ -85,24 +132,6 @@
             font-size: 1.2rem;
             font-weight: 600;
             backdrop-filter: blur(5px);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .currency-display.loading::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-            animation: shimmer 1.5s infinite;
-        }
-
-        @keyframes shimmer {
-            0% { left: -100%; }
-            100% { left: 100%; }
         }
 
         .currency-display .stick-icon {
@@ -172,177 +201,75 @@
             color: rgba(236, 240, 241, 0.8);
             text-align: center;
         }
+
+        .error-message {
+            background: rgba(231, 76, 60, 0.2);
+            border: 1px solid rgba(231, 76, 60, 0.5);
+            color: #fff;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
     </style>
 </head>
 <body>
+    <!-- Загрузочный экран -->
+    <div id="loadingScreen" class="loading-screen">
+        <div class="loading-spinner"></div>
+        <div class="loading-text">Загрузка данных...</div>
+    </div>
+
     <div class="header">
         <div class="header-title">Hockey Shootouts</div>
     </div>
 
     <div class="container">
-        <div class="user-avatar" id="userAvatar">
-            <img id="userPhoto" style="display: none; width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" alt="User Photo">
-            <span id="userInitial">👤</span>
-        </div>
-        
-        <div class="currency-display">
-            <span>Клюшек: <span id="userMoney">0</span></span>
-            <span class="stick-icon">🏒</span>
-        </div>
+        <div id="mainContent" class="main-content">
+            <div class="user-avatar" id="userAvatar">
+                <img id="userPhoto" style="display: none; width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" alt="User Photo">
+                <span id="userInitial">👤</span>
+            </div>
 
-        <a href="game.html" class="btn btn-primary">
-            Играть
-        </a>
+            <div class="currency-display">
+                <span>Клюшек: <span id="userMoney">0</span></span>
+                <span class="stick-icon">🏒</span>
+            </div>
 
-        <a href="profile.html" class="btn btn-secondary">
-            Мой профиль
-        </a>
+            <div id="errorMessage" class="error-message" style="display: none;"></div>
 
-        <div class="menu-grid">
-            <a href="craft.html" class="btn btn-secondary">
-                Крафт
+            <a href="game.html" class="btn btn-primary">
+                Играть
             </a>
-            <a href="obmen.html" class="btn btn-secondary">
-                Обмен
-            </a>
-        </div>
 
-        <div class="version">Hockey Shootouts V(b-1.0)</div>
+            <a href="profile.html" class="btn btn-secondary">
+                Мой профиль
+            </a>
+
+            <div class="menu-grid">
+                <a href="craft.html" class="btn btn-secondary">
+                    Крафт
+                </a>
+                <a href="obmen.html" class="btn btn-secondary">
+                    Обмен
+                </a>
+            </div>
+
+            <div class="version">Hockey Shootouts V(b-1.0)</div>
+        </div>
     </div>
 
     <script>
-        // Конфигурация для Cloudflare D1 API
-        const config = {
-            baseUrl: 'https://hockey-d1-api.egorspirin10.workers.dev', // URL вашего развернутого Worker'а
-            timeout: 10000,
-            retryDelay: 200,
-            maxRetries: 3,
-            cacheTimeout: 30000 // 30 секунд кэш
-        };
+        const WORKER_URL = 'https://googletest.egorspirin10.workers.dev/';
 
-        // Кэш для запросов
-        const requestCache = new Map();
-        const pendingRequests = new Map();
-        
         let tg = window.Telegram.WebApp;
         let userData = null;
         let isInitialized = false;
-        
-
-        // Функция для работы с D1 API
-        async function makeApiRequest(endpoint, options = {}) {
-            const cacheKey = `${endpoint}_${JSON.stringify(options)}`;
-            
-            // Проверяем кэш для GET запросов
-            if (options.method !== 'POST' && options.method !== 'PUT' && options.method !== 'DELETE') {
-                const cached = requestCache.get(cacheKey);
-                if (cached && Date.now() - cached.timestamp < config.cacheTimeout) {
-                    return cached.data;
-                }
-            }
-
-            // Предотвращаем дублирование запросов
-            if (pendingRequests.has(cacheKey)) {
-                return await pendingRequests.get(cacheKey);
-            }
-
-            const requestPromise = executeRequest(endpoint, options);
-            pendingRequests.set(cacheKey, requestPromise);
-
-            try {
-                const result = await requestPromise;
-                
-                // Кэшируем успешные GET запросы
-                if (options.method !== 'POST' && options.method !== 'PUT' && options.method !== 'DELETE') {
-                    requestCache.set(cacheKey, {
-                        data: result,
-                        timestamp: Date.now()
-                    });
-                }
-                
-                return result;
-            } finally {
-                pendingRequests.delete(cacheKey);
-            }
-        }
-
-        async function executeRequest(endpoint, options = {}) {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), config.timeout);
-
-            try {
-                const url = `${config.baseUrl}${endpoint}`;
-                
-                const requestOptions = {
-                    ...options,
-                    signal: controller.signal,
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Cache-Control': 'no-cache',
-                        ...options.headers
-                    }
-                };
-
-                const response = await fetch(url, requestOptions);
-                clearTimeout(timeoutId);
-
-                if (response.ok) {
-                    return await response.json();
-                }
-
-                // При ошибке ретрай
-                if (response.status === 429 || response.status >= 500) {
-                    await new Promise(resolve => setTimeout(resolve, config.retryDelay));
-                    return await executeRequest(endpoint, options);
-                }
-
-                throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                
-            } catch (error) {
-                clearTimeout(timeoutId);
-                
-                if (error.name === 'AbortError') {
-                    throw new Error('Request timeout');
-                }
-                
-                throw error;
-            }
-        }
-
-        // Дебаунс для предотвращения частых запросов
-        function debounce(func, wait) {
-            let timeout;
-            return function executedFunction(...args) {
-                const later = () => {
-                    clearTimeout(timeout);
-                    func(...args);
-                };
-                clearTimeout(timeout);
-                timeout = setTimeout(later, wait);
-            };
-        }
-
-        // Установить cookie
-        function setCookie(name, value, days = 365) {
-            const expires = new Date();
-            expires.setTime(expires.getTime() + (days * 24 * 60 * 60 * 1000));
-            document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/`;
-        }
-
-        // Получить cookie
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-            return null;
-        }
 
         // Получить данные пользователя из Telegram WebApp
         function getTelegramUserData() {
             try {
-                tg.expand();
-
-                if (tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
                     const user = tg.initDataUnsafe.user;
                     return {
                         id: user.id.toString(),
@@ -354,21 +281,8 @@
                     };
                 }
 
-                // Используем сохраненные данные если есть
-                const savedUserId = getCookie('tg_user_id');
-                if (savedUserId) {
-                    return {
-                        id: savedUserId,
-                        username: getCookie('tg_username') || 'test_user',
-                        first_name: getCookie('tg_name') || 'Игрок',
-                        last_name: '',
-                        display_name: getCookie('tg_name') || 'Игрок',
-                        language_code: 'ru'
-                    };
-                }
-
                 // Fallback для тестирования
-                const fallbackId = Date.now().toString();
+                const fallbackId = '123456789';
                 return {
                     id: fallbackId,
                     username: 'test_user',
@@ -379,7 +293,7 @@
                 };
             } catch (error) {
                 console.log('Ошибка получения данных пользователя:', error);
-                const fallbackId = Date.now().toString();
+                const fallbackId = '123456789';
                 return {
                     id: fallbackId,
                     username: 'test_user',
@@ -391,72 +305,71 @@
             }
         }
 
-        // Сохранить данные пользователя в cookies
-        function saveUserData(userData) {
-            setCookie('tg_user_id', userData.id);
-            setCookie('tg_username', userData.username);
-            setCookie('tg_name', userData.display_name);
-            setCookie('tg_language', userData.language_code);
+        // Показать ошибку
+        function showError(message) {
+            const errorEl = document.getElementById('errorMessage');
+            errorEl.textContent = message;
+            errorEl.style.display = 'block';
         }
 
-        // Получение данных пользователя из D1
-        async function getUserData(userId) {
-            try {
-                console.log('Запрос данных пользователя для ID:', userId);
-                console.log('URL запроса:', `${config.baseUrl}/api/user?user_id=${userId}`);
-                
-                const data = await makeApiRequest(`/api/user?user_id=${userId}`, { method: 'GET' });
-                console.log('Ответ от API при получении пользователя:', data);
-                return data.success ? data.user : null;
-            } catch (error) {
-                console.log('Ошибка получения данных пользователя:');
-                console.log('Error message:', error.message);
-                console.log('Error stack:', error.stack);
-                console.log('Full error:', error);
-                return null;
-            }
+        // Скрыть ошибку
+        function hideError() {
+            document.getElementById('errorMessage').style.display = 'none';
         }
 
-        // Создание пользователя в D1
-        async function createUser(userData) {
+        // Запрос к Worker API
+        async function makeRequest(endpoint, options = {}) {
             try {
-                const newUserData = {
-                    user_id: userData.id,
-                    user_name: userData.display_name,
-                    money: 100,
-                    card: ''
-                };
-
-                console.log('Создание пользователя с данными:', newUserData);
-                console.log('URL запроса:', `${config.baseUrl}/api/user`);
-
-                const result = await makeApiRequest('/api/user', {
-                    method: 'POST',
-                    body: JSON.stringify(newUserData)
+                const response = await fetch(`${WORKER_URL}${endpoint}`, {
+                    method: options.method || 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        ...options.headers
+                    },
+                    body: options.body ? JSON.stringify(options.body) : undefined
                 });
 
-                console.log('Ответ от API при создании пользователя:', result);
-                return result.success ? result.user : null;
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                return await response.json();
             } catch (error) {
-                console.log('Ошибка создания пользователя:');
-                console.log('Error message:', error.message);
-                console.log('Error stack:', error.stack);
-                console.log('Full error:', error);
+                console.error('Request failed:', error);
                 throw error;
             }
         }
 
-        // Обновление данных пользователя в D1
-        async function updateUserData(userId, updates) {
+        // Получение данных пользователя
+        async function getUserData(userId) {
             try {
-                const result = await makeApiRequest('/api/user', {
-                    method: 'PUT',
-                    body: JSON.stringify({ user_id: userId, ...updates })
+                const data = await makeRequest(`api/user/${userId}`);
+                return data.success ? data.user : null;
+            } catch (error) {
+                console.log('Ошибка получения данных пользователя:', error);
+                return null;
+            }
+        }
+
+        // Создание пользователя
+        async function createUser(userData) {
+            try {
+                const newUserData = {
+                    id: userData.id,
+                    name: userData.display_name,
+                    username: userData.username,
+                    balance: 100,
+                    card: ''
+                };
+
+                const result = await makeRequest('api/user', {
+                    method: 'POST',
+                    body: newUserData
                 });
 
                 return result.success ? result.user : null;
             } catch (error) {
-                console.log('Ошибка обновления данных пользователя:', error);
+                console.log('Ошибка создания пользователя:', error);
                 throw error;
             }
         }
@@ -465,14 +378,14 @@
         function getUserAvatar(userData) {
             const photoElement = document.getElementById('userPhoto');
             const initialElement = document.getElementById('userInitial');
-            
+
             if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.photo_url) {
                 photoElement.src = tg.initDataUnsafe.user.photo_url;
                 photoElement.style.display = 'block';
                 initialElement.style.display = 'none';
                 return;
             }
-            
+
             if (userData.first_name) {
                 initialElement.textContent = userData.first_name.charAt(0).toUpperCase();
             } else {
@@ -482,182 +395,81 @@
             initialElement.style.display = 'block';
         }
 
-        // Защита от спама - блокировка кнопок
-        function enableButtonsAfterDelay() {
+        // Скрыть загрузочный экран
+        function hideLoadingScreen() {
+            const loadingScreen = document.getElementById('loadingScreen');
+            const mainContent = document.getElementById('mainContent');
+
+            loadingScreen.style.opacity = '0';
             setTimeout(() => {
-                document.querySelectorAll('.btn').forEach(btn => {
-                    btn.style.pointerEvents = 'auto';
-                    btn.style.opacity = '1';
-                });
-            }, 500); // Уменьшили с 1000мс до 500мс
+                loadingScreen.style.display = 'none';
+                mainContent.classList.add('visible');
+            }, 300);
         }
 
-        function disableButtons() {
-            document.querySelectorAll('.btn').forEach(btn => {
-                btn.style.pointerEvents = 'none';
-                btn.style.opacity = '0.5';
-            });
-        }
-
-        // Тест доступности API
-        async function testApiConnection() {
-            try {
-                console.log('Тестирование подключения к API...');
-                console.log('URL:', config.baseUrl);
-                const response = await fetch(config.baseUrl);
-                console.log('Статус ответа от API:', response.status);
-                console.log('Headers ответа:', [...response.headers.entries()]);
-                
-                if (!response.ok) {
-                    const responseText = await response.text();
-                    console.log('API недоступен. Ответ:', responseText);
-                    console.log('Проверьте:');
-                    console.log('1. Правильность URL Worker\'а');
-                    console.log('2. Что Worker развернут и активен');
-                    console.log('3. Что привязана D1 база данных');
-                    return false;
-                }
-                return true;
-            } catch (error) {
-                console.log('API недоступен. Ошибка подключения:', error);
-                console.log('Проверьте URL Worker\'а в настройках');
-                return false;
-            }
-        }
-
-        // Сохранить данные пользователя в localStorage
-        function saveUserToLocalStorage(userData) {
-            try {
-                const dataToSave = {
-                    user_id: userData.user_id || userData.id,
-                    user_name: userData.user_name || userData.display_name,
-                    money: userData.money || 0,
-                    card: userData.card || '',
-                    lastUpdated: Date.now()
-                };
-                localStorage.setItem('hockey_user_data', JSON.stringify(dataToSave));
-                console.log('Данные пользователя сохранены в localStorage:', dataToSave);
-            } catch (error) {
-                console.log('Ошибка сохранения в localStorage:', error);
-            }
-        }
-
-        // Получить данные пользователя из localStorage
-        function getUserFromLocalStorage() {
-            try {
-                const saved = localStorage.getItem('hockey_user_data');
-                if (saved) {
-                    const data = JSON.parse(saved);
-                    // Проверяем, не устарели ли данные (1 час)
-                    if (Date.now() - data.lastUpdated < 3600000) {
-                        return data;
-                    }
-                }
-            } catch (error) {
-                console.log('Ошибка чтения из localStorage:', error);
-            }
-            return null;
-        }
-
-        // Оптимизированная проверка пользователя в базе данных
+        // Проверка пользователя в базе данных
         async function checkUserInDatabase(userData) {
-            const currencyDisplay = document.querySelector('.currency-display');
-            currencyDisplay.classList.add('loading');
-
             try {
-                // Сначала проверяем localStorage
-                const cachedData = getUserFromLocalStorage();
-                if (cachedData && cachedData.user_id === userData.id) {
-                    currencyDisplay.classList.remove('loading');
-                    document.getElementById('userMoney').textContent = cachedData.money || 0;
-                    console.log('Данные загружены из localStorage');
-                    return true;
-                }
-
-                // Проверяем доступность API
-                const apiAvailable = await testApiConnection();
-                if (!apiAvailable) {
-                    console.log('API недоступен, пропускаем проверку базы данных');
-                    currencyDisplay.classList.remove('loading');
-                    document.getElementById('userMoney').textContent = 0;
-                    return false;
-                }
-
                 let existingUser = await getUserData(userData.id);
 
                 if (existingUser) {
-                    currencyDisplay.classList.remove('loading');
-                    document.getElementById('userMoney').textContent = existingUser.money || 0;
-                    // Сохраняем в localStorage
-                    saveUserToLocalStorage(existingUser);
-                    return true;
+                    document.getElementById('userMoney').textContent = existingUser.balance || 0;
+                    return existingUser;
                 }
 
-                // Создаем пользователя только если его нет
+                // Создаем пользователя если его нет
                 const createdUser = await createUser(userData);
                 if (createdUser) {
-                    currencyDisplay.classList.remove('loading');
-                    document.getElementById('userMoney').textContent = 100;
-                    // Сохраняем в localStorage
-                    saveUserToLocalStorage(createdUser);
-                    return true;
+                    document.getElementById('userMoney').textContent = createdUser.balance || 100;
+                    return createdUser;
                 }
+
+                throw new Error('Не удалось создать пользователя');
 
             } catch (error) {
-                console.log('Ошибка при работе с базой данных:');
-                console.log('Error message:', error.message);
-                console.log('Error stack:', error.stack);
-                console.log('Full error:', error);
-                currencyDisplay.classList.remove('loading');
+                console.log('Ошибка при работе с базой данных:', error);
+                showError('Ошибка загрузки данных. Попробуйте обновить страницу.');
                 document.getElementById('userMoney').textContent = 0;
+                return null;
             }
-            
-            return true;
         }
 
-        // Оптимизированная инициализация приложения
+        // Инициализация приложения
         async function initApp() {
             if (isInitialized) return;
-            
-            try {
-                disableButtons();
 
+            try {
                 if (window.Telegram && window.Telegram.WebApp) {
                     tg.ready();
-                    userData = getTelegramUserData();
-                    saveUserData(userData);
-                    getUserAvatar(userData);
-                    await checkUserInDatabase(userData);
+                    tg.expand();
                 }
 
+                userData = getTelegramUserData();
+                getUserAvatar(userData);
+
+                // Проверяем/создаем пользователя в базе
+                await checkUserInDatabase(userData);
+
+                hideError();
                 isInitialized = true;
-                enableButtonsAfterDelay();
 
             } catch (error) {
                 console.log('Ошибка инициализации:', error);
-                const currencyDisplay = document.querySelector('.currency-display');
-                currencyDisplay.classList.remove('loading');
+                showError('Ошибка инициализации. Попробуйте обновить страницу.');
                 document.getElementById('userMoney').textContent = 0;
                 getUserAvatar(userData || {});
-                enableButtonsAfterDelay();
                 isInitialized = true;
+            } finally {
+                // Всегда скрываем загрузочный экран
+                setTimeout(() => {
+                    hideLoadingScreen();
+                }, 1000);
             }
         }
 
-        // Очистка кэша каждые 5 минут
-        setInterval(() => {
-            const now = Date.now();
-            for (const [key, value] of requestCache.entries()) {
-                if (now - value.timestamp > config.cacheTimeout) {
-                    requestCache.delete(key);
-                }
-            }
-        }, 300000);
-
-        // Оптимизированная инициализация
+        // Инициализация
         document.addEventListener('DOMContentLoaded', initApp);
-        
-        // Убираем повторную инициализацию через window.load
+
         if (document.readyState === 'complete') {
             initApp();
         }
