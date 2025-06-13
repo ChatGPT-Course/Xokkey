@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Обмен - Hockey Shootouts</title>
+    <title>Магазин - Hockey Shootouts</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         * {
@@ -365,7 +365,7 @@
         <div class="content">
             <div class="shop-section">
                 <div class="section-title">Карточки игроков</div>
-                
+
                 <div class="cards-grid" id="cardsGrid">
                     <div class="loading">Загрузка карточек...</div>
                 </div>
@@ -435,12 +435,12 @@
         // Нормализация редкости для CSS классов
         function normalizeRarity(rarity) {
             const rarityText = rarity.toLowerCase().trim();
-            
+
             if (rarityText.includes('легендар')) return 'легендарный';
             if (rarityText.includes('мифич')) return 'мифический';
             if (rarityText.includes('эпич')) return 'эпический';
             if (rarityText.includes('прост')) return 'простой';
-            
+
             return 'простой'; // по умолчанию
         }
 
@@ -548,7 +548,7 @@
             playerCards.forEach(card => {
                 const cardElement = document.createElement('div');
                 cardElement.className = 'card-item';
-                
+
                 cardElement.innerHTML = `
                     <div class="card-rarity-badge ${normalizeRarity(card.rarity)}">${card.rarity}</div>
                     <div class="card-content">
@@ -563,7 +563,7 @@
                         </div>
                     </div>
                 `;
-                
+
                 container.appendChild(cardElement);
             });
 
@@ -574,12 +574,12 @@
         function updateButtonStates() {
             const money = currentUserData?.balance || 0;
             const buttons = document.querySelectorAll('.buy-btn');
-            
+
             buttons.forEach(button => {
                 const cardElement = button.closest('.card-item');
                 const priceText = cardElement.querySelector('.card-price').textContent;
                 const price = parseInt(priceText.match(/\d+/)[0]);
-                
+
                 if (money < price) {
                     button.disabled = true;
                     button.textContent = 'Недостаточно';
@@ -616,11 +616,11 @@
             try {
                 const { name, rarity, price } = pendingPurchase;
                 const currentMoney = currentUserData.balance || 0;
-                
+
                 // Создаем новую карточку
                 const newCard = `${name}(${rarity})`;
                 const existingCards = currentUserData.card || '';
-                
+
                 // Объединяем с существующими карточками
                 let allCards = existingCards ? existingCards.split(',').map(s => s.trim()).filter(s => s) : [];
                 allCards.push(newCard);
@@ -638,7 +638,10 @@
                     // Обновляем локальные данные
                     currentUserData.balance = updatedUser.balance;
                     currentUserData.card = updatedUser.card;
-                    
+
+                    // Очищаем кэш чтобы при следующем переходе загрузились свежие данные
+                    clearUserCache();
+
                     // Обновляем отображение
                     document.getElementById('userMoney').textContent = currentUserData.balance;
                     updateButtonStates();
@@ -675,6 +678,27 @@
             }
         }
 
+        // Кэширование данных пользователя
+        function getCachedUserData() {
+            try {
+                const cached = localStorage.getItem('userCache');
+                if (cached) {
+                    const { data, timestamp } = JSON.parse(cached);
+                    // Кэш валиден 5 минут
+                    if (Date.now() - timestamp < 5 * 60 * 1000) {
+                        return data;
+                    }
+                }
+            } catch (error) {
+                console.log('Ошибка чтения кэша:', error);
+            }
+            return null;
+        }
+
+        function clearUserCache() {
+            localStorage.removeItem('userCache');
+        }
+
         // Инициализация магазина
         async function initShop() {
             try {
@@ -686,25 +710,35 @@
                 userData = getTelegramUserData();
                 console.log('Данные пользователя:', userData);
 
-                // Устанавливаем анимацию загрузки для валюты
-                const currencyDisplay = document.getElementById('currencyDisplay');
-                currencyDisplay.classList.add('loading');
-
-                // Получаем данные из базы
-                currentUserData = await getUserData(userData.id);
+                // Проверяем кэш
+                const cachedUser = getCachedUserData();
                 
-                // Убираем анимацию загрузки
-                currencyDisplay.classList.remove('loading');
-                
-                if (currentUserData) {
+                if (cachedUser && cachedUser.id === userData.id) {
+                    // Используем кэшированные данные
+                    currentUserData = cachedUser;
                     document.getElementById('userMoney').textContent = currentUserData.balance || 0;
+                    displayCards();
                 } else {
-                    document.getElementById('userMoney').textContent = 0;
-                    showMessage('Ошибка загрузки данных пользователя', 'error');
-                }
+                    // Устанавливаем анимацию загрузки для валюты
+                    const currencyDisplay = document.getElementById('currencyDisplay');
+                    currencyDisplay.classList.add('loading');
 
-                // Отображаем карточки
-                displayCards();
+                    // Получаем данные из базы
+                    currentUserData = await getUserData(userData.id);
+
+                    // Убираем анимацию загрузки
+                    currencyDisplay.classList.remove('loading');
+
+                    if (currentUserData) {
+                        document.getElementById('userMoney').textContent = currentUserData.balance || 0;
+                    } else {
+                        document.getElementById('userMoney').textContent = 0;
+                        showMessage('Ошибка загрузки данных пользователя', 'error');
+                    }
+
+                    // Отображаем карточки
+                    displayCards();
+                }
 
             } catch (error) {
                 console.error('Ошибка инициализации магазина:', error);
