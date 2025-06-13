@@ -397,19 +397,7 @@
     </div>
 
     <script>
-        // Конфигурация NocoDB с множественными API ключами
-        const config = {
-            orgs: 'wf52x8bf',
-            projectName: 'pawgl0ouxic497w',
-            tableName: 'mtfr4e3wywjtyua',
-            apiTokens: [
-                'TowDsj9CjbcU97wkk8ojrFmLChpZT6-KkHrYlpu8', // T1
-                'TowDsj9CjbcU97wkk8ojrFmLChpZT6-KkHrYlpu8', // T2
-                'hwE0I5dS4sDwPhrPS6JIjtgH62pPHU0tjqbRtGff', // T3
-                'kVGhgZD0SzJPmt8MLqeapHIfoa-QcGnc56ZgLGiL'  // T4
-            ],
-            baseUrl: 'https://app.nocodb.com/api/v1/db/data'
-        };
+        const WORKER_URL = 'https://googletest.egorspirin10.workers.dev/';
 
         let tg = window.Telegram.WebApp;
         let userData = null;
@@ -456,14 +444,6 @@
             return 'простой'; // по умолчанию
         }
 
-        // Получить cookie
-        function getCookie(name) {
-            const value = `; ${document.cookie}`;
-            const parts = value.split(`; ${name}=`);
-            if (parts.length === 2) return parts.pop().split(';').shift();
-            return null;
-        }
-
         // Получить данные пользователя из Telegram WebApp
         function getTelegramUserData() {
             try {
@@ -476,159 +456,50 @@
                     };
                 }
 
-                // Fallback из cookies
-                const savedUserId = getCookie('tg_user_id');
-                const savedUsername = getCookie('tg_username');
-                const savedName = getCookie('tg_name');
-
-                if (savedUserId) {
-                    return {
-                        id: savedUserId,
-                        username: savedUsername || 'unknown',
-                        display_name: savedName || 'Игрок'
-                    };
-                }
-
                 // Fallback для тестирования
                 return {
-                    id: Date.now().toString(),
+                    id: '123456789',
                     username: 'test_user',
                     display_name: 'Тестовый игрок'
                 };
             } catch (error) {
                 console.log('Ошибка получения данных пользователя:', error);
                 return {
-                    id: Date.now().toString(),
+                    id: '123456789',
                     username: 'test_user',
                     display_name: 'Тестовый игрок'
                 };
             }
         }
 
-        // Оптимизированная система запросов
-        let currentTokenIndex = 0;
-        const requestCache = new Map();
-        const pendingRequests = new Map();
-        
-        async function makeApiRequest(url, options = {}) {
-            const cacheKey = `${url}_${JSON.stringify(options)}`;
-            
-            // Проверяем кэш для GET запросов
-            if (options.method !== 'POST' && options.method !== 'PATCH' && options.method !== 'DELETE') {
-                const cached = requestCache.get(cacheKey);
-                if (cached && Date.now() - cached.timestamp < 30000) {
-                    return cached.data;
-                }
-            }
-
-            // Предотвращаем дублирование запросов
-            if (pendingRequests.has(cacheKey)) {
-                return await pendingRequests.get(cacheKey);
-            }
-
-            const requestPromise = executeRequest(url, options);
-            pendingRequests.set(cacheKey, requestPromise);
-
+        // Запрос к Worker API
+        async function makeRequest(endpoint, options = {}) {
             try {
-                const result = await requestPromise;
-                
-                // Кэшируем GET запросы
-                if (options.method !== 'POST' && options.method !== 'PATCH' && options.method !== 'DELETE') {
-                    requestCache.set(cacheKey, {
-                        data: result,
-                        timestamp: Date.now()
-                    });
-                }
-                
-                return result;
-            } finally {
-                pendingRequests.delete(cacheKey);
-            }
-        }
-
-        async function executeRequest(url, options = {}) {
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000);
-
-            try {
-                const token = config.apiTokens[currentTokenIndex];
-                
-                const requestOptions = {
-                    ...options,
-                    signal: controller.signal,
+                const response = await fetch(`${WORKER_URL}${endpoint}`, {
+                    method: options.method || 'GET',
                     headers: {
-                        'xc-token': token,
                         'Content-Type': 'application/json',
-                        'Cache-Control': 'no-cache',
                         ...options.headers
-                    }
-                };
+                    },
+                    body: options.body ? JSON.stringify(options.body) : undefined
+                });
 
-                const response = await fetch(url, requestOptions);
-                clearTimeout(timeoutId);
-
-                if (response.ok) {
-                    return await response.json();
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
 
-                if (response.status === 429 || response.status >= 500) {
-                    currentTokenIndex = (currentTokenIndex + 1) % config.apiTokens.length;
-                    await new Promise(resolve => setTimeout(resolve, 200));
-                    return await executeRequest(url, options);
-                }
-
-                throw new Error(`HTTP ${response.status}`);
-                
+                return await response.json();
             } catch (error) {
-                clearTimeout(timeoutId);
-                
-                if (error.name === 'AbortError') {
-                    throw new Error('Request timeout');
-                }
-                
-                currentTokenIndex = (currentTokenIndex + 1) % config.apiTokens.length;
+                console.error('Request failed:', error);
                 throw error;
             }
         }
 
-        // Получить данные пользователя из localStorage
-        function getUserFromLocalStorage() {
-            try {
-                const saved = localStorage.getItem('hockey_user_data');
-                if (saved) {
-                    const data = JSON.parse(saved);
-                    console.log('Данные пользователя из localStorage:', data);
-                    return data;
-                }
-            } catch (error) {
-                console.log('Ошибка чтения из localStorage:', error);
-            }
-            return null;
-        }
-
-        // Сохранить данные пользователя в localStorage
-        function saveUserToLocalStorage(userData) {
-            try {
-                const dataToSave = {
-                    user_id: userData.user_id || userData.id,
-                    user_name: userData.user_name || userData.display_name,
-                    money: userData.money || 0,
-                    card: userData.card || '',
-                    lastUpdated: Date.now()
-                };
-                localStorage.setItem('hockey_user_data', JSON.stringify(dataToSave));
-                console.log('Данные пользователя обновлены в localStorage:', dataToSave);
-            } catch (error) {
-                console.log('Ошибка сохранения в localStorage:', error);
-            }
-        }
-
-        // Оптимизированное получение данных пользователя (fallback)
+        // Получить данные пользователя из базы
         async function getUserData(userId) {
             try {
-                const url = `${config.baseUrl}/${config.orgs}/${config.projectName}/${config.tableName}?where=(user_id,eq,${userId})&limit=1`;
-                const data = await makeApiRequest(url, { method: 'GET' });
-                return data.list && data.list.length > 0 ? data.list[0] : null;
+                const data = await makeRequest(`api/user/${userId}`);
+                return data.success ? data.user : null;
             } catch (error) {
                 console.log('Ошибка получения данных пользователя:', error);
                 return null;
@@ -638,18 +509,12 @@
         // Обновить данные пользователя в базе
         async function updateUserData(userId, updates) {
             try {
-                const dbUser = await getUserData(userId);
-                if (!dbUser) {
-                    throw new Error('Пользователь не найден в базе данных');
-                }
-
-                const url = `${config.baseUrl}/${config.orgs}/${config.projectName}/${config.tableName}/${dbUser.Id}`;
-                const result = await makeApiRequest(url, {
-                    method: 'PATCH',
-                    body: JSON.stringify(updates)
+                const result = await makeRequest(`api/user/${userId}`, {
+                    method: 'PUT',
+                    body: updates
                 });
 
-                return result;
+                return result.success ? result.user : null;
             } catch (error) {
                 console.error('Ошибка обновления данных пользователя:', error);
                 throw error;
@@ -707,7 +572,7 @@
 
         // Обновление доступности кнопок
         function updateButtonStates() {
-            const money = currentUserData?.money || 0;
+            const money = currentUserData?.balance || 0;
             const buttons = document.querySelectorAll('.buy-btn');
             
             buttons.forEach(button => {
@@ -732,7 +597,7 @@
                 return;
             }
 
-            const currentMoney = currentUserData.money || 0;
+            const currentMoney = currentUserData.balance || 0;
             if (currentMoney < price) {
                 document.getElementById('errorModal').style.display = 'block';
                 return;
@@ -750,7 +615,7 @@
 
             try {
                 const { name, rarity, price } = pendingPurchase;
-                const currentMoney = currentUserData.money || 0;
+                const currentMoney = currentUserData.balance || 0;
                 
                 // Создаем новую карточку
                 const newCard = `${name}(${rarity})`;
@@ -761,29 +626,29 @@
                 allCards.push(newCard);
                 const updatedCardsString = allCards.join(', ');
 
-                // Обновляем локальные данные
-                currentUserData.money = currentMoney - price;
-                currentUserData.card = updatedCardsString;
-
-                // Сохраняем в localStorage
-                saveUserToLocalStorage(currentUserData);
-
-                // Обновляем данные в базе (в фоне, без ожидания)
+                // Обновляем данные в базе
                 const updates = {
-                    money: currentMoney - price,
+                    balance: currentMoney - price,
                     card: updatedCardsString
                 };
 
-                updateUserData(userData.id, updates).catch(error => {
-                    console.log('Ошибка обновления данных в базе:', error);
-                });
-                
-                // Обновляем отображение
-                document.getElementById('userMoney').textContent = currentUserData.money;
-                updateButtonStates();
+                const updatedUser = await updateUserData(userData.id, updates);
 
-                // Показываем результат
-                showMessage(`Карточка ${name} (${rarity}) успешно куплена!`, 'success');
+                if (updatedUser) {
+                    // Обновляем локальные данные
+                    currentUserData.balance = updatedUser.balance;
+                    currentUserData.card = updatedUser.card;
+                    
+                    // Обновляем отображение
+                    document.getElementById('userMoney').textContent = currentUserData.balance;
+                    updateButtonStates();
+
+                    // Показываем результат
+                    showMessage(`Карточка ${name} (${rarity}) успешно куплена!`, 'success');
+                } else {
+                    throw new Error('Не удалось обновить данные пользователя');
+                }
+
                 closeModal();
 
             } catch (error) {
@@ -825,20 +690,14 @@
                 const currencyDisplay = document.getElementById('currencyDisplay');
                 currencyDisplay.classList.add('loading');
 
-                // Сначала пытаемся получить данные из localStorage
-                currentUserData = getUserFromLocalStorage();
-                
-                // Если нет данных в localStorage, пытаемся загрузить из базы
-                if (!currentUserData) {
-                    console.log('Данных в localStorage нет, загружаем из базы...');
-                    currentUserData = await getUserData(userData.id);
-                }
+                // Получаем данные из базы
+                currentUserData = await getUserData(userData.id);
                 
                 // Убираем анимацию загрузки
                 currencyDisplay.classList.remove('loading');
                 
                 if (currentUserData) {
-                    document.getElementById('userMoney').textContent = currentUserData.money || 0;
+                    document.getElementById('userMoney').textContent = currentUserData.balance || 0;
                 } else {
                     document.getElementById('userMoney').textContent = 0;
                     showMessage('Ошибка загрузки данных пользователя', 'error');
