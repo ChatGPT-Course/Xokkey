@@ -632,6 +632,23 @@
             container.appendChild(inventoryGrid);
         }
 
+        // Кэширование данных пользователя
+        function getCachedUserData() {
+            try {
+                const cached = localStorage.getItem('userCache');
+                if (cached) {
+                    const { data, timestamp } = JSON.parse(cached);
+                    // Кэш валиден 5 минут
+                    if (Date.now() - timestamp < 5 * 60 * 1000) {
+                        return data;
+                    }
+                }
+            } catch (error) {
+                console.log('Ошибка чтения кэша:', error);
+            }
+            return null;
+        }
+
         // Инициализация профиля
         async function initProfile() {
             try {
@@ -648,28 +665,38 @@
                 document.getElementById('userUsername').textContent = `@${userData.username}`;
                 document.getElementById('userId').textContent = `ID: ${userData.id}`;
 
-                // Устанавливаем анимацию загрузки для валюты
-                const currencyDisplay = document.querySelector('.currency-display');
-                currencyDisplay.classList.add('loading');
-
                 // Получаем аватар
                 getUserAvatar(userData);
 
-                // Получаем данные из базы
-                const dbUser = await getUserData(userData.id);
-
-                // Убираем анимацию загрузки
-                currencyDisplay.classList.remove('loading');
-
-                if (dbUser) {
-                    document.getElementById('userMoney').textContent = dbUser.balance || 0;
-
-                    // Парсим и отображаем карточки
-                    const cards = parseCards(dbUser.card);
+                // Проверяем кэш
+                const cachedUser = getCachedUserData();
+                
+                if (cachedUser && cachedUser.id === userData.id) {
+                    // Используем кэшированные данные
+                    document.getElementById('userMoney').textContent = cachedUser.balance || 0;
+                    const cards = parseCards(cachedUser.card);
                     displayInventory(cards);
                 } else {
-                    document.getElementById('userMoney').textContent = 0;
-                    displayInventory([]);
+                    // Устанавливаем анимацию загрузки для валюты
+                    const currencyDisplay = document.querySelector('.currency-display');
+                    currencyDisplay.classList.add('loading');
+
+                    // Получаем данные из базы
+                    const dbUser = await getUserData(userData.id);
+
+                    // Убираем анимацию загрузки
+                    currencyDisplay.classList.remove('loading');
+
+                    if (dbUser) {
+                        document.getElementById('userMoney').textContent = dbUser.balance || 0;
+
+                        // Парсим и отображаем карточки
+                        const cards = parseCards(dbUser.card);
+                        displayInventory(cards);
+                    } else {
+                        document.getElementById('userMoney').textContent = 0;
+                        displayInventory([]);
+                    }
                 }
 
             } catch (error) {
