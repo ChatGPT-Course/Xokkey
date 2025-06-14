@@ -217,7 +217,7 @@
 <body>
     <div id="loadingScreen" class="loading-screen">
         <div class="loading-spinner"></div>
-        <div class="loading-text">Подключение к базе данных...</div>
+        <div class="loading-text">Загружаем данные...</div>
     </div>
 
     <div class="header">
@@ -256,7 +256,7 @@
                 </a>
             </div>
 
-            <div class="version">Hockey Shootouts V(b-1.1 - TimeWeb)</div>
+            <div class="version">Версия 1.1 (beta)</div>
         </div>
     </div>
 
@@ -424,7 +424,7 @@
                     console.log('Пользователь найден:', user);
                     currentUserData = user;
                     updateBalance(user.balance);
-                    showMessage('Добро пожаловать!', 'success');
+                    saveCurrentUserData();
                     return user;
                 }
 
@@ -436,7 +436,8 @@
                     console.log('Пользователь создан:', user);
                     currentUserData = user;
                     updateBalance(user.balance);
-                    showMessage('Аккаунт создан! Добро пожаловать!', 'success');
+                    saveCurrentUserData();
+                    showMessage('Аккаунт создан!', 'success');
                     return user;
                 }
 
@@ -480,9 +481,29 @@
         // Запуск при загрузке страницы
         document.addEventListener('DOMContentLoaded', initApp);
 
+        // Сохранение данных в localStorage для других страниц
+        function saveUserDataToStorage(userData) {
+            try {
+                const dataToSave = {
+                    user: userData,
+                    timestamp: Date.now()
+                };
+                localStorage.setItem('currentUserData', JSON.stringify(dataToSave));
+            } catch (error) {
+                console.log('Ошибка сохранения данных:', error);
+            }
+        }
+
         // Экспорт для других страниц
         window.getCurrentUser = () => currentUserData;
         window.refreshUserData = () => initUserData(userData);
+
+        // Сохраняем данные при их обновлении
+        function saveCurrentUserData() {
+            if (currentUserData) {
+                saveUserDataToStorage(currentUserData);
+            }
+        }
     </script>
 </body>
 </html>
