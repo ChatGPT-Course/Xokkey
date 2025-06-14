@@ -545,9 +545,11 @@
             const container = document.getElementById('cardsGrid');
             container.innerHTML = '';
 
-            playerCards.forEach(card => {
+            playerCards.forEach((card, index) => {
                 const cardElement = document.createElement('div');
                 cardElement.className = 'card-item';
+
+                const buyButtonId = `buyBtn_${index}`;
 
                 cardElement.innerHTML = `
                     <div class="card-rarity-badge ${normalizeRarity(card.rarity)}">${card.rarity}</div>
@@ -557,7 +559,7 @@
                         <div class="card-info">
                             <div class="card-name">${card.name}</div>
                             <div class="card-price">${card.price} <span>🏒</span></div>
-                            <button class="buy-btn" onclick="buyCard('${card.name}', '${card.rarity}', ${card.price})">
+                            <button class="buy-btn" id="${buyButtonId}">
                                 Купить
                             </button>
                         </div>
@@ -565,6 +567,12 @@
                 `;
 
                 container.appendChild(cardElement);
+
+                // Добавляем обработчик события для кнопки
+                const buyButton = document.getElementById(buyButtonId);
+                buyButton.addEventListener('click', () => {
+                    buyCard(card.name, card.rarity, card.price);
+                });
             });
 
             updateButtonStates();
@@ -617,20 +625,25 @@
                 const { name, rarity, price } = pendingPurchase;
                 const currentMoney = currentUserData.balance || 0;
 
-                // Создаем новую карточку
+                // Создаем новую карточку в правильном формате
                 const newCard = `${name}(${rarity})`;
                 const existingCards = currentUserData.card || '';
 
                 // Объединяем с существующими карточками
-                let allCards = existingCards ? existingCards.split(',').map(s => s.trim()).filter(s => s) : [];
-                allCards.push(newCard);
-                const updatedCardsString = allCards.join(', ');
+                let updatedCardsString;
+                if (existingCards.trim() === '') {
+                    updatedCardsString = newCard;
+                } else {
+                    updatedCardsString = existingCards + ', ' + newCard;
+                }
 
                 // Обновляем данные в базе
                 const updates = {
                     balance: currentMoney - price,
                     card: updatedCardsString
                 };
+
+                console.log('Обновление данных пользователя:', updates);
 
                 const updatedUser = await updateUserData(userData.id, updates);
 
@@ -639,7 +652,7 @@
                     currentUserData.balance = updatedUser.balance;
                     currentUserData.card = updatedUser.card;
 
-                    // Сохраняем обновленные данные
+                    // Сохраняем обновленные данные в буфер сессии
                     updateSavedUserData(currentUserData);
 
                     // Обновляем отображение
@@ -648,6 +661,8 @@
 
                     // Показываем результат
                     showMessage(`Карточка ${name} (${rarity}) успешно куплена!`, 'success');
+
+                    console.log('Покупка успешно завершена');
                 } else {
                     throw new Error('Не удалось обновить данные пользователя');
                 }
@@ -657,6 +672,7 @@
             } catch (error) {
                 console.error('Ошибка покупки карточки:', error);
                 showMessage('Ошибка покупки карточки', 'error');
+                closeModal();
             }
 
             pendingPurchase = null;
@@ -695,14 +711,17 @@
             return null;
         }
 
-        // Обновить сохраненные данные
+        // Обновить сохраненные данные в буфере сессии
         function updateSavedUserData(userData) {
             try {
                 const dataToSave = {
                     user: userData,
                     timestamp: Date.now()
                 };
+                // Сохраняем в оба хранилища
+                sessionStorage.setItem('activeUserSession', JSON.stringify(dataToSave));
                 localStorage.setItem('currentUserData', JSON.stringify(dataToSave));
+                console.log('Данные пользователя обновлены в буфере');
             } catch (error) {
                 console.log('Ошибка сохранения данных:', error);
             }
