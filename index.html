@@ -58,28 +58,19 @@
             justify-content: center;
         }
 
-        .loading-screen {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
-            display: flex;
-            flex-direction: column;
+        .balance-loading {
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            z-index: 9999;
         }
 
-        .loading-spinner {
-            width: 60px;
-            height: 60px;
-            border: 4px solid rgba(255, 255, 255, 0.3);
-            border-top: 4px solid #e74c3c;
+        .balance-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid #ffffff;
             border-radius: 50%;
             animation: spin 1s linear infinite;
-            margin-bottom: 20px;
         }
 
         @keyframes spin {
@@ -87,15 +78,9 @@
             100% { transform: rotate(360deg); }
         }
 
-        .loading-text {
-            font-size: 1.2rem;
-            color: white;
-            text-align: center;
-        }
-
         .main-content {
-            opacity: 0;
-            transform: translateY(20px);
+            opacity: 1;
+            transform: translateY(0);
             transition: all 0.5s ease;
         }
 
@@ -177,6 +162,12 @@
             transform: translateY(-1px);
         }
 
+        .btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
         .menu-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -215,43 +206,43 @@
     </style>
 </head>
 <body>
-    <div id="loadingScreen" class="loading-screen">
-        <div class="loading-spinner"></div>
-        <div class="loading-text">Загружаем данные...</div>
-    </div>
-
     <div class="header">
         <div class="header-title">Hockey Shootouts</div>
     </div>
 
     <div class="container">
-        <div id="mainContent" class="main-content">
+        <div id="mainContent" class="main-content visible">
             <div class="user-avatar" id="userAvatar">
                 <img id="userPhoto" style="display: none; width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" alt="User Photo">
                 <span id="userInitial">👤</span>
             </div>
 
             <div class="currency-display">
-                <span>Клюшек: <span id="userMoney">0</span></span>
+                <span>Клюшек: <span id="userMoney">
+                    <div class="balance-loading" id="balanceLoading">
+                        <div class="balance-spinner"></div>
+                    </div>
+                    <span id="balanceAmount" style="display: none;">0</span>
+                </span></span>
                 <span class="stick-icon">🏒</span>
             </div>
 
             <div id="errorMessage" class="error-message" style="display: none;"></div>
             <div id="successMessage" class="success-message" style="display: none;"></div>
 
-            <a href="game.html" class="btn btn-primary">
+            <a href="game.html" class="btn btn-primary disabled" id="gameBtn">
                 Играть
             </a>
 
-            <a href="profile.html" class="btn btn-secondary">
+            <a href="profile.html" class="btn btn-secondary disabled" id="profileBtn">
                 Мой профиль
             </a>
 
             <div class="menu-grid">
-                <a href="craft.html" class="btn btn-secondary">
+                <a href="craft.html" class="btn btn-secondary disabled" id="craftBtn">
                     Крафт
                 </a>
-                <a href="obmen.html" class="btn btn-secondary">
+                <a href="obmen.html" class="btn btn-secondary disabled" id="obmenBtn">
                     Магазин
                 </a>
             </div>
@@ -397,21 +388,45 @@
             }
         }
 
-        // Скрыть загрузочный экран
-        function hideLoadingScreen() {
-            const loadingScreen = document.getElementById('loadingScreen');
-            const mainContent = document.getElementById('mainContent');
+        // Показать загрузку баланса
+        function showBalanceLoading() {
+            document.getElementById('balanceLoading').style.display = 'inline-flex';
+            document.getElementById('balanceAmount').style.display = 'none';
+        }
 
-            loadingScreen.style.opacity = '0';
-            setTimeout(() => {
-                loadingScreen.style.display = 'none';
-                mainContent.classList.add('visible');
-            }, 300);
+        // Скрыть загрузку баланса
+        function hideBalanceLoading() {
+            document.getElementById('balanceLoading').style.display = 'none';
+            document.getElementById('balanceAmount').style.display = 'inline';
         }
 
         // Обновить отображение баланса
         function updateBalance(balance) {
-            document.getElementById('userMoney').textContent = balance || 0;
+            document.getElementById('balanceAmount').textContent = balance || 0;
+            hideBalanceLoading();
+            enableAllButtons();
+        }
+
+        // Заблокировать все кнопки
+        function disableAllButtons() {
+            const buttons = ['gameBtn', 'profileBtn', 'craftBtn', 'obmenBtn'];
+            buttons.forEach(buttonId => {
+                const button = document.getElementById(buttonId);
+                if (button) {
+                    button.classList.add('disabled');
+                }
+            });
+        }
+
+        // Разблокировать все кнопки
+        function enableAllButtons() {
+            const buttons = ['gameBtn', 'profileBtn', 'craftBtn', 'obmenBtn'];
+            buttons.forEach(buttonId => {
+                const button = document.getElementById(buttonId);
+                if (button) {
+                    button.classList.remove('disabled');
+                }
+            });
         }
 
         // Проверка и создание пользователя в базе данных
