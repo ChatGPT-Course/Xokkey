@@ -100,27 +100,11 @@
             overflow: hidden;
         }
 
-        .avatar.loading::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
-            animation: shimmer 1.5s infinite;
-        }
-
         .avatar img {
             width: 100%;
             height: 100%;
             object-fit: cover;
             border-radius: 50%;
-        }
-
-        @keyframes shimmer {
-            0% { left: -100%; }
-            100% { left: 100%; }
         }
 
         .profile-info {
@@ -156,19 +140,6 @@
             font-weight: 600;
             color: white;
             box-shadow: 0 5px 15px rgba(46, 204, 113, 0.3);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .currency-display.loading::before {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: -100%;
-            width: 100%;
-            height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
-            animation: shimmer 1.5s infinite;
         }
 
         .currency-display .stick-icon {
@@ -324,26 +295,6 @@
             letter-spacing: 0.3px;
         }
 
-        .card-manage-btn {
-            background: linear-gradient(45deg, #3498db, #2980b9);
-            color: white;
-            border: none;
-            padding: 6px 10px;
-            border-radius: 8px;
-            font-size: 0.65rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            margin-top: auto;
-            text-transform: uppercase;
-            letter-spacing: 0.3px;
-        }
-
-        .card-manage-btn:hover {
-            background: linear-gradient(45deg, #2980b9, #1f4e79);
-            transform: translateY(-1px);
-        }
-
         .empty-inventory {
             text-align: center;
             color: rgba(236, 240, 241, 0.6);
@@ -418,10 +369,25 @@
     </div>
 
     <script>
-        const WORKER_URL = 'https://hockey-osnova-worker.egorspirin10.workers.dev/';
-
         let tg = window.Telegram.WebApp;
         let userData = null;
+
+        // Получить сохраненные данные пользователя
+        function getSavedUserData() {
+            try {
+                const saved = localStorage.getItem('currentUserData');
+                if (saved) {
+                    const { user, timestamp } = JSON.parse(saved);
+                    // Данные актуальны 10 минут
+                    if (Date.now() - timestamp < 10 * 60 * 1000) {
+                        return user;
+                    }
+                }
+            } catch (error) {
+                console.log('Ошибка чтения сохраненных данных:', error);
+            }
+            return null;
+        }
 
         // Нормализация редкости для CSS классов
         function normalizeRarity(rarity) {
@@ -467,44 +433,9 @@
             }
         }
 
-        // Запрос к Worker API
-        async function makeRequest(endpoint, options = {}) {
-            try {
-                const response = await fetch(`${WORKER_URL}${endpoint}`, {
-                    method: options.method || 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...options.headers
-                    },
-                    body: options.body ? JSON.stringify(options.body) : undefined
-                });
-
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-
-                return await response.json();
-            } catch (error) {
-                console.error('Request failed:', error);
-                throw error;
-            }
-        }
-
-        // Получить данные пользователя из базы
-        async function getUserData(userId) {
-            try {
-                const data = await makeRequest(`api/user/${userId}`);
-                return data.success ? data.user : null;
-            } catch (error) {
-                console.log('Ошибка получения данных пользователя:', error);
-                return null;
-            }
-        }
-
         // Получить аватар пользователя
         function getUserAvatar(userData) {
             const avatarElement = document.getElementById('userAvatar');
-            avatarElement.classList.add('loading');
 
             if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.photo_url) {
                 const img = document.createElement('img');
@@ -512,7 +443,6 @@
                 img.onload = function() {
                     avatarElement.innerHTML = '';
                     avatarElement.appendChild(img);
-                    avatarElement.classList.remove('loading');
                 };
                 img.onerror = function() {
                     showInitial();
@@ -521,7 +451,6 @@
             }
 
             function showInitial() {
-                avatarElement.classList.remove('loading');
                 if (userData && userData.first_name) {
                     avatarElement.textContent = userData.first_name.charAt(0).toUpperCase();
                 } else {
@@ -614,14 +543,12 @@
                              onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                         <div class="card-icon" style="display: none;">🏒</div>
                         <div class="card-name">${card.name}</div>
-                        <button class="card-manage-btn">Управление</button>
                     `;
                 } else {
                     cardElement.innerHTML = `
                         <div class="card-rarity-badge ${normalizeRarity(card.rarity)}">${card.rarity}</div>
                         <div class="card-icon">🏒</div>
                         <div class="card-name">${card.name}</div>
-                        <button class="card-manage-btn">Управление</button>
                     `;
                 }
 
@@ -630,23 +557,6 @@
 
             container.innerHTML = '';
             container.appendChild(inventoryGrid);
-        }
-
-        // Кэширование данных пользователя
-        function getCachedUserData() {
-            try {
-                const cached = localStorage.getItem('userCache');
-                if (cached) {
-                    const { data, timestamp } = JSON.parse(cached);
-                    // Кэш валиден 5 минут
-                    if (Date.now() - timestamp < 5 * 60 * 1000) {
-                        return data;
-                    }
-                }
-            } catch (error) {
-                console.log('Ошибка чтения кэша:', error);
-            }
-            return null;
         }
 
         // Инициализация профиля
@@ -668,35 +578,18 @@
                 // Получаем аватар
                 getUserAvatar(userData);
 
-                // Проверяем кэш
-                const cachedUser = getCachedUserData();
-                
-                if (cachedUser && cachedUser.id === userData.id) {
-                    // Используем кэшированные данные
-                    document.getElementById('userMoney').textContent = cachedUser.balance || 0;
-                    const cards = parseCards(cachedUser.card);
+                // Используем сохраненные данные
+                const savedUser = getSavedUserData();
+
+                if (savedUser && savedUser.id === userData.id) {
+                    // Используем сохраненные данные
+                    document.getElementById('userMoney').textContent = savedUser.balance || 0;
+                    const cards = parseCards(savedUser.card);
                     displayInventory(cards);
                 } else {
-                    // Устанавливаем анимацию загрузки для валюты
-                    const currencyDisplay = document.querySelector('.currency-display');
-                    currencyDisplay.classList.add('loading');
-
-                    // Получаем данные из базы
-                    const dbUser = await getUserData(userData.id);
-
-                    // Убираем анимацию загрузки
-                    currencyDisplay.classList.remove('loading');
-
-                    if (dbUser) {
-                        document.getElementById('userMoney').textContent = dbUser.balance || 0;
-
-                        // Парсим и отображаем карточки
-                        const cards = parseCards(dbUser.card);
-                        displayInventory(cards);
-                    } else {
-                        document.getElementById('userMoney').textContent = 0;
-                        displayInventory([]);
-                    }
+                    document.getElementById('userMoney').textContent = 0;
+                    displayInventory([]);
+                    console.log('Нет актуальных сохраненных данных');
                 }
 
             } catch (error) {
