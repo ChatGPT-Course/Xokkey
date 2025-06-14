@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -60,7 +58,6 @@
             justify-content: center;
         }
 
-        /* Загрузочный экран */
         .loading-screen {
             position: fixed;
             top: 0;
@@ -96,7 +93,6 @@
             text-align: center;
         }
 
-        /* Основной контент */
         .main-content {
             opacity: 0;
             transform: translateY(20px);
@@ -197,13 +193,6 @@
             text-align: center;
         }
 
-        .user-info {
-            margin-top: 20px;
-            font-size: 0.9rem;
-            color: rgba(236, 240, 241, 0.8);
-            text-align: center;
-        }
-
         .error-message {
             background: rgba(231, 76, 60, 0.2);
             border: 1px solid rgba(231, 76, 60, 0.5);
@@ -223,12 +212,9 @@
             text-align: center;
             margin-bottom: 20px;
         }
-
-        
     </style>
 </head>
 <body>
-    <!-- Загрузочный экран -->
     <div id="loadingScreen" class="loading-screen">
         <div class="loading-spinner"></div>
         <div class="loading-text">Подключение к базе данных...</div>
@@ -270,8 +256,6 @@
                 </a>
             </div>
 
-            
-
             <div class="version">Hockey Shootouts V(b-1.1 - TimeWeb)</div>
         </div>
     </div>
@@ -282,19 +266,13 @@
         let tg = window.Telegram.WebApp;
         let userData = null;
         let currentUserData = null;
-        let isInitialized = false;
-
-        // Логирование для отладки
-        function debugLog(message, data = null) {
-            console.log(`[DEBUG] ${message}`, data);
-        }
 
         // Получить данные пользователя из Telegram WebApp
         function getTelegramUserData() {
             try {
                 if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
                     const user = tg.initDataUnsafe.user;
-                    const userData = {
+                    return {
                         id: user.id.toString(),
                         username: user.username || '',
                         first_name: user.first_name || '',
@@ -302,27 +280,21 @@
                         display_name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Игрок',
                         language_code: user.language_code || 'ru'
                     };
-                    debugLog('Данные пользователя из Telegram:', userData);
-                    return userData;
                 }
 
                 // Fallback для тестирования
-                const fallbackId = 'test_' + Date.now();
-                const fallbackData = {
-                    id: fallbackId,
+                return {
+                    id: 'test_' + Date.now(),
                     username: 'test_user',
                     first_name: 'Тестовый',
                     last_name: 'Игрок',
                     display_name: 'Тестовый игрок',
                     language_code: 'ru'
                 };
-                debugLog('Использую тестовые данные:', fallbackData);
-                return fallbackData;
             } catch (error) {
-                debugLog('Ошибка получения данных пользователя:', error);
-                const fallbackId = 'error_' + Date.now();
+                console.error('Ошибка получения данных пользователя:', error);
                 return {
-                    id: fallbackId,
+                    id: 'error_' + Date.now(),
                     username: 'error_user',
                     first_name: 'Ошибка',
                     last_name: 'Пользователь',
@@ -336,27 +308,25 @@
         function showMessage(message, type = 'error') {
             const errorEl = document.getElementById('errorMessage');
             const successEl = document.getElementById('successMessage');
-            
-            // Скрываем все сообщения
+
             errorEl.style.display = 'none';
             successEl.style.display = 'none';
-            
+
             if (type === 'success') {
                 successEl.textContent = message;
                 successEl.style.display = 'block';
-                setTimeout(() => successEl.style.display = 'none', 5000);
+                setTimeout(() => successEl.style.display = 'none', 3000);
             } else {
                 errorEl.textContent = message;
                 errorEl.style.display = 'block';
-                setTimeout(() => errorEl.style.display = 'none', 8000);
+                setTimeout(() => errorEl.style.display = 'none', 5000);
             }
         }
 
         // Запрос к Worker API
         async function makeRequest(endpoint, options = {}) {
             const url = `${WORKER_URL}${endpoint}`;
-            debugLog(`Запрос к: ${url}`, options);
-            
+
             try {
                 const response = await fetch(url, {
                     method: options.method || 'GET',
@@ -367,36 +337,31 @@
                     body: options.body ? JSON.stringify(options.body) : undefined
                 });
 
-                debugLog(`Ответ сервера (${response.status}):`, response.statusText);
-
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
+                    throw new Error(`HTTP ${response.status}`);
                 }
 
-                const data = await response.json();
-                debugLog('Данные ответа:', data);
-                return data;
+                return await response.json();
             } catch (error) {
-                debugLog('Ошибка запроса:', error);
+                console.error('Ошибка запроса:', error);
                 throw error;
             }
         }
 
         // Получение данных пользователя из базы
-        async function getUserData(userId) {
+        async function getUserFromDB(userId) {
             try {
                 const data = await makeRequest(`api/user/${userId}`);
                 return data.success ? data.user : null;
             } catch (error) {
-                debugLog('Ошибка получения данных пользователя:', error);
                 return null;
             }
         }
 
         // Создание пользователя
-        async function createUser(userData) {
+        async function createUserInDB(userData) {
             try {
-                const newUserData = {
+                const newUser = {
                     id: userData.id,
                     name: userData.display_name,
                     username: userData.username,
@@ -404,37 +369,20 @@
                     card: ''
                 };
 
-                debugLog('Создание пользователя:', newUserData);
                 const result = await makeRequest('api/user', {
                     method: 'POST',
-                    body: newUserData
+                    body: newUser
                 });
 
                 return result.success ? result.user : null;
             } catch (error) {
-                debugLog('Ошибка создания пользователя:', error);
-                throw error;
-            }
-        }
-
-        // Обновление данных пользователя
-        async function updateUser(userId, updates) {
-            try {
-                debugLog('Обновление пользователя:', { userId, updates });
-                const result = await makeRequest(`api/user/${userId}`, {
-                    method: 'PUT',
-                    body: updates
-                });
-
-                return result.success ? result.user : null;
-            } catch (error) {
-                debugLog('Ошибка обновления пользователя:', error);
+                console.error('Ошибка создания пользователя:', error);
                 throw error;
             }
         }
 
         // Получить аватар пользователя
-        function getUserAvatar(userData) {
+        function setUserAvatar(userData) {
             const photoElement = document.getElementById('userPhoto');
             const initialElement = document.getElementById('userInitial');
 
@@ -442,16 +390,11 @@
                 photoElement.src = tg.initDataUnsafe.user.photo_url;
                 photoElement.style.display = 'block';
                 initialElement.style.display = 'none';
-                return;
-            }
-
-            if (userData.first_name) {
-                initialElement.textContent = userData.first_name.charAt(0).toUpperCase();
             } else {
-                initialElement.textContent = '👤';
+                initialElement.textContent = userData.first_name ? userData.first_name.charAt(0).toUpperCase() : '👤';
+                photoElement.style.display = 'none';
+                initialElement.style.display = 'block';
             }
-            photoElement.style.display = 'none';
-            initialElement.style.display = 'block';
         }
 
         // Скрыть загрузочный экран
@@ -466,139 +409,80 @@
             }, 300);
         }
 
-        // Кэширование данных пользователя
-        function cacheUserData(userData) {
-            const cacheData = {
-                data: userData,
-                timestamp: Date.now()
-            };
-            localStorage.setItem('userCache', JSON.stringify(cacheData));
-            debugLog('Данные закэшированы:', cacheData);
-        }
-
-        function getCachedUserData() {
-            try {
-                const cached = localStorage.getItem('userCache');
-                if (cached) {
-                    const { data, timestamp } = JSON.parse(cached);
-                    // Кэш валиден 10 минут
-                    if (Date.now() - timestamp < 10 * 60 * 1000) {
-                        debugLog('Используем данные из кэша:', data);
-                        return data;
-                    } else {
-                        debugLog('Кэш устарел');
-                    }
-                }
-            } catch (error) {
-                debugLog('Ошибка чтения кэша:', error);
-            }
-            return null;
-        }
-
-        function clearUserCache() {
-            localStorage.removeItem('userCache');
-            debugLog('Кэш очищен');
-        }
-
         // Обновить отображение баланса
-        function updateBalanceDisplay(balance) {
+        function updateBalance(balance) {
             document.getElementById('userMoney').textContent = balance || 0;
         }
 
-        // Проверка пользователя в базе данных
-        async function checkUserInDatabase(userData) {
+        // Проверка и создание пользователя в базе данных
+        async function initUserData(userData) {
             try {
-                debugLog('Проверка пользователя в базе данных', userData);
-                
-                let existingUser = await getUserData(userData.id);
+                // Сначала пытаемся получить пользователя
+                let user = await getUserFromDB(userData.id);
 
-                if (existingUser) {
-                    debugLog('Пользователь найден в базе:', existingUser);
-                    updateBalanceDisplay(existingUser.balance);
-                    cacheUserData(existingUser);
-                    currentUserData = existingUser;
-                    showMessage('Данные успешно загружены!', 'success');
-                    return existingUser;
+                if (user) {
+                    console.log('Пользователь найден:', user);
+                    currentUserData = user;
+                    updateBalance(user.balance);
+                    showMessage('Добро пожаловать!', 'success');
+                    return user;
                 }
 
-                debugLog('Пользователь не найден, создаем нового');
-                const createdUser = await createUser(userData);
-                if (createdUser) {
-                    debugLog('Пользователь создан:', createdUser);
-                    updateBalanceDisplay(createdUser.balance);
-                    cacheUserData(createdUser);
-                    currentUserData = createdUser;
-                    showMessage('Добро пожаловать! Создан новый аккаунт.', 'success');
-                    return createdUser;
+                // Если не найден - создаем
+                console.log('Создание нового пользователя');
+                user = await createUserInDB(userData);
+
+                if (user) {
+                    console.log('Пользователь создан:', user);
+                    currentUserData = user;
+                    updateBalance(user.balance);
+                    showMessage('Аккаунт создан! Добро пожаловать!', 'success');
+                    return user;
                 }
 
                 throw new Error('Не удалось создать пользователя');
 
             } catch (error) {
-                debugLog('Ошибка при работе с базой данных:', error);
-                showMessage(`Ошибка подключения к базе данных: ${error.message}`);
-                updateBalanceDisplay(0);
+                console.error('Ошибка при работе с базой данных:', error);
+                showMessage('Ошибка подключения к базе данных');
+                updateBalance(0);
                 return null;
             }
         }
 
-        
-
         // Инициализация приложения
         async function initApp() {
-            if (isInitialized) return;
-
             try {
-                debugLog('Начало инициализации приложения');
-                
-                if (window.Telegram && window.Telegram.WebApp) {
+                // Инициализация Telegram WebApp
+                if (tg) {
                     tg.ready();
                     tg.expand();
-                    debugLog('Telegram WebApp инициализирован');
                 }
 
+                // Получаем данные пользователя
                 userData = getTelegramUserData();
-                getUserAvatar(userData);
+                setUserAvatar(userData);
 
-                // Проверяем кэш
-                const cachedData = getCachedUserData();
-                if (cachedData) {
-                    currentUserData = cachedData;
-                    updateBalanceDisplay(cachedData.balance);
-                    showMessage('Данные загружены из кэша', 'success');
-                } else {
-                    // Проверяем/создаем пользователя в базе
-                    await checkUserInDatabase(userData);
-                }
-
-                isInitialized = true;
-                debugLog('Инициализация завершена успешно');
+                // Работа с базой данных
+                await initUserData(userData);
 
             } catch (error) {
-                debugLog('Ошибка инициализации:', error);
-                showMessage(`Ошибка инициализации: ${error.message}`);
-                updateBalanceDisplay(0);
-                getUserAvatar(userData || {});
-                isInitialized = true;
+                console.error('Ошибка инициализации:', error);
+                showMessage('Ошибка инициализации приложения');
+                updateBalance(0);
+                setUserAvatar(userData || {});
             } finally {
-                // Всегда скрываем загрузочный экран
-                setTimeout(() => {
-                    hideLoadingScreen();
-                }, 1500);
+                // Скрываем загрузочный экран
+                setTimeout(hideLoadingScreen, 1000);
             }
         }
 
-        // Инициализация
+        // Запуск при загрузке страницы
         document.addEventListener('DOMContentLoaded', initApp);
 
-        if (document.readyState === 'complete') {
-            initApp();
-        }
-
-        // Экспорт функций для глобального доступа
-        window.getUserDataFromCache = () => currentUserData;
-        window.updateUserBalance = updateUser;
+        // Экспорт для других страниц
+        window.getCurrentUser = () => currentUserData;
+        window.refreshUserData = () => initUserData(userData);
     </script>
 </body>
-    </html>
-    
+</html>
