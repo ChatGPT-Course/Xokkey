@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -211,13 +212,61 @@
             text-align: center;
             margin-bottom: 20px;
         }
+
+        .success-message {
+            background: rgba(46, 204, 113, 0.2);
+            border: 1px solid rgba(46, 204, 113, 0.5);
+            color: #fff;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .debug-info {
+            background: rgba(52, 152, 219, 0.2);
+            border: 1px solid rgba(52, 152, 219, 0.5);
+            color: #fff;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: left;
+            margin-top: 20px;
+            font-size: 0.8rem;
+            font-family: monospace;
+        }
+
+        /* Кнопки тестирования */
+        .test-buttons {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .btn-test {
+            background: rgba(155, 89, 182, 0.8);
+            color: white;
+            border: 2px solid rgba(155, 89, 182, 0.5);
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .btn-test:hover {
+            background: rgba(155, 89, 182, 1);
+            transform: translateY(-1px);
+        }
     </style>
 </head>
 <body>
     <!-- Загрузочный экран -->
     <div id="loadingScreen" class="loading-screen">
         <div class="loading-spinner"></div>
-        <div class="loading-text">Загрузка данных...</div>
+        <div class="loading-text">Подключение к базе данных...</div>
     </div>
 
     <div class="header">
@@ -237,6 +286,7 @@
             </div>
 
             <div id="errorMessage" class="error-message" style="display: none;"></div>
+            <div id="successMessage" class="success-message" style="display: none;"></div>
 
             <a href="game.html" class="btn btn-primary">
                 Играть
@@ -255,23 +305,58 @@
                 </a>
             </div>
 
-            <div class="version">Hockey Shootouts V(b-1.0)</div>
+            <!-- Кнопки тестирования -->
+            <div class="test-buttons">
+                <button class="btn-test" onclick="testDatabaseConnection()">
+                    🔧 Тест подключения к БД
+                </button>
+                <button class="btn-test" onclick="addBalance(50)">
+                    💰 Добавить 50 клюшек
+                </button>
+                <button class="btn-test" onclick="subtractBalance(25)">
+                    📉 Отнять 25 клюшек
+                </button>
+                <button class="btn-test" onclick="resetBalance()">
+                    🔄 Сбросить баланс (100)
+                </button>
+                <button class="btn-test" onclick="refreshUserData()">
+                    🔄 Обновить данные
+                </button>
+            </div>
+
+            <div id="debugInfo" class="debug-info" style="display: none;"></div>
+
+            <div class="version">Hockey Shootouts V(b-1.1 - TimeWeb)</div>
         </div>
     </div>
 
     <script>
-        const WORKER_URL = 'https://hockey-osnova-worker.egorspirin10.workers.dev/';
+        const WORKER_URL = 'https://hockey-database-worker.egorspirin10.workers.dev/';
 
         let tg = window.Telegram.WebApp;
         let userData = null;
+        let currentUserData = null;
         let isInitialized = false;
+
+        // Логирование для отладки
+        function debugLog(message, data = null) {
+            console.log(`[DEBUG] ${message}`, data);
+            
+            const debugElement = document.getElementById('debugInfo');
+            if (debugElement) {
+                const timestamp = new Date().toLocaleTimeString();
+                const logEntry = `[${timestamp}] ${message}${data ? '\n' + JSON.stringify(data, null, 2) : ''}`;
+                debugElement.textContent = logEntry + '\n' + debugElement.textContent;
+                debugElement.style.display = 'block';
+            }
+        }
 
         // Получить данные пользователя из Telegram WebApp
         function getTelegramUserData() {
             try {
                 if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
                     const user = tg.initDataUnsafe.user;
-                    return {
+                    const userData = {
                         id: user.id.toString(),
                         username: user.username || '',
                         first_name: user.first_name || '',
@@ -279,11 +364,13 @@
                         display_name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Игрок',
                         language_code: user.language_code || 'ru'
                     };
+                    debugLog('Данные пользователя из Telegram:', userData);
+                    return userData;
                 }
 
                 // Fallback для тестирования
-                const fallbackId = '123456789';
-                return {
+                const fallbackId = 'test_' + Date.now();
+                const fallbackData = {
                     id: fallbackId,
                     username: 'test_user',
                     first_name: 'Тестовый',
@@ -291,36 +378,49 @@
                     display_name: 'Тестовый игрок',
                     language_code: 'ru'
                 };
+                debugLog('Использую тестовые данные:', fallbackData);
+                return fallbackData;
             } catch (error) {
-                console.log('Ошибка получения данных пользователя:', error);
-                const fallbackId = '123456789';
+                debugLog('Ошибка получения данных пользователя:', error);
+                const fallbackId = 'error_' + Date.now();
                 return {
                     id: fallbackId,
-                    username: 'test_user',
-                    first_name: 'Тестовый',
-                    last_name: 'Игрок',
-                    display_name: 'Тестовый игрок',
+                    username: 'error_user',
+                    first_name: 'Ошибка',
+                    last_name: 'Пользователь',
+                    display_name: 'Ошибка пользователь',
                     language_code: 'ru'
                 };
             }
         }
 
-        // Показать ошибку
-        function showError(message) {
+        // Показать сообщение
+        function showMessage(message, type = 'error') {
             const errorEl = document.getElementById('errorMessage');
-            errorEl.textContent = message;
-            errorEl.style.display = 'block';
-        }
-
-        // Скрыть ошибку
-        function hideError() {
-            document.getElementById('errorMessage').style.display = 'none';
+            const successEl = document.getElementById('successMessage');
+            
+            // Скрываем все сообщения
+            errorEl.style.display = 'none';
+            successEl.style.display = 'none';
+            
+            if (type === 'success') {
+                successEl.textContent = message;
+                successEl.style.display = 'block';
+                setTimeout(() => successEl.style.display = 'none', 5000);
+            } else {
+                errorEl.textContent = message;
+                errorEl.style.display = 'block';
+                setTimeout(() => errorEl.style.display = 'none', 8000);
+            }
         }
 
         // Запрос к Worker API
         async function makeRequest(endpoint, options = {}) {
+            const url = `${WORKER_URL}${endpoint}`;
+            debugLog(`Запрос к: ${url}`, options);
+            
             try {
-                const response = await fetch(`${WORKER_URL}${endpoint}`, {
+                const response = await fetch(url, {
                     method: options.method || 'GET',
                     headers: {
                         'Content-Type': 'application/json',
@@ -329,24 +429,28 @@
                     body: options.body ? JSON.stringify(options.body) : undefined
                 });
 
+                debugLog(`Ответ сервера (${response.status}):`, response.statusText);
+
                 if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
+                    throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
                 }
 
-                return await response.json();
+                const data = await response.json();
+                debugLog('Данные ответа:', data);
+                return data;
             } catch (error) {
-                console.error('Request failed:', error);
+                debugLog('Ошибка запроса:', error);
                 throw error;
             }
         }
 
-        // Получение данных пользователя
+        // Получение данных пользователя из базы
         async function getUserData(userId) {
             try {
                 const data = await makeRequest(`api/user/${userId}`);
                 return data.success ? data.user : null;
             } catch (error) {
-                console.log('Ошибка получения данных пользователя:', error);
+                debugLog('Ошибка получения данных пользователя:', error);
                 return null;
             }
         }
@@ -362,6 +466,7 @@
                     card: ''
                 };
 
+                debugLog('Создание пользователя:', newUserData);
                 const result = await makeRequest('api/user', {
                     method: 'POST',
                     body: newUserData
@@ -369,7 +474,23 @@
 
                 return result.success ? result.user : null;
             } catch (error) {
-                console.log('Ошибка создания пользователя:', error);
+                debugLog('Ошибка создания пользователя:', error);
+                throw error;
+            }
+        }
+
+        // Обновление данных пользователя
+        async function updateUser(userId, updates) {
+            try {
+                debugLog('Обновление пользователя:', { userId, updates });
+                const result = await makeRequest(`api/user/${userId}`, {
+                    method: 'PUT',
+                    body: updates
+                });
+
+                return result.success ? result.user : null;
+            } catch (error) {
+                debugLog('Ошибка обновления пользователя:', error);
                 throw error;
             }
         }
@@ -409,10 +530,12 @@
 
         // Кэширование данных пользователя
         function cacheUserData(userData) {
-            localStorage.setItem('userCache', JSON.stringify({
+            const cacheData = {
                 data: userData,
                 timestamp: Date.now()
-            }));
+            };
+            localStorage.setItem('userCache', JSON.stringify(cacheData));
+            debugLog('Данные закэшированы:', cacheData);
         }
 
         function getCachedUserData() {
@@ -420,47 +543,160 @@
                 const cached = localStorage.getItem('userCache');
                 if (cached) {
                     const { data, timestamp } = JSON.parse(cached);
-                    // Кэш валиден 5 минут
-                    if (Date.now() - timestamp < 5 * 60 * 1000) {
+                    // Кэш валиден 10 минут
+                    if (Date.now() - timestamp < 10 * 60 * 1000) {
+                        debugLog('Используем данные из кэша:', data);
                         return data;
+                    } else {
+                        debugLog('Кэш устарел');
                     }
                 }
             } catch (error) {
-                console.log('Ошибка чтения кэша:', error);
+                debugLog('Ошибка чтения кэша:', error);
             }
             return null;
         }
 
         function clearUserCache() {
             localStorage.removeItem('userCache');
+            debugLog('Кэш очищен');
+        }
+
+        // Обновить отображение баланса
+        function updateBalanceDisplay(balance) {
+            document.getElementById('userMoney').textContent = balance || 0;
         }
 
         // Проверка пользователя в базе данных
         async function checkUserInDatabase(userData) {
             try {
+                debugLog('Проверка пользователя в базе данных', userData);
+                
                 let existingUser = await getUserData(userData.id);
 
                 if (existingUser) {
-                    document.getElementById('userMoney').textContent = existingUser.balance || 0;
-                    cacheUserData(existingUser); // Кэшируем данные
+                    debugLog('Пользователь найден в базе:', existingUser);
+                    updateBalanceDisplay(existingUser.balance);
+                    cacheUserData(existingUser);
+                    currentUserData = existingUser;
+                    showMessage('Данные успешно загружены!', 'success');
                     return existingUser;
                 }
 
-                // Создаем пользователя если его нет
+                debugLog('Пользователь не найден, создаем нового');
                 const createdUser = await createUser(userData);
                 if (createdUser) {
-                    document.getElementById('userMoney').textContent = createdUser.balance || 100;
-                    cacheUserData(createdUser); // Кэшируем данные
+                    debugLog('Пользователь создан:', createdUser);
+                    updateBalanceDisplay(createdUser.balance);
+                    cacheUserData(createdUser);
+                    currentUserData = createdUser;
+                    showMessage('Добро пожаловать! Создан новый аккаунт.', 'success');
                     return createdUser;
                 }
 
                 throw new Error('Не удалось создать пользователя');
 
             } catch (error) {
-                console.log('Ошибка при работе с базой данных:', error);
-                showError('Ошибка загрузки данных. Попробуйте обновить страницу.');
-                document.getElementById('userMoney').textContent = 0;
+                debugLog('Ошибка при работе с базой данных:', error);
+                showMessage(`Ошибка подключения к базе данных: ${error.message}`);
+                updateBalanceDisplay(0);
                 return null;
+            }
+        }
+
+        // Тестовые функции
+        async function testDatabaseConnection() {
+            try {
+                debugLog('Тестирование подключения к базе данных');
+                const result = await makeRequest('');
+                showMessage('Подключение к базе данных успешно!', 'success');
+                debugLog('Результат теста подключения:', result);
+            } catch (error) {
+                showMessage(`Ошибка подключения: ${error.message}`);
+                debugLog('Ошибка тестирования:', error);
+            }
+        }
+
+        async function addBalance(amount) {
+            if (!currentUserData) {
+                showMessage('Пользователь не загружен');
+                return;
+            }
+            
+            try {
+                const newBalance = (currentUserData.balance || 0) + amount;
+                const updatedUser = await updateUser(currentUserData.id, { balance: newBalance });
+                
+                if (updatedUser) {
+                    currentUserData = updatedUser;
+                    updateBalanceDisplay(updatedUser.balance);
+                    cacheUserData(updatedUser);
+                    showMessage(`Добавлено ${amount} клюшек!`, 'success');
+                }
+            } catch (error) {
+                showMessage(`Ошибка добавления баланса: ${error.message}`);
+            }
+        }
+
+        async function subtractBalance(amount) {
+            if (!currentUserData) {
+                showMessage('Пользователь не загружен');
+                return;
+            }
+            
+            try {
+                const newBalance = Math.max(0, (currentUserData.balance || 0) - amount);
+                const updatedUser = await updateUser(currentUserData.id, { balance: newBalance });
+                
+                if (updatedUser) {
+                    currentUserData = updatedUser;
+                    updateBalanceDisplay(updatedUser.balance);
+                    cacheUserData(updatedUser);
+                    showMessage(`Снято ${amount} клюшек!`, 'success');
+                }
+            } catch (error) {
+                showMessage(`Ошибка вычитания баланса: ${error.message}`);
+            }
+        }
+
+        async function resetBalance() {
+            if (!currentUserData) {
+                showMessage('Пользователь не загружен');
+                return;
+            }
+            
+            try {
+                const updatedUser = await updateUser(currentUserData.id, { balance: 100 });
+                
+                if (updatedUser) {
+                    currentUserData = updatedUser;
+                    updateBalanceDisplay(updatedUser.balance);
+                    cacheUserData(updatedUser);
+                    showMessage('Баланс сброшен до 100 клюшек!', 'success');
+                }
+            } catch (error) {
+                showMessage(`Ошибка сброса баланса: ${error.message}`);
+            }
+        }
+
+        async function refreshUserData() {
+            if (!currentUserData) {
+                showMessage('Пользователь не загружен');
+                return;
+            }
+            
+            try {
+                clearUserCache();
+                const freshUser = await getUserData(currentUserData.id);
+                
+                if (freshUser) {
+                    currentUserData = freshUser;
+                    updateBalanceDisplay(freshUser.balance);
+                    cacheUserData(freshUser);
+                    showMessage('Данные обновлены!', 'success');
+                }
+            } catch (error) {
+                showMessage(`Ошибка обновления данных: ${error.message}`);
             }
         }
 
@@ -469,31 +705,42 @@
             if (isInitialized) return;
 
             try {
+                debugLog('Начало инициализации приложения');
+                
                 if (window.Telegram && window.Telegram.WebApp) {
                     tg.ready();
                     tg.expand();
+                    debugLog('Telegram WebApp инициализирован');
                 }
 
                 userData = getTelegramUserData();
                 getUserAvatar(userData);
 
-                // Проверяем/создаем пользователя в базе
-                await checkUserInDatabase(userData);
+                // Проверяем кэш
+                const cachedData = getCachedUserData();
+                if (cachedData) {
+                    currentUserData = cachedData;
+                    updateBalanceDisplay(cachedData.balance);
+                    showMessage('Данные загружены из кэша', 'success');
+                } else {
+                    // Проверяем/создаем пользователя в базе
+                    await checkUserInDatabase(userData);
+                }
 
-                hideError();
                 isInitialized = true;
+                debugLog('Инициализация завершена успешно');
 
             } catch (error) {
-                console.log('Ошибка инициализации:', error);
-                showError('Ошибка инициализации. Попробуйте обновить страницу.');
-                document.getElementById('userMoney').textContent = 0;
+                debugLog('Ошибка инициализации:', error);
+                showMessage(`Ошибка инициализации: ${error.message}`);
+                updateBalanceDisplay(0);
                 getUserAvatar(userData || {});
                 isInitialized = true;
             } finally {
                 // Всегда скрываем загрузочный экран
                 setTimeout(() => {
                     hideLoadingScreen();
-                }, 1000);
+                }, 1500);
             }
         }
 
@@ -503,6 +750,10 @@
         if (document.readyState === 'complete') {
             initApp();
         }
+
+        // Экспорт функций для глобального доступа
+        window.getUserDataFromCache = () => currentUserData;
+        window.updateUserBalance = updateUser;
     </script>
 </body>
 </html>
