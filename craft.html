@@ -458,7 +458,7 @@
     </div>
 
     <script>
-        const WORKER_URL = 'https://hockey-osnova-worker.egorspirin10.workers.dev/';
+        const WORKER_URL = 'https://worker-my-db.egorspirin10.workers.dev/';
 
         let tg = window.Telegram.WebApp;
         let userData = null;
@@ -477,12 +477,12 @@
         // Нормализация редкости для CSS классов
         function normalizeRarity(rarity) {
             const rarityText = rarity.toLowerCase().trim();
-            
+
             if (rarityText.includes('легендар')) return 'легендарный';
             if (rarityText.includes('мифич')) return 'мифический';
             if (rarityText.includes('эпич')) return 'эпический';
             if (rarityText.includes('прост')) return 'простой';
-            
+
             return 'простой'; // по умолчанию
         }
 
@@ -514,6 +514,23 @@
             }
         }
 
+        // Получить сохраненные данные пользователя
+        function getSavedUserData() {
+            try {
+                const saved = localStorage.getItem('currentUserData');
+                if (saved) {
+                    const { user, timestamp } = JSON.parse(saved);
+                    // Данные актуальны 10 минут
+                    if (Date.now() - timestamp < 10 * 60 * 1000) {
+                        return user;
+                    }
+                }
+            } catch (error) {
+                console.log('Ошибка чтения сохраненных данных:', error);
+            }
+            return null;
+        }
+
         // Запрос к Worker API
         async function makeRequest(endpoint, options = {}) {
             try {
@@ -534,17 +551,6 @@
             } catch (error) {
                 console.error('Request failed:', error);
                 throw error;
-            }
-        }
-
-        // Получить данные пользователя из базы
-        async function getUserData(userId) {
-            try {
-                const data = await makeRequest(`api/user/${userId}`);
-                return data.success ? data.user : null;
-            } catch (error) {
-                console.log('Ошибка получения данных пользователя:', error);
-                return null;
             }
         }
 
@@ -597,7 +603,7 @@
                 'Рушан': 'https://raw.githubusercontent.com/ChatGPT-Course/Xokkey/main/avatar/Rushan_rafikov.jpg',
                 'Сериков': 'https://raw.githubusercontent.com/ChatGPT-Course/Xokkey/main/avatar/artem_serikov.jpg'
             };
-            
+
             return avatarMap[name] || null;
         }
 
@@ -616,7 +622,7 @@
             if (card.rarity !== selectedRarity) return;
 
             const cardIndex = selectedCards.findIndex(c => c.id === cardId);
-            
+
             if (cardIndex >= 0) {
                 // Убираем карточку из выбранных
                 selectedCards.splice(cardIndex, 1);
@@ -643,11 +649,11 @@
         // Обновление состояния карточек
         function updateCardStates() {
             const cardElements = document.querySelectorAll('.card-item');
-            
+
             cardElements.forEach(element => {
                 const cardId = parseInt(element.getAttribute('data-card-id'));
                 const card = userCards.find(c => c.id === cardId);
-                
+
                 if (selectedRarity && card.rarity !== selectedRarity) {
                     element.classList.add('disabled');
                 } else {
@@ -675,7 +681,7 @@
         // Обновление кнопки крафта
         function updateCraftButton() {
             const button = document.getElementById('craftBtn');
-            
+
             if (selectedRarity && craftRules[selectedRarity]) {
                 const rule = craftRules[selectedRarity];
                 button.disabled = selectedCards.length !== rule.required;
@@ -687,7 +693,7 @@
         // Отобразить инвентарь
         function displayInventory(cards) {
             const container = document.getElementById('inventoryContainer');
-            
+
             if (cards.length === 0) {
                 container.innerHTML = '<div class="empty-inventory">Инвентарь пуст<br>Получите карточки в разделе "Обмен"</div>';
                 return;
@@ -701,9 +707,9 @@
                 cardElement.className = 'card-item';
                 cardElement.setAttribute('data-card-id', card.id);
                 cardElement.onclick = () => selectCard(card.id);
-                
+
                 const avatarUrl = getCardAvatar(card.name);
-                
+
                 if (avatarUrl) {
                     cardElement.innerHTML = `
                         <div class="card-rarity-badge ${normalizeRarity(card.rarity)}">${card.rarity}</div>
@@ -719,7 +725,7 @@
                         <div class="card-name">${card.name}</div>
                     `;
                 }
-                
+
                 inventoryGrid.appendChild(cardElement);
             });
 
@@ -730,10 +736,10 @@
         // Показать подтверждение крафта
         function showCraftConfirmation() {
             if (!selectedRarity || selectedCards.length === 0) return;
-            
+
             const rule = craftRules[selectedRarity];
             const playerName = getRandomPlayerForRarity(rule.result);
-            
+
             document.getElementById('craftText').textContent = 
                 `Вы действительно хотите объединить ${selectedCards.length} карт редкости "${selectedRarity}" в 1 карту "${playerName}" редкости "${rule.result}"?`;
             document.getElementById('craftModal').style.display = 'block';
@@ -747,7 +753,7 @@
                 'Мифический': ['Голдобин'],
                 'Легендарный': ['Ливо']
             };
-            
+
             const players = rarityPlayers[rarity] || ['Неизвестный'];
             return players[Math.floor(Math.random() * players.length)];
         }
@@ -762,7 +768,7 @@
                 // Создаем новый массив карт без выбранных
                 const selectedIds = selectedCards.map(c => c.id);
                 const remainingCards = userCards.filter(c => !selectedIds.includes(c.id));
-                
+
                 // Добавляем новую карту
                 remainingCards.push({
                     id: Date.now(),
@@ -781,11 +787,11 @@
                     // Обновляем локальные данные
                     currentUserData.card = updatedUser.card;
                     userCards = remainingCards;
-                    
+
                     // Сбрасываем выбор
                     selectedCards = [];
                     selectedRarity = null;
-                    
+
                     // Обновляем отображение
                     displayInventory(userCards);
                     updateSelectionInfo();
@@ -798,7 +804,7 @@
                 } else {
                     throw new Error('Не удалось обновить данные пользователя');
                 }
-                
+
                 closeModal();
                 document.getElementById('resultModal').style.display = 'block';
 
@@ -806,7 +812,7 @@
                 console.error('Ошибка крафта:', error);
                 document.getElementById('resultTitle').textContent = 'Ошибка крафта';
                 document.getElementById('resultText').textContent = 'Произошла ошибка при крафте карт';
-                
+
                 closeModal();
                 document.getElementById('resultModal').style.display = 'block';
             }
@@ -838,9 +844,9 @@
                 userData = getTelegramUserData();
                 console.log('Данные пользователя:', userData);
 
-                // Получаем данные из базы
-                currentUserData = await getUserData(userData.id);
-                
+                // Используем сохраненные данные
+                currentUserData = getSavedUserData();
+
                 if (currentUserData) {
                     // Парсим и отображаем карточки
                     const cards = parseCards(currentUserData.card);
@@ -848,6 +854,7 @@
                     displayInventory(userCards);
                 } else {
                     displayInventory([]);
+                    console.log('Нет сохраненных данных пользователя');
                 }
 
             } catch (error) {
