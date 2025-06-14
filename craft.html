@@ -517,6 +517,17 @@
         // Получить сохраненные данные пользователя
         function getSavedUserData() {
             try {
+                // Сначала проверяем сессионный буфер
+                const sessionSaved = sessionStorage.getItem('activeUserSession');
+                if (sessionSaved) {
+                    const { user, timestamp } = JSON.parse(sessionSaved);
+                    // Данные актуальны в течение сессии (30 минут)
+                    if (Date.now() - timestamp < 30 * 60 * 1000) {
+                        return user;
+                    }
+                }
+
+                // Если нет сессионных данных, проверяем localStorage
                 const saved = localStorage.getItem('currentUserData');
                 if (saved) {
                     const { user, timestamp } = JSON.parse(saved);
