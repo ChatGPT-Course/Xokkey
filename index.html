@@ -314,28 +314,56 @@
             }
         }
 
-        // Запрос к Worker API
+        // Запрос к Worker API с retry логикой и оптимизацией
         async function makeRequest(endpoint, options = {}) {
-            const url = `${WORKER_URL}${endpoint}`;
+            const maxRetries = 3;
+            const timeoutMs = 10000; // 10 секунд
+            
+            // Добавляем заголовки для обхода блокировок
+            const headers = {
+                'Content-Type': 'application/json',
+                'Cache-Control': 'no-cache',
+                'Pragma': 'no-cache',
+                'X-Requested-With': 'XMLHttpRequest',
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                ...options.headers
+            };
 
-            try {
-                const response = await fetch(url, {
-                    method: options.method || 'GET',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...options.headers
-                    },
-                    body: options.body ? JSON.stringify(options.body) : undefined
-                });
+            for (let attempt = 1; attempt <= maxRetries; attempt++) {
+                try {
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+                    
+                    const url = `${WORKER_URL}${endpoint}`;
+                    
+                    const response = await fetch(url, {
+                        method: options.method || 'GET',
+                        headers: headers,
+                        body: options.body ? JSON.stringify(options.body) : undefined,
+                        signal: controller.signal,
+                        mode: 'cors',
+                        credentials: 'omit'
+                    });
 
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}`);
+                    clearTimeout(timeoutId);
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}`);
+                    }
+
+                    return await response.json();
+                    
+                } catch (error) {
+                    console.error(`Попытка ${attempt} не удалась:`, error);
+                    
+                    if (attempt === maxRetries) {
+                        throw error;
+                    }
+                    
+                    // Увеличиваем задержку с каждой попыткой
+                    const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
+                    await new Promise(resolve => setTimeout(resolve, delay));
                 }
-
-                return await response.json();
-            } catch (error) {
-                console.error('Ошибка запроса:', error);
-                throw error;
             }
         }
 
@@ -483,8 +511,19 @@
                 disableAllButtons();
                 showBalanceLoading();
 
-                // ВСЕГДА делаем новый запрос в базу данных на index.html
-                console.log('Загрузка актуальных данных из базы данных');
+                // Проверяем буфер сессии
+                const sessionData = getSessionData();
+                
+                if (sessionData && sessionData.id === userData.id) {
+                    // Используем данные из буфера - мгновенная загрузка
+                    console.log('Использование данных из буфера сессии');
+                    currentUserData = sessionData;
+                    updateBalance(sessionData.balance);
+                    return;
+                }
+
+                // Если нет данных в буфере - загружаем из БД
+                console.log('Загрузка данных из базы данных');
                 await initUserData(userData);
 
             } catch (error) {
@@ -498,7 +537,22 @@
         // Запуск при загрузке страницы
         document.addEventListener('DOMContentLoaded', initApp);
 
-        
+        // Получить данные из сессионного буфера
+        function getSessionData() {
+            try {
+                const saved = sessionStorage.getItem('activeUserSession');
+                if (saved) {
+                    const { user, timestamp } = JSON.parse(saved);
+                    // Данные актуальны в течение активной сессии (30 минут)
+                    if (Date.now() - timestamp < 30 * 60 * 1000) {
+                        return user;
+                    }
+                }
+            } catch (error) {
+                console.log('Ошибка чтения сессионных данных:', error);
+            }
+            return null;
+        }
 
         // Сохранить данные в сессионный буфер
         function saveSessionData(userData) {
@@ -510,9 +564,34 @@
                 sessionStorage.setItem('activeUserSession', JSON.stringify(dataToSave));
                 // Также сохраняем в localStorage для других страниц
                 localStorage.setItem('currentUserData', JSON.stringify(dataToSave));
+                
+                // Дополнительное кеширование с более длительным сроком
+                const longTermCache = {
+                    user: userData,
+                    timestamp: Date.now(),
+                    version: '1.1'
+                };
+                localStorage.setItem('userBackupCache', JSON.stringify(longTermCache));
             } catch (error) {
                 console.log('Ошибка сохранения сессионных данных:', error);
             }
+        }
+
+        // Получить данные из backup кеша
+        function getBackupCacheData() {
+            try {
+                const saved = localStorage.getItem('userBackupCache');
+                if (saved) {
+                    const { user, timestamp, version } = JSON.parse(saved);
+                    // Данные актуальны 24 часа
+                    if (Date.now() - timestamp < 24 * 60 * 60 * 1000 && version === '1.1') {
+                        return user;
+                    }
+                }
+            } catch (error) {
+                console.log('Ошибка чтения backup кеша:', error);
+            }
+            return null;
         }
 
         // Экспорт для других страниц
