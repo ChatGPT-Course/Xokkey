@@ -479,20 +479,12 @@
                 userData = getTelegramUserData();
                 setUserAvatar(userData);
 
-                // Проверяем буфер сессии
-                const sessionData = getSessionData();
-                
-                if (sessionData && sessionData.id === userData.id) {
-                    // Используем данные из буфера - мгновенная загрузка
-                    console.log('Использование данных из буфера сессии');
-                    currentUserData = sessionData;
-                    updateBalance(sessionData.balance);
-                    hideLoadingScreen(); // Сразу скрываем загрузочный экран
-                    return;
-                }
+                // Блокируем кнопки и показываем загрузку баланса
+                disableAllButtons();
+                showBalanceLoading();
 
-                // Если нет данных в буфере - загружаем из БД
-                console.log('Загрузка данных из базы данных');
+                // ВСЕГДА делаем новый запрос в базу данных на index.html
+                console.log('Загрузка актуальных данных из базы данных');
                 await initUserData(userData);
 
             } catch (error) {
@@ -500,33 +492,13 @@
                 showMessage('Ошибка инициализации приложения');
                 updateBalance(0);
                 setUserAvatar(userData || {});
-            } finally {
-                // Скрываем загрузочный экран через 1 секунду только если данные загружались из БД
-                if (!getSessionData()) {
-                    setTimeout(hideLoadingScreen, 1000);
-                }
             }
         }
 
         // Запуск при загрузке страницы
         document.addEventListener('DOMContentLoaded', initApp);
 
-        // Получить данные из сессионного буфера
-        function getSessionData() {
-            try {
-                const saved = sessionStorage.getItem('activeUserSession');
-                if (saved) {
-                    const { user, timestamp } = JSON.parse(saved);
-                    // Данные актуальны в течение активной сессии (30 минут)
-                    if (Date.now() - timestamp < 30 * 60 * 1000) {
-                        return user;
-                    }
-                }
-            } catch (error) {
-                console.log('Ошибка чтения сессионных данных:', error);
-            }
-            return null;
-        }
+        
 
         // Сохранить данные в сессионный буфер
         function saveSessionData(userData) {
