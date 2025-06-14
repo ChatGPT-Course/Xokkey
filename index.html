@@ -1,4 +1,5 @@
 
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -223,43 +224,7 @@
             margin-bottom: 20px;
         }
 
-        .debug-info {
-            background: rgba(52, 152, 219, 0.2);
-            border: 1px solid rgba(52, 152, 219, 0.5);
-            color: #fff;
-            padding: 10px;
-            border-radius: 8px;
-            text-align: left;
-            margin-top: 20px;
-            font-size: 0.8rem;
-            font-family: monospace;
-        }
-
-        /* Кнопки тестирования */
-        .test-buttons {
-            margin-top: 20px;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            width: 100%;
-            max-width: 300px;
-        }
-
-        .btn-test {
-            background: rgba(155, 89, 182, 0.8);
-            color: white;
-            border: 2px solid rgba(155, 89, 182, 0.5);
-            padding: 10px;
-            border-radius: 8px;
-            font-size: 0.9rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        .btn-test:hover {
-            background: rgba(155, 89, 182, 1);
-            transform: translateY(-1px);
-        }
+        
     </style>
 </head>
 <body>
@@ -305,33 +270,14 @@
                 </a>
             </div>
 
-            <!-- Кнопки тестирования -->
-            <div class="test-buttons">
-                <button class="btn-test" onclick="testDatabaseConnection()">
-                    🔧 Тест подключения к БД
-                </button>
-                <button class="btn-test" onclick="addBalance(50)">
-                    💰 Добавить 50 клюшек
-                </button>
-                <button class="btn-test" onclick="subtractBalance(25)">
-                    📉 Отнять 25 клюшек
-                </button>
-                <button class="btn-test" onclick="resetBalance()">
-                    🔄 Сбросить баланс (100)
-                </button>
-                <button class="btn-test" onclick="refreshUserData()">
-                    🔄 Обновить данные
-                </button>
-            </div>
-
-            <div id="debugInfo" class="debug-info" style="display: none;"></div>
+            
 
             <div class="version">Hockey Shootouts V(b-1.1 - TimeWeb)</div>
         </div>
     </div>
 
     <script>
-        const WORKER_URL = 'https://hockey-database-worker.egorspirin10.workers.dev/';
+        const WORKER_URL = 'https://worker-my-db.egorspirin10.workers.dev/';
 
         let tg = window.Telegram.WebApp;
         let userData = null;
@@ -341,14 +287,6 @@
         // Логирование для отладки
         function debugLog(message, data = null) {
             console.log(`[DEBUG] ${message}`, data);
-            
-            const debugElement = document.getElementById('debugInfo');
-            if (debugElement) {
-                const timestamp = new Date().toLocaleTimeString();
-                const logEntry = `[${timestamp}] ${message}${data ? '\n' + JSON.stringify(data, null, 2) : ''}`;
-                debugElement.textContent = logEntry + '\n' + debugElement.textContent;
-                debugElement.style.display = 'block';
-            }
         }
 
         // Получить данные пользователя из Telegram WebApp
@@ -604,101 +542,7 @@
             }
         }
 
-        // Тестовые функции
-        async function testDatabaseConnection() {
-            try {
-                debugLog('Тестирование подключения к базе данных');
-                const result = await makeRequest('');
-                showMessage('Подключение к базе данных успешно!', 'success');
-                debugLog('Результат теста подключения:', result);
-            } catch (error) {
-                showMessage(`Ошибка подключения: ${error.message}`);
-                debugLog('Ошибка тестирования:', error);
-            }
-        }
-
-        async function addBalance(amount) {
-            if (!currentUserData) {
-                showMessage('Пользователь не загружен');
-                return;
-            }
-            
-            try {
-                const newBalance = (currentUserData.balance || 0) + amount;
-                const updatedUser = await updateUser(currentUserData.id, { balance: newBalance });
-                
-                if (updatedUser) {
-                    currentUserData = updatedUser;
-                    updateBalanceDisplay(updatedUser.balance);
-                    cacheUserData(updatedUser);
-                    showMessage(`Добавлено ${amount} клюшек!`, 'success');
-                }
-            } catch (error) {
-                showMessage(`Ошибка добавления баланса: ${error.message}`);
-            }
-        }
-
-        async function subtractBalance(amount) {
-            if (!currentUserData) {
-                showMessage('Пользователь не загружен');
-                return;
-            }
-            
-            try {
-                const newBalance = Math.max(0, (currentUserData.balance || 0) - amount);
-                const updatedUser = await updateUser(currentUserData.id, { balance: newBalance });
-                
-                if (updatedUser) {
-                    currentUserData = updatedUser;
-                    updateBalanceDisplay(updatedUser.balance);
-                    cacheUserData(updatedUser);
-                    showMessage(`Снято ${amount} клюшек!`, 'success');
-                }
-            } catch (error) {
-                showMessage(`Ошибка вычитания баланса: ${error.message}`);
-            }
-        }
-
-        async function resetBalance() {
-            if (!currentUserData) {
-                showMessage('Пользователь не загружен');
-                return;
-            }
-            
-            try {
-                const updatedUser = await updateUser(currentUserData.id, { balance: 100 });
-                
-                if (updatedUser) {
-                    currentUserData = updatedUser;
-                    updateBalanceDisplay(updatedUser.balance);
-                    cacheUserData(updatedUser);
-                    showMessage('Баланс сброшен до 100 клюшек!', 'success');
-                }
-            } catch (error) {
-                showMessage(`Ошибка сброса баланса: ${error.message}`);
-            }
-        }
-
-        async function refreshUserData() {
-            if (!currentUserData) {
-                showMessage('Пользователь не загружен');
-                return;
-            }
-            
-            try {
-                clearUserCache();
-                const freshUser = await getUserData(currentUserData.id);
-                
-                if (freshUser) {
-                    currentUserData = freshUser;
-                    updateBalanceDisplay(freshUser.balance);
-                    cacheUserData(freshUser);
-                    showMessage('Данные обновлены!', 'success');
-                }
-            } catch (error) {
-                showMessage(`Ошибка обновления данных: ${error.message}`);
-            }
-        }
+        
 
         // Инициализация приложения
         async function initApp() {
@@ -756,4 +600,5 @@
         window.updateUserBalance = updateUser;
     </script>
 </body>
-</html>
+    </html>
+    
