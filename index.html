@@ -252,7 +252,12 @@
     </div>
 
     <script>
-        const WORKER_URL = 'https://worker-my-db.egorspirin10.workers.dev/';
+        // Основной URL и резервные варианты
+        const WORKER_URLS = [
+            'https://worker-my-db.egorspirin10.workers.dev/',
+            'https://cors-anywhere.herokuapp.com/https://worker-my-db.egorspirin10.workers.dev/',
+            'https://api.allorigins.win/raw?url=https://worker-my-db.egorspirin10.workers.dev/'
+        ];
 
         let tg = window.Telegram.WebApp;
         let userData = null;
@@ -314,57 +319,57 @@
             }
         }
 
-        // Запрос к Worker API с retry логикой и оптимизацией
+        // Запрос к Worker API с множественными попытками и прокси
         async function makeRequest(endpoint, options = {}) {
-            const maxRetries = 3;
-            const timeoutMs = 10000; // 10 секунд
-            
-            // Добавляем заголовки для обхода блокировок
-            const headers = {
-                'Content-Type': 'application/json',
-                'Cache-Control': 'no-cache',
-                'Pragma': 'no-cache',
-                'X-Requested-With': 'XMLHttpRequest',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                ...options.headers
-            };
+            const maxRetries = WORKER_URLS.length;
+            let lastError = null;
 
-            for (let attempt = 1; attempt <= maxRetries; attempt++) {
+            for (let i = 0; i < maxRetries; i++) {
+                const baseUrl = WORKER_URLS[i];
+                const url = `${baseUrl}${endpoint}`;
+                
                 try {
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+                    console.log(`Попытка ${i + 1}/${maxRetries}: ${baseUrl}`);
                     
-                    const url = `${WORKER_URL}${endpoint}`;
+                    const controller = new AbortController();
+                    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 секунд таймаут
                     
                     const response = await fetch(url, {
                         method: options.method || 'GET',
-                        headers: headers,
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest', // Помогает с CORS
+                            ...options.headers
+                        },
                         body: options.body ? JSON.stringify(options.body) : undefined,
                         signal: controller.signal,
                         mode: 'cors',
-                        credentials: 'omit'
+                        cache: 'no-cache' // Отключаем кеш для актуальных данных
                     });
-
+                    
                     clearTimeout(timeoutId);
 
                     if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}`);
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                     }
 
-                    return await response.json();
+                    const data = await response.json();
+                    console.log(`Успешное подключение через: ${baseUrl}`);
+                    return data;
                     
                 } catch (error) {
-                    console.error(`Попытка ${attempt} не удалась:`, error);
+                    lastError = error;
+                    console.warn(`Ошибка с ${baseUrl}:`, error.message);
                     
-                    if (attempt === maxRetries) {
-                        throw error;
+                    // Небольшая задержка между попытками
+                    if (i < maxRetries - 1) {
+                        await new Promise(resolve => setTimeout(resolve, 1000));
                     }
-                    
-                    // Увеличиваем задержку с каждой попыткой
-                    const delay = Math.min(1000 * Math.pow(2, attempt - 1), 5000);
-                    await new Promise(resolve => setTimeout(resolve, delay));
                 }
             }
+
+            console.error('Все попытки подключения неудачны:', lastError);
+            throw new Error(`Не удалось подключиться ни к одному серверу. Последняя ошибка: ${lastError?.message}`);
         }
 
         // Получение данных пользователя из базы
@@ -488,7 +493,18 @@
 
             } catch (error) {
                 console.error('Ошибка при работе с базой данных:', error);
-                showMessage('Ошибка подключения к базе данных');
+                
+                // Более подробные сообщения об ошибках
+                if (error.message.includes('fetch')) {
+                    showMessage('Проблемы с подключением. Проверьте интернет или попробуйте через VPN.');
+                } else if (error.message.includes('CORS')) {
+                    showMessage('Ошибка доступа к серверу. Используются резервные каналы...');
+                } else if (error.message.includes('timeout')) {
+                    showMessage('Превышено время ожидания. Проверьте скорость интернета.');
+                } else {
+                    showMessage(`Ошибка подключения: ${error.message}`);
+                }
+                
                 updateBalance(0);
                 return null;
             }
@@ -511,19 +527,8 @@
                 disableAllButtons();
                 showBalanceLoading();
 
-                // Проверяем буфер сессии
-                const sessionData = getSessionData();
-                
-                if (sessionData && sessionData.id === userData.id) {
-                    // Используем данные из буфера - мгновенная загрузка
-                    console.log('Использование данных из буфера сессии');
-                    currentUserData = sessionData;
-                    updateBalance(sessionData.balance);
-                    return;
-                }
-
-                // Если нет данных в буфере - загружаем из БД
-                console.log('Загрузка данных из базы данных');
+                // ВСЕГДА делаем свежий запрос в index.html (без кеша)
+                console.log('Загрузка актуальных данных из базы данных (без кеша)');
                 await initUserData(userData);
 
             } catch (error) {
@@ -564,34 +569,9 @@
                 sessionStorage.setItem('activeUserSession', JSON.stringify(dataToSave));
                 // Также сохраняем в localStorage для других страниц
                 localStorage.setItem('currentUserData', JSON.stringify(dataToSave));
-                
-                // Дополнительное кеширование с более длительным сроком
-                const longTermCache = {
-                    user: userData,
-                    timestamp: Date.now(),
-                    version: '1.1'
-                };
-                localStorage.setItem('userBackupCache', JSON.stringify(longTermCache));
             } catch (error) {
                 console.log('Ошибка сохранения сессионных данных:', error);
             }
-        }
-
-        // Получить данные из backup кеша
-        function getBackupCacheData() {
-            try {
-                const saved = localStorage.getItem('userBackupCache');
-                if (saved) {
-                    const { user, timestamp, version } = JSON.parse(saved);
-                    // Данные актуальны 24 часа
-                    if (Date.now() - timestamp < 24 * 60 * 60 * 1000 && version === '1.1') {
-                        return user;
-                    }
-                }
-            } catch (error) {
-                console.log('Ошибка чтения backup кеша:', error);
-            }
-            return null;
         }
 
         // Экспорт для других страниц
