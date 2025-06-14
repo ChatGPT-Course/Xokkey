@@ -397,7 +397,7 @@
     </div>
 
     <script>
-        const WORKER_URL = 'https://hockey-osnova-worker.egorspirin10.workers.dev/';
+        const WORKER_URL = 'https://worker-my-db.egorspirin10.workers.dev/';
 
         let tg = window.Telegram.WebApp;
         let userData = null;
@@ -639,8 +639,8 @@
                     currentUserData.balance = updatedUser.balance;
                     currentUserData.card = updatedUser.card;
 
-                    // Очищаем кэш чтобы при следующем переходе загрузились свежие данные
-                    clearUserCache();
+                    // Сохраняем обновленные данные
+                    updateSavedUserData(currentUserData);
 
                     // Обновляем отображение
                     document.getElementById('userMoney').textContent = currentUserData.balance;
@@ -678,25 +678,34 @@
             }
         }
 
-        // Кэширование данных пользователя
-        function getCachedUserData() {
+        // Получить сохраненные данные пользователя
+        function getSavedUserData() {
             try {
-                const cached = localStorage.getItem('userCache');
-                if (cached) {
-                    const { data, timestamp } = JSON.parse(cached);
-                    // Кэш валиден 5 минут
-                    if (Date.now() - timestamp < 5 * 60 * 1000) {
-                        return data;
+                const saved = localStorage.getItem('currentUserData');
+                if (saved) {
+                    const { user, timestamp } = JSON.parse(saved);
+                    // Данные актуальны 10 минут
+                    if (Date.now() - timestamp < 10 * 60 * 1000) {
+                        return user;
                     }
                 }
             } catch (error) {
-                console.log('Ошибка чтения кэша:', error);
+                console.log('Ошибка чтения сохраненных данных:', error);
             }
             return null;
         }
 
-        function clearUserCache() {
-            localStorage.removeItem('userCache');
+        // Обновить сохраненные данные
+        function updateSavedUserData(userData) {
+            try {
+                const dataToSave = {
+                    user: userData,
+                    timestamp: Date.now()
+                };
+                localStorage.setItem('currentUserData', JSON.stringify(dataToSave));
+            } catch (error) {
+                console.log('Ошибка сохранения данных:', error);
+            }
         }
 
         // Инициализация магазина
@@ -710,33 +719,17 @@
                 userData = getTelegramUserData();
                 console.log('Данные пользователя:', userData);
 
-                // Проверяем кэш
-                const cachedUser = getCachedUserData();
+                // Используем сохраненные данные
+                const savedUser = getSavedUserData();
                 
-                if (cachedUser && cachedUser.id === userData.id) {
-                    // Используем кэшированные данные
-                    currentUserData = cachedUser;
+                if (savedUser && savedUser.id === userData.id) {
+                    // Используем сохраненные данные
+                    currentUserData = savedUser;
                     document.getElementById('userMoney').textContent = currentUserData.balance || 0;
                     displayCards();
                 } else {
-                    // Устанавливаем анимацию загрузки для валюты
-                    const currencyDisplay = document.getElementById('currencyDisplay');
-                    currencyDisplay.classList.add('loading');
-
-                    // Получаем данные из базы
-                    currentUserData = await getUserData(userData.id);
-
-                    // Убираем анимацию загрузки
-                    currencyDisplay.classList.remove('loading');
-
-                    if (currentUserData) {
-                        document.getElementById('userMoney').textContent = currentUserData.balance || 0;
-                    } else {
-                        document.getElementById('userMoney').textContent = 0;
-                        showMessage('Ошибка загрузки данных пользователя', 'error');
-                    }
-
-                    // Отображаем карточки
+                    document.getElementById('userMoney').textContent = 0;
+                    showMessage('Нет актуальных данных пользователя', 'error');
                     displayCards();
                 }
 
