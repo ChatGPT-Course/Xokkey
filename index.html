@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -5,6 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hockey Shootouts</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
     <style>
         * {
             margin: 0;
@@ -247,17 +249,21 @@
                 </a>
             </div>
 
-            <div class="version">Версия 1.1 (beta)</div>
+            <button onclick="forceRefreshData()" class="btn btn-secondary" style="margin-top: 15px; max-width: 200px; font-size: 0.9rem;">
+                🔄 Обновить данные
+            </button>
+
+            <div class="version">Версия 2.0 (Supabase)</div>
         </div>
     </div>
 
     <script>
-        // Основной URL и резервные варианты
-        const WORKER_URLS = [
-            'https://worker-my-db.egorspirin10.workers.dev/',
-            'https://cors-anywhere.herokuapp.com/https://worker-my-db.egorspirin10.workers.dev/',
-            'https://api.allorigins.win/raw?url=https://worker-my-db.egorspirin10.workers.dev/'
-        ];
+        // Конфигурация Supabase
+        const SUPABASE_URL = 'https://tkuhnmfvojzoarbmizgv.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRrdWhubWZ2b2p6b2FyYm1pemd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk4MTgyNzcsImV4cCI6MjA2NTM5NDI3N30.L44bzsSPWJC390Hsr_f-eV8vwIp7s2Qbyif6_6Ga-OU';
+
+        // Инициализация Supabase клиента
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let tg = window.Telegram.WebApp;
         let userData = null;
@@ -269,7 +275,7 @@
                 if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
                     const user = tg.initDataUnsafe.user;
                     return {
-                        id: user.id.toString(),
+                        id: user.id,
                         username: user.username || '',
                         first_name: user.first_name || '',
                         last_name: user.last_name || '',
@@ -280,7 +286,7 @@
 
                 // Fallback для тестирования
                 return {
-                    id: 'test_' + Date.now(),
+                    id: 123456789,
                     username: 'test_user',
                     first_name: 'Тестовый',
                     last_name: 'Игрок',
@@ -290,7 +296,7 @@
             } catch (error) {
                 console.error('Ошибка получения данных пользователя:', error);
                 return {
-                    id: 'error_' + Date.now(),
+                    id: 987654321,
                     username: 'error_user',
                     first_name: 'Ошибка',
                     last_name: 'Пользователь',
@@ -319,65 +325,22 @@
             }
         }
 
-        // Запрос к Worker API с множественными попытками и прокси
-        async function makeRequest(endpoint, options = {}) {
-            const maxRetries = WORKER_URLS.length;
-            let lastError = null;
-
-            for (let i = 0; i < maxRetries; i++) {
-                const baseUrl = WORKER_URLS[i];
-                const url = `${baseUrl}${endpoint}`;
-                
-                try {
-                    console.log(`Попытка ${i + 1}/${maxRetries}: ${baseUrl}`);
-                    
-                    const controller = new AbortController();
-                    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 секунд таймаут
-                    
-                    const response = await fetch(url, {
-                        method: options.method || 'GET',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-Requested-With': 'XMLHttpRequest', // Помогает с CORS
-                            ...options.headers
-                        },
-                        body: options.body ? JSON.stringify(options.body) : undefined,
-                        signal: controller.signal,
-                        mode: 'cors',
-                        cache: 'no-cache' // Отключаем кеш для актуальных данных
-                    });
-                    
-                    clearTimeout(timeoutId);
-
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                    }
-
-                    const data = await response.json();
-                    console.log(`Успешное подключение через: ${baseUrl}`);
-                    return data;
-                    
-                } catch (error) {
-                    lastError = error;
-                    console.warn(`Ошибка с ${baseUrl}:`, error.message);
-                    
-                    // Небольшая задержка между попытками
-                    if (i < maxRetries - 1) {
-                        await new Promise(resolve => setTimeout(resolve, 1000));
-                    }
-                }
-            }
-
-            console.error('Все попытки подключения неудачны:', lastError);
-            throw new Error(`Не удалось подключиться ни к одному серверу. Последняя ошибка: ${lastError?.message}`);
-        }
-
         // Получение данных пользователя из базы
         async function getUserFromDB(userId) {
             try {
-                const data = await makeRequest(`api/user/${userId}`);
-                return data.success ? data.user : null;
+                const { data, error } = await supabase
+                    .from('test')
+                    .select('*')
+                    .eq('id', userId)
+                    .single();
+
+                if (error && error.code !== 'PGRST116') {
+                    throw error;
+                }
+
+                return data;
             } catch (error) {
+                console.error('Ошибка получения пользователя:', error);
                 return null;
             }
         }
@@ -385,20 +348,28 @@
         // Создание пользователя
         async function createUserInDB(userData) {
             try {
-                const newUser = {
-                    id: userData.id,
-                    name: userData.display_name,
-                    username: userData.username,
-                    balance: 100,
-                    card: ''
-                };
+                const { data, error } = await supabase
+                    .from('test')
+                    .insert([
+                        {
+                            id: userData.id,
+                            name: userData.display_name,
+                            username: userData.username,
+                            balance: 10,
+                            cards: '',
+                            last_game_time: 0,
+                            total_games: 0,
+                            wins: 0
+                        }
+                    ])
+                    .select()
+                    .single();
 
-                const result = await makeRequest('api/user', {
-                    method: 'POST',
-                    body: newUser
-                });
+                if (error) {
+                    throw error;
+                }
 
-                return result.success ? result.user : null;
+                return data;
             } catch (error) {
                 console.error('Ошибка создания пользователя:', error);
                 throw error;
@@ -485,7 +456,7 @@
                     currentUserData = user;
                     updateBalance(user.balance);
                     saveCurrentUserData();
-                    showMessage('Аккаунт создан!', 'success');
+                    showMessage('Аккаунт создан! Начальный баланс: 10 клюшек', 'success');
                     return user;
                 }
 
@@ -493,18 +464,7 @@
 
             } catch (error) {
                 console.error('Ошибка при работе с базой данных:', error);
-                
-                // Более подробные сообщения об ошибках
-                if (error.message.includes('fetch')) {
-                    showMessage('Проблемы с подключением. Проверьте интернет или попробуйте через VPN.');
-                } else if (error.message.includes('CORS')) {
-                    showMessage('Ошибка доступа к серверу. Используются резервные каналы...');
-                } else if (error.message.includes('timeout')) {
-                    showMessage('Превышено время ожидания. Проверьте скорость интернета.');
-                } else {
-                    showMessage(`Ошибка подключения: ${error.message}`);
-                }
-                
+                showMessage(`Ошибка подключения к базе данных: ${error.message}`);
                 updateBalance(0);
                 return null;
             }
@@ -527,8 +487,8 @@
                 disableAllButtons();
                 showBalanceLoading();
 
-                // ВСЕГДА делаем свежий запрос в index.html (без кеша)
-                console.log('Загрузка актуальных данных из базы данных (без кеша)');
+                // Подключаемся к Supabase базе данных
+                console.log('Подключение к Supabase базе данных...');
                 await initUserData(userData);
 
             } catch (error) {
@@ -542,48 +502,42 @@
         // Запуск при загрузке страницы
         document.addEventListener('DOMContentLoaded', initApp);
 
-        // Получить данные из сессионного буфера
-        function getSessionData() {
-            try {
-                const saved = sessionStorage.getItem('activeUserSession');
-                if (saved) {
-                    const { user, timestamp } = JSON.parse(saved);
-                    // Данные актуальны в течение активной сессии (30 минут)
-                    if (Date.now() - timestamp < 30 * 60 * 1000) {
-                        return user;
-                    }
-                }
-            } catch (error) {
-                console.log('Ошибка чтения сессионных данных:', error);
-            }
-            return null;
-        }
-
-        // Сохранить данные в сессионный буфер
-        function saveSessionData(userData) {
-            try {
+        // Сохранить данные в localStorage
+        function saveCurrentUserData() {
+            if (currentUserData) {
                 const dataToSave = {
-                    user: userData,
+                    user: currentUserData,
                     timestamp: Date.now()
                 };
-                sessionStorage.setItem('activeUserSession', JSON.stringify(dataToSave));
-                // Также сохраняем в localStorage для других страниц
                 localStorage.setItem('currentUserData', JSON.stringify(dataToSave));
+                sessionStorage.setItem('activeUserSession', JSON.stringify(dataToSave));
+            }
+        }
+
+        // Функция принудительного обновления данных
+        async function forceRefreshData() {
+            try {
+                disableAllButtons();
+                showBalanceLoading();
+                showMessage('Обновление данных...', 'success');
+
+                // Очищаем кеш
+                localStorage.removeItem('currentUserData');
+                sessionStorage.removeItem('activeUserSession');
+
+                await initUserData(userData);
+                showMessage('Данные обновлены!', 'success');
             } catch (error) {
-                console.log('Ошибка сохранения сессионных данных:', error);
+                showMessage('Не удалось обновить данные');
             }
         }
 
         // Экспорт для других страниц
         window.getCurrentUser = () => currentUserData;
         window.refreshUserData = () => initUserData(userData);
-
-        // Сохраняем данные при их обновлении
-        function saveCurrentUserData() {
-            if (currentUserData) {
-                saveSessionData(currentUserData);
-            }
-        }
+        window.forceRefreshData = forceRefreshData;
+        window.supabaseClient = supabase;
+        window.getTelegramUserData = getTelegramUserData;
     </script>
 </body>
 </html>
