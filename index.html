@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -253,7 +252,7 @@
                 🔄 Обновить данные
             </button>
 
-            <div class="version">Версия 2025 (Supabase)</div>
+            <div class="version">Версия 2025 (Cloudflare Worker + Supabase)</div>
         </div>
     </div>
 
@@ -261,6 +260,7 @@
         // Конфигурация Supabase
         const SUPABASE_URL = 'https://tkuhnmfvojzoarbmizgv.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRrdWhubWZ2b2p6b2FyYm1pemd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk4MTgyNzcsImV4cCI6MjA2NTM5NDI3N30.L44bzsSPWJC390Hsr_f-eV8vwIp7s2Qbyif6_6Ga-OU';
+        const WORKER_URL = 'https://game-worker.egorspirin10.workers.dev'; // URL вашего Cloudflare Worker
 
         // Инициализация Supabase клиента
         const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -325,48 +325,57 @@
             }
         }
 
-        // Получение данных пользователя из базы
+        // Получение данных пользователя из базы через Worker
         async function getUserFromDB(userId) {
             try {
-                const { data, error } = await supabase
-                    .from('test')
-                    .select('*')
-                    .eq('id', userId)
-                    .single();
+                const response = await fetch(`${WORKER_URL}/api/user/get`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ userId })
+                });
 
-                if (error && error.code !== 'PGRST116') {
-                    throw error;
+                const result = await response.json();
+
+                if (!result.success) {
+                    if (response.status === 404) {
+                        return null; // Пользователь не найден
+                    }
+                    throw new Error(result.message);
                 }
 
-                return data;
+                return result.user;
             } catch (error) {
                 console.error('Ошибка получения пользователя:', error);
                 return null;
             }
         }
 
-        // Создание пользователя
+        // Создание пользователя через Worker
         async function createUserInDB(userData) {
             try {
-                const { data, error } = await supabase
-                    .from('test')
-                    .insert([
-                        {
-                            id: userData.id,
-                            name: userData.display_name,
-                            username: userData.username,
-                            balance: 10,
-                            cards: ''
-                        }
-                    ])
-                    .select()
-                    .single();
+                const response = await fetch(`${WORKER_URL}/api/user/create`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        id: userData.id,
+                        name: userData.display_name,
+                        username: userData.username,
+                        balance: 10,
+                        cards: ''
+                    })
+                });
 
-                if (error) {
-                    throw error;
+                const result = await response.json();
+
+                if (!result.success) {
+                    throw new Error(result.message);
                 }
 
-                return data;
+                return result.user;
             } catch (error) {
                 console.error('Ошибка создания пользователя:', error);
                 throw error;
