@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Hockey Shootouts</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    
     <style>
         * {
             margin: 0;
@@ -252,18 +252,13 @@
                 🔄 Обновить данные
             </button>
 
-            <div class="version">Версия 2025 (Cloudflare Worker + Supabase)</div>
+            <div class="version">Версия 2025 (Node.js + PostgreSQL Time Web)</div>
         </div>
     </div>
 
     <script>
-        // Конфигурация Supabase
-        const SUPABASE_URL = 'https://tkuhnmfvojzoarbmizgv.supabase.co';
-        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRrdWhubWZ2b2p6b2FyYm1pemd2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDk4MTgyNzcsImV4cCI6MjA2NTM5NDI3N30.L44bzsSPWJC390Hsr_f-eV8vwIp7s2Qbyif6_6Ga-OU';
-        const WORKER_URL = 'https://game-worker.egorspirin10.workers.dev'; // URL вашего Cloudflare Worker
-
-        // Инициализация Supabase клиента
-        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Конфигурация сервера Time Web
+        const SERVER_URL = 'http://your-domain.ru:5000'; // Замените на ваш реальный домен Time Web
 
         let tg = window.Telegram.WebApp;
         let userData = null;
@@ -325,10 +320,10 @@
             }
         }
 
-        // Получение данных пользователя из базы через Worker
+        // Получение данных пользователя из базы через локальный сервер
         async function getUserFromDB(userId) {
             try {
-                const response = await fetch(`${WORKER_URL}/api/user/get`, {
+                const response = await fetch(`${SERVER_URL}/api/user/get`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -352,10 +347,10 @@
             }
         }
 
-        // Создание пользователя через Worker
+        // Создание пользователя через локальный сервер
         async function createUserInDB(userData) {
             try {
-                const response = await fetch(`${WORKER_URL}/api/user/create`, {
+                const response = await fetch(`${SERVER_URL}/api/user/create`, {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json'
@@ -493,8 +488,8 @@
                 disableAllButtons();
                 showBalanceLoading();
 
-                // Подключаемся к Supabase базе данных
-                console.log('Подключение к Supabase базе данных...');
+                // Подключаемся к PostgreSQL базе данных через локальный сервер
+                console.log('Подключение к PostgreSQL базе данных...');
                 await initUserData(userData);
 
             } catch (error) {
@@ -542,8 +537,8 @@
         window.getCurrentUser = () => currentUserData;
         window.refreshUserData = () => initUserData(userData);
         window.forceRefreshData = forceRefreshData;
-        window.supabaseClient = supabase;
         window.getTelegramUserData = getTelegramUserData;
+        window.SERVER_URL = SERVER_URL;
     </script>
 </body>
 </html>
