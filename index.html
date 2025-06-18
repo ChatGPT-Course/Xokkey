@@ -146,7 +146,6 @@
             <label for="apiUrl">URL сервера API:</label>
             <input type="url" id="apiUrl" placeholder="http://localhost:3000 или URL вашего сервера" value="">
             <button class="btn-primary" onclick="updateApiUrl()">💾 Сохранить URL</button>
-            <button class="btn-warning" onclick="forceHttpTest()">⚠️ Принудительный HTTP тест</button>
             <div id="connectionInfo" class="connection-info" style="display: none;"></div>
         </div>
         
@@ -191,39 +190,19 @@
         
         // Инициализация URL API
         function initApiUrl() {
-            // Попробуем определить URL автоматически
-            const currentHost = window.location.host;
-            const currentProtocol = window.location.protocol;
+            // Для Vercel деплоя - указываем URL вашего API сервера
+            // Замените на реальный URL вашего API сервера
+            API_BASE = 'https://ваш-api-сервер.railway.app'; // Или другой хостинг для сервера
             
-            // Если открыто локально
-            if (currentHost.includes('localhost') || currentHost.includes('127.0.0.1')) {
-                API_BASE = `${currentProtocol}//${currentHost}`;
-            } 
-            // Если это Replit
-            else if (currentHost.includes('replit')) {
-                API_BASE = `${currentProtocol}//${currentHost}`;
-            }
-            // Если это GitHub Pages или другой HTTPS хост
-            else if (currentProtocol === 'https:') {
-                // Для HTTPS сайтов используем HTTPS сервер
-                // Вариант 1: Ваш HTTPS сервер на TimeWeb
-                // API_BASE = 'https://46.149.67.97:3000';
-                
-                // Вариант 2: Replit сервер (РЕКОМЕНДУЕТСЯ)
-                API_BASE = 'https://ваш-repl-name.replit.dev'; // Замените на ваш Replit URL
-                
-                addLog(`🔒 Обнаружен HTTPS хост: ${currentHost}`, 'info');
-                addLog(`⚠️ ВНИМАНИЕ: Для GitHub Pages требуется HTTPS API сервер!`, 'warning');
-                addLog(`💡 Рекомендуется использовать Replit для API сервера`, 'info');
-            }
-            // Если это HTTP
-            else {
-                API_BASE = 'http://46.149.67.97:3000'; // HTTP версия
-            }
+            // Альтернативные варианты:
+            // API_BASE = 'https://ваш-проект.render.com';
+            // API_BASE = 'https://ваш-проект.fly.dev';
+            // API_BASE = 'http://77.232.130.97:3000'; // Ваш TimeWeb сервер
             
             document.getElementById('apiUrl').value = API_BASE;
-            addLog(`🔧 Автоматически определен API URL: ${API_BASE}`, 'info');
-            addLog(`🌍 Текущий хост: ${currentHost}`, 'debug');
+            addLog(`🔧 API URL для Vercel деплоя: ${API_BASE}`, 'info');
+            addLog(`ℹ️ Фронтенд: https://xokkey-chatgpt-course1s-projects.vercel.app/`, 'info');
+            addLog(`⚠️ Сервер API должен быть размещен отдельно!`, 'warning');
             updateConnectionInfo();
         }
         
@@ -484,15 +463,6 @@ ${error.stack ? `📚 Stack trace: ${error.stack}` : ''}
 
         function clearLogs() {
             document.getElementById('logs').textContent = 'Логи очищены...\n';
-        }
-        
-        function forceHttpTest() {
-            addLog('⚠️ ВНИМАНИЕ: Попытка принудительного HTTP соединения', 'warning');
-            addLog('📝 Это может не работать на HTTPS сайтах из-за Mixed Content Policy', 'warning');
-            API_BASE = 'http://46.149.67.97:3000';
-            document.getElementById('apiUrl').value = API_BASE;
-            updateConnectionInfo();
-            setTimeout(() => testServer(), 500);
         }
 
         // Автоматическая инициализация при загрузке страницы
