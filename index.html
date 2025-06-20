@@ -4,476 +4,678 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram Mini App - Database Test</title>
+    <title>Hockey Shootouts</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .container {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-        h1, h2 {
-            color: #333;
-            text-align: center;
-        }
-        .button-group {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
-        button {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background-color 0.3s;
-        }
-        .btn-primary {
-            background-color: #007bff;
-            color: white;
-        }
-        .btn-primary:hover {
-            background-color: #0056b3;
-        }
-        .btn-success {
-            background-color: #28a745;
-            color: white;
-        }
-        .btn-success:hover {
-            background-color: #1e7e34;
-        }
-        .btn-warning {
-            background-color: #ffc107;
-            color: black;
-        }
-        .btn-warning:hover {
-            background-color: #e0a800;
-        }
-        .btn-danger {
-            background-color: #dc3545;
-            color: white;
-        }
-        .btn-danger:hover {
-            background-color: #c82333;
-        }
-        input[type="text"], input[type="url"] {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            margin-bottom: 10px;
+        * {
+            margin: 0;
+            padding: 0;
             box-sizing: border-box;
         }
-        #logs {
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 5px;
-            padding: 15px;
-            height: 400px;
-            overflow-y: auto;
-            font-family: monospace;
-            font-size: 12px;
-            white-space: pre-wrap;
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+            min-height: 100vh;
+            color: white;
+            padding-top: 70px;
         }
-        #records {
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 5px;
-            padding: 15px;
-            height: 200px;
-            overflow-y: auto;
+
+        .header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 60px;
+            background: rgba(44, 62, 80, 0.95);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.3);
         }
-        .record-item {
-            padding: 8px;
-            margin: 5px 0;
-            background: white;
-            border-radius: 3px;
-            border-left: 4px solid #007bff;
+
+        .header-title {
+            font-size: 1.8rem;
+            font-weight: bold;
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
         }
-        .record-date {
-            font-size: 11px;
-            color: #666;
+
+        .container {
+            max-width: 400px;
+            margin: 0 auto;
+            padding: 20px;
+            min-height: calc(100vh - 70px);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
         }
-        .status-indicator {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
+
+        .balance-loading {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .balance-spinner {
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top: 2px solid #ffffff;
             border-radius: 50%;
-            margin-right: 10px;
+            animation: spin 1s linear infinite;
         }
-        .status-online {
-            background-color: #28a745;
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
-        .status-offline {
-            background-color: #dc3545;
+
+        .main-content {
+            opacity: 1;
+            transform: translateY(0);
+            transition: all 0.5s ease;
         }
-        .error-details {
-            background-color: #fff3cd;
-            border: 1px solid #ffeaa7;
-            border-radius: 5px;
+
+        .main-content.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .user-avatar {
+            width: 120px;
+            height: 120px;
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 20px auto;
+            font-size: 4rem;
+            box-shadow: 0 10px 30px rgba(231, 76, 60, 0.3);
+            color: white;
+        }
+
+        .currency-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: rgba(52, 73, 94, 0.8);
+            padding: 12px 20px;
+            border-radius: 25px;
+            margin: 20px auto;
+            width: fit-content;
+            font-size: 1.2rem;
+            font-weight: 600;
+            backdrop-filter: blur(5px);
+        }
+
+        .currency-display .stick-icon {
+            margin-left: 8px;
+            font-size: 1.4rem;
+        }
+
+        .btn {
+            display: block;
+            width: 100%;
+            max-width: 300px;
+            padding: 15px 20px;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            margin: 12px 0;
+            text-align: center;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #e74c3c, #c0392b);
+            color: white;
+            box-shadow: 0 8px 25px rgba(231, 76, 60, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 35px rgba(231, 76, 60, 0.4);
+        }
+
+        .btn-secondary {
+            background: rgba(52, 73, 94, 0.8);
+            color: #ecf0f1;
+            border: 2px solid rgba(236, 240, 241, 0.3);
+            backdrop-filter: blur(5px);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(52, 73, 94, 1);
+            border-color: rgba(236, 240, 241, 0.5);
+            transform: translateY(-1px);
+        }
+
+        .btn.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
+        .menu-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 20px;
+            width: 100%;
+            max-width: 300px;
+        }
+
+        .version {
+            margin-top: 30px;
+            font-size: 0.9rem;
+            color: rgba(236, 240, 241, 0.6);
+            text-align: center;
+        }
+
+        .error-message {
+            background: rgba(231, 76, 60, 0.2);
+            border: 1px solid rgba(231, 76, 60, 0.5);
+            color: #fff;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            line-height: 1.4;
+        }
+
+        .success-message {
+            background: rgba(46, 204, 113, 0.2);
+            border: 1px solid rgba(46, 204, 113, 0.5);
+            color: #fff;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .debug-info {
+            background: rgba(52, 73, 94, 0.8);
+            border: 1px solid rgba(149, 165, 166, 0.3);
+            color: #bdc3c7;
             padding: 10px;
-            margin: 10px 0;
+            border-radius: 8px;
+            font-size: 0.8rem;
             font-family: monospace;
-            font-size: 12px;
-        }
-        .connection-info {
-            background-color: #d1ecf1;
-            border: 1px solid #bee5eb;
-            border-radius: 5px;
-            padding: 10px;
-            margin: 10px 0;
-            font-family: monospace;
-            font-size: 12px;
+            margin-top: 10px;
+            max-height: 150px;
+            overflow-y: auto;
+            white-space: pre-wrap;
         }
     </style>
 </head>
 <body>
+    <div class="header">
+        <div class="header-title">Hockey Shootouts</div>
+    </div>
+
     <div class="container">
-        <h1>🤖 Telegram Mini App - Тест базы данных</h1>
-        
-        <div class="container">
-            <h2>🔗 Настройки соединения</h2>
-            <label for="apiUrl">URL сервера API:</label>
-            <input type="url" id="apiUrl" placeholder="http://localhost:3000 или URL вашего сервера" value="">
-            <button class="btn-primary" onclick="updateApiUrl()">💾 Сохранить URL</button>
-            <div id="connectionInfo" class="connection-info" style="display: none;"></div>
-        </div>
-        
-        <div class="container">
-            <h2>🔗 Проверка соединений</h2>
-            <div class="button-group">
-                <button class="btn-primary" onclick="testServer()">
-                    <span id="server-status" class="status-indicator status-offline"></span>
-                    Проверить сервер
-                </button>
-                <button class="btn-primary" onclick="testDatabase()">
-                    <span id="db-status" class="status-indicator status-offline"></span>
-                    Проверить БД
-                </button>
+        <div id="mainContent" class="main-content visible">
+            <div class="user-avatar" id="userAvatar">
+                <img id="userPhoto" style="display: none; width: 100%; height: 100%; object-fit: cover; border-radius: 50%;" alt="User Photo">
+                <span id="userInitial">👤</span>
             </div>
-        </div>
 
-        <div class="container">
-            <h2>💾 Операции с базой данных</h2>
-            <input type="text" id="messageInput" placeholder="Введите сообщение для записи в БД" maxlength="255">
-            <div class="button-group">
-                <button class="btn-success" onclick="createRecord()">➕ Создать запись</button>
-                <button class="btn-warning" onclick="readRecords()">📖 Читать записи</button>
-                <button class="btn-danger" onclick="clearRecords()">🗑️ Очистить БД</button>
+            <div class="currency-display">
+                <span>Клюшек: <span id="userMoney">
+                    <div class="balance-loading" id="balanceLoading">
+                        <div class="balance-spinner"></div>
+                    </div>
+                    <span id="balanceAmount" style="display: none;">0</span>
+                </span></span>
+                <span class="stick-icon">🏒</span>
             </div>
-        </div>
 
-        <div class="container">
-            <h2>📋 Записи из базы данных</h2>
-            <div id="records">Нажмите "Читать записи" для загрузки данных...</div>
-        </div>
+            <div id="errorMessage" class="error-message" style="display: none;"></div>
+            <div id="successMessage" class="success-message" style="display: none;"></div>
+            <div id="debugInfo" class="debug-info" style="display: none;"></div>
 
-        <div class="container">
-            <h2>📝 Детальные логи операций</h2>
-            <div id="logs">Логи операций будут отображаться здесь...\n</div>
-            <button class="btn-warning" onclick="clearLogs()" style="margin-top: 10px;">🧹 Очистить логи</button>
+            <a href="game.html" class="btn btn-primary disabled" id="gameBtn">
+                Играть
+            </a>
+
+            <a href="profile.html" class="btn btn-secondary disabled" id="profileBtn">
+                Мой профиль
+            </a>
+
+            <div class="menu-grid">
+                <a href="craft.html" class="btn btn-secondary disabled" id="craftBtn">
+                    Крафт
+                </a>
+                <a href="obmen.html" class="btn btn-secondary disabled" id="obmenBtn">
+                    Магазин
+                </a>
+            </div>
+
+            <button onclick="forceRefreshData()" class="btn btn-secondary" style="margin-top: 15px; max-width: 200px; font-size: 0.9rem;">
+                🔄 Обновить данные
+            </button>
+
+            <button onclick="toggleDebugInfo()" class="btn btn-secondary" style="margin-top: 5px; max-width: 200px; font-size: 0.8rem;">
+                🐛 Показать/Скрыть логи
+            </button>
+
+            <div class="version">Версия 2025 (TimeWeb PostgreSQL)</div>
         </div>
     </div>
 
     <script>
+        // Конфигурация сервера
         let API_BASE = '';
-        
-        // Инициализация URL API
+
         function initApiUrl() {
-            // Используем Cloudflare Worker для проксирования к TimeWeb серверу
-            API_BASE = 'https://game-worker.egorspirin10.workers.dev/'; // ЗАМЕНИТЕ на URL вашего Worker
-            
-            // Альтернативные варианты для тестирования:
-            // API_BASE = 'http://77.232.130.97:3000'; // Прямое подключение к TimeWeb (может не работать из-за CORS)
-            
-            document.getElementById('apiUrl').value = API_BASE;
-            addLog(`🌐 Cloudflare Worker URL: ${API_BASE}`, 'info');
-            addLog(`🔒 Проксирование через HTTPS с поддержкой CORS`, 'info');
-            addLog(`🎯 Целевой сервер: TimeWeb (77.232.130.97:3000)`, 'info');
-            updateConnectionInfo();
-        }
-        
-        function updateApiUrl() {
-            const newUrl = document.getElementById('apiUrl').value.trim();
-            if (newUrl) {
-                API_BASE = newUrl.replace(/\/$/, ''); // убираем последний слеш
-                addLog(`🔧 API URL обновлен: ${API_BASE}`, 'info');
-                updateConnectionInfo();
-                // Сразу проверим соединение
-                setTimeout(() => {
-                    testServer();
-                }, 500);
+            // Автоматическое определение API URL
+            if (window.location.hostname === 'hocketgame.tw1.ru') {
+                API_BASE = 'https://hocketgame.tw1.ru';
+            } else if (window.location.hostname === '46.149.69.67') {
+                API_BASE = 'http://46.149.69.67:3000';
             } else {
-                addLog('❌ Введите корректный URL сервера', 'error');
-            }
-        }
-        
-        function updateConnectionInfo() {
-            const info = document.getElementById('connectionInfo');
-            const url = new URL(API_BASE);
-            info.innerHTML = `
-                <strong>Текущие настройки подключения:</strong><br>
-                🌐 Хост: ${url.hostname}<br>
-                🔌 Порт: ${url.port || (url.protocol === 'https:' ? 443 : 80)}<br>
-                🔒 Протокол: ${url.protocol}<br>
-                📡 Полный URL: ${API_BASE}
-            `;
-            info.style.display = 'block';
-        }
-        
-        function addLog(message, type = 'info') {
-            const logs = document.getElementById('logs');
-            const timestamp = new Date().toLocaleString('ru-RU');
-            const logTypes = {
-                'success': '✅',
-                'error': '❌',
-                'info': 'ℹ️',
-                'warning': '⚠️',
-                'debug': '🔍'
-            };
-            const icon = logTypes[type] || 'ℹ️';
-            logs.textContent += `[${timestamp}] ${icon} ${message}\n`;
-            logs.scrollTop = logs.scrollHeight;
-        }
-
-        function addErrorDetails(error, response = null) {
-            const logs = document.getElementById('logs');
-            logs.textContent += `
-📋 ДЕТАЛИ ОШИБКИ:
-🔍 Тип ошибки: ${error.name || 'Unknown'}
-📝 Сообщение: ${error.message || 'Нет сообщения'}
-🌐 URL: ${API_BASE}
-${response ? `📊 HTTP Status: ${response.status} ${response.statusText}` : ''}
-${error.stack ? `📚 Stack trace: ${error.stack}` : ''}
-═══════════════════════════════════════════
-
-`;
-            logs.scrollTop = logs.scrollHeight;
-        }
-
-        function updateStatus(elementId, isOnline) {
-            const element = document.getElementById(elementId);
-            element.className = `status-indicator ${isOnline ? 'status-online' : 'status-offline'}`;
-        }
-
-        async function testServer() {
-            if (!API_BASE) {
-                addLog('❌ Сначала настройте URL сервера', 'error');
-                return;
+                API_BASE = 'http://46.149.69.67:3000'; // fallback
             }
             
-            addLog(`🔄 Проверка соединения с сервером: ${API_BASE}/api/test`, 'info');
+            addLog(`🌐 API URL установлен: ${API_BASE}`, 'info');
+        }
+        
+        // Telegram WebApp API
+        const tg = window.Telegram?.WebApp;
+        
+        // Глобальные переменные
+        let userData = null;
+        let currentUserData = null;
+        let debugLogs = [];
+
+        // Функция для логирования
+        function addLog(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = `[${timestamp}] ${type.toUpperCase()}: ${message}`;
+            debugLogs.push(logEntry);
+            console.log(logEntry);
+            
+            // Ограничиваем количество логов
+            if (debugLogs.length > 50) {
+                debugLogs = debugLogs.slice(-50);
+            }
+            
+            updateDebugDisplay();
+        }
+
+        // Обновить отображение отладочной информации
+        function updateDebugDisplay() {
+            const debugElement = document.getElementById('debugInfo');
+            if (debugElement && debugElement.style.display !== 'none') {
+                debugElement.textContent = debugLogs.join('\n');
+                debugElement.scrollTop = debugElement.scrollHeight;
+            }
+        }
+
+        // Переключить отображение отладочной информации
+        function toggleDebugInfo() {
+            const debugElement = document.getElementById('debugInfo');
+            if (debugElement.style.display === 'none') {
+                debugElement.style.display = 'block';
+                updateDebugDisplay();
+            } else {
+                debugElement.style.display = 'none';
+            }
+        }
+
+        // Получить данные пользователя из Telegram
+        function getTelegramUserData() {
             try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 10000);
+                addLog('Получение данных пользователя из Telegram WebApp');
                 
-                const response = await fetch(`${API_BASE}/api/test`, {
-                    signal: controller.signal,
+                if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user) {
+                    const user = tg.initDataUnsafe.user;
+                    const userData = {
+                        id: user.id,
+                        username: user.username || '',
+                        first_name: user.first_name || '',
+                        last_name: user.last_name || '',
+                        display_name: `${user.first_name || ''} ${user.last_name || ''}`.trim() || 'Игрок',
+                        language_code: user.language_code || 'ru'
+                    };
+                    addLog(`Пользователь получен: ID=${userData.id}, Имя=${userData.display_name}`, 'success');
+                    return userData;
+                }
+
+                addLog('Telegram WebApp данные недоступны, используем тестовые данные', 'warning');
+                // Fallback для тестирования
+                return {
+                    id: 123456789,
+                    username: 'test_user',
+                    first_name: 'Тестовый',
+                    last_name: 'Игрок',
+                    display_name: 'Тестовый игрок',
+                    language_code: 'ru'
+                };
+            } catch (error) {
+                addLog(`Ошибка получения данных пользователя: ${error.message}`, 'error');
+                return {
+                    id: 987654321,
+                    username: 'error_user',
+                    first_name: 'Ошибка',
+                    last_name: 'Пользователь',
+                    display_name: 'Ошибка пользователь',
+                    language_code: 'ru'
+                };
+            }
+        }
+
+        // Показать сообщение
+        function showMessage(message, type = 'error') {
+            const errorEl = document.getElementById('errorMessage');
+            const successEl = document.getElementById('successMessage');
+
+            errorEl.style.display = 'none';
+            successEl.style.display = 'none';
+
+            if (type === 'success') {
+                successEl.textContent = message;
+                successEl.style.display = 'block';
+                setTimeout(() => successEl.style.display = 'none', 3000);
+            } else {
+                errorEl.textContent = message;
+                errorEl.style.display = 'block';
+                setTimeout(() => errorEl.style.display = 'none', 5000);
+            }
+        }
+
+        // Получение данных пользователя из базы users
+        async function getUserFromDB(userId) {
+            try {
+                addLog(`Запрос пользователя из БД: ID=${userId}`);
+                
+                const response = await fetch(`${API_BASE}/api/users`, {
                     method: 'GET',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
                     }
                 });
-                
-                clearTimeout(timeoutId);
-                
-                const data = await response.json();
-                
-                if (response.ok) {
-                    addLog(`✅ Сервер отвечает: ${data.message}`, 'success');
-                    addLog(`📊 Данные сервера: Порт ${data.port}, Окружение: ${data.environment}`, 'info');
-                    updateStatus('server-status', true);
-                } else {
-                    addLog(`❌ Ошибка сервера (${response.status}): ${data.message || 'Неизвестная ошибка'}`, 'error');
-                    addErrorDetails(new Error(`HTTP ${response.status}`), response);
-                    updateStatus('server-status', false);
+
+                addLog(`Статус ответа: ${response.status} ${response.statusText}`);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    addLog(`Ошибка HTTP: ${response.status} - ${errorText}`, 'error');
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
                 }
+
+                const result = await response.json();
+                addLog(`Ответ сервера: ${JSON.stringify(result)}`);
+
+                if (!result.success) {
+                    throw new Error(result.message || 'Неизвестная ошибка сервера');
+                }
+
+                // Ищем пользователя по ID
+                const user = result.users.find(u => u.id === userId);
+                if (user) {
+                    addLog('Пользователь найден в БД', 'success');
+                    return user;
+                } else {
+                    addLog('Пользователь не найден в БД', 'warning');
+                    return null;
+                }
+
             } catch (error) {
-                if (error.name === 'AbortError') {
-                    addLog('❌ Таймаут соединения с сервером (10 сек)', 'error');
-                } else {
-                    addLog(`❌ Ошибка соединения с сервером: ${error.message}`, 'error');
+                addLog(`Ошибка получения пользователя: ${error.name} - ${error.message}`, 'error');
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    addLog('Возможно, сервер недоступен или заблокирован CORS', 'error');
                 }
-                addErrorDetails(error);
-                updateStatus('server-status', false);
+                return null;
             }
         }
 
-        async function testDatabase() {
-            if (!API_BASE) {
-                addLog('❌ Сначала настройте URL сервера', 'error');
-                return;
-            }
-            
-            addLog(`🔄 Проверка соединения с базой данных: ${API_BASE}/api/test-db`, 'info');
+        // Создание пользователя в таблице users
+        async function createUserInDB(userData) {
             try {
-                const controller = new AbortController();
-                const timeoutId = setTimeout(() => controller.abort(), 15000);
+                addLog(`Создание нового пользователя: ID=${userData.id}, Имя=${userData.display_name}`);
                 
-                const response = await fetch(`${API_BASE}/api/test-db`, {
-                    signal: controller.signal
-                });
-                
-                clearTimeout(timeoutId);
-                
-                const data = await response.json();
-                
-                if (response.ok) {
-                    addLog(`✅ База данных подключена! Время: ${data.current_time}`, 'success');
-                    addLog(`📊 Версия PostgreSQL: ${data.db_version}`, 'info');
-                    if (data.connection_info) {
-                        addLog(`🔗 Подключение: ${data.connection_info.user}@${data.connection_info.host}:${data.connection_info.port}/${data.connection_info.database}`, 'info');
-                    }
-                    updateStatus('db-status', true);
-                } else {
-                    addLog(`❌ Ошибка БД (${response.status}): ${data.message}`, 'error');
-                    if (data.code) addLog(`🔍 Код ошибки PostgreSQL: ${data.code}`, 'debug');
-                    if (data.detail) addLog(`📝 Детали: ${data.detail}`, 'debug');
-                    addErrorDetails(new Error(`Database error: ${data.message}`), response);
-                    updateStatus('db-status', false);
-                }
-            } catch (error) {
-                if (error.name === 'AbortError') {
-                    addLog('❌ Таймаут соединения с БД (15 сек)', 'error');
-                } else {
-                    addLog(`❌ Ошибка соединения с БД: ${error.message}`, 'error');
-                }
-                addErrorDetails(error);
-                updateStatus('db-status', false);
-            }
-        }
+                const requestBody = {
+                    username: userData.display_name,
+                    email: `${userData.username}@telegram.user`,
+                    level: 1,
+                    coins: 10
+                };
+                addLog(`Тело запроса создания: ${JSON.stringify(requestBody)}`);
 
-        async function createRecord() {
-            const messageInput = document.getElementById('messageInput');
-            const message = messageInput.value.trim();
-            
-            if (!message) {
-                addLog('⚠️ Введите сообщение для создания записи', 'warning');
-                return;
-            }
-
-            addLog(`🔄 Создание записи: "${message}"`, 'info');
-            try {
-                const response = await fetch(`${API_BASE}/api/records`, {
+                const response = await fetch(`${API_BASE}/api/users`, {
                     method: 'POST',
                     headers: {
-                        'Content-Type': 'application/json'
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
                     },
-                    body: JSON.stringify({ message })
+                    body: JSON.stringify(requestBody)
                 });
-                
-                const data = await response.json();
-                
-                if (response.ok) {
-                    addLog(`✅ Запись создана! ID: ${data.record.id}`, 'success');
-                    messageInput.value = '';
-                    await readRecords(); // Автоматически обновляем список
-                } else {
-                    addLog(`❌ Ошибка создания записи: ${data.message}`, 'error');
-                    if (data.code) addLog(`🔍 Код ошибки: ${data.code}`, 'debug');
-                    addErrorDetails(new Error(`Create record error: ${data.message}`), response);
+
+                addLog(`Статус создания: ${response.status} ${response.statusText}`);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    addLog(`Ошибка создания HTTP: ${response.status} - ${errorText}`, 'error');
+                    throw new Error(`HTTP ${response.status}: ${errorText}`);
                 }
+
+                const result = await response.json();
+                addLog(`Результат создания: ${JSON.stringify(result)}`);
+
+                if (!result.success) {
+                    throw new Error(result.message || 'Не удалось создать пользователя');
+                }
+
+                addLog('Пользователь успешно создан в БД', 'success');
+                return result.user;
             } catch (error) {
-                addLog(`❌ Ошибка запроса: ${error.message}`, 'error');
-                addErrorDetails(error);
+                addLog(`Ошибка создания пользователя: ${error.name} - ${error.message}`, 'error');
+                throw error;
             }
         }
 
-        async function readRecords() {
-            addLog('🔄 Загрузка записей из базы данных...', 'info');
-            try {
-                const response = await fetch(`${API_BASE}/api/records`);
-                const data = await response.json();
-                
-                if (response.ok) {
-                    displayRecords(data.records);
-                    addLog(`✅ Загружено записей: ${data.records.length}`, 'success');
-                } else {
-                    addLog(`❌ Ошибка чтения записей: ${data.message}`, 'error');
-                    if (data.code) addLog(`🔍 Код ошибки: ${data.code}`, 'debug');
-                    addErrorDetails(new Error(`Read records error: ${data.message}`), response);
-                }
-            } catch (error) {
-                addLog(`❌ Ошибка запроса: ${error.message}`, 'error');
-                addErrorDetails(error);
+        // Получить аватар пользователя
+        function setUserAvatar(userData) {
+            const photoElement = document.getElementById('userPhoto');
+            const initialElement = document.getElementById('userInitial');
+
+            if (tg && tg.initDataUnsafe && tg.initDataUnsafe.user && tg.initDataUnsafe.user.photo_url) {
+                photoElement.src = tg.initDataUnsafe.user.photo_url;
+                photoElement.style.display = 'block';
+                initialElement.style.display = 'none';
+                addLog('Аватар загружен из Telegram', 'success');
+            } else {
+                initialElement.textContent = userData.first_name ? userData.first_name.charAt(0).toUpperCase() : '👤';
+                photoElement.style.display = 'none';
+                initialElement.style.display = 'block';
+                addLog('Используется инициал как аватар');
             }
         }
 
-        function displayRecords(records) {
-            const recordsDiv = document.getElementById('records');
-            
-            if (records.length === 0) {
-                recordsDiv.innerHTML = '<p style="text-align: center; color: #666;">База данных пуста</p>';
-                return;
-            }
+        // Показать загрузку баланса
+        function showBalanceLoading() {
+            document.getElementById('balanceLoading').style.display = 'inline-flex';
+            document.getElementById('balanceAmount').style.display = 'none';
+            addLog('Показана загрузка баланса');
+        }
 
-            let html = '';
-            records.forEach(record => {
-                const date = new Date(record.created_at).toLocaleString('ru-RU');
-                html += `
-                    <div class="record-item">
-                        <strong>ID ${record.id}:</strong> ${record.message}
-                        <div class="record-date">${date}</div>
-                    </div>
-                `;
+        // Скрыть загрузку баланса
+        function hideBalanceLoading() {
+            document.getElementById('balanceLoading').style.display = 'none';
+            document.getElementById('balanceAmount').style.display = 'inline';
+            addLog('Скрыта загрузка баланса');
+        }
+
+        // Обновить отображение баланса
+        function updateBalance(balance) {
+            document.getElementById('balanceAmount').textContent = balance || 0;
+            hideBalanceLoading();
+            enableAllButtons();
+            addLog(`Баланс обновлен: ${balance}`, 'success');
+        }
+
+        // Заблокировать все кнопки
+        function disableAllButtons() {
+            const buttons = ['gameBtn', 'profileBtn', 'craftBtn', 'obmenBtn'];
+            buttons.forEach(buttonId => {
+                const button = document.getElementById(buttonId);
+                if (button) {
+                    button.classList.add('disabled');
+                }
             });
-            
-            recordsDiv.innerHTML = html;
+            addLog('Кнопки заблокированы');
         }
 
-        async function clearRecords() {
-            if (!confirm('Вы уверены, что хотите удалить все записи из базы данных?')) {
-                return;
-            }
-
-            addLog('🔄 Удаление всех записей из базы данных...', 'warning');
-            try {
-                const response = await fetch(`${API_BASE}/api/records`, {
-                    method: 'DELETE'
-                });
-                
-                const data = await response.json();
-                
-                if (response.ok) {
-                    addLog(`✅ Удалено записей: ${data.deleted_count || 'все'}`, 'success');
-                    await readRecords(); // Обновляем отображение
-                } else {
-                    addLog(`❌ Ошибка удаления записей: ${data.message}`, 'error');
-                    if (data.code) addLog(`🔍 Код ошибки: ${data.code}`, 'debug');
-                    addErrorDetails(new Error(`Delete records error: ${data.message}`), response);
+        // Разблокировать все кнопки
+        function enableAllButtons() {
+            const buttons = ['gameBtn', 'profileBtn', 'craftBtn', 'obmenBtn'];
+            buttons.forEach(buttonId => {
+                const button = document.getElementById(buttonId);
+                if (button) {
+                    button.classList.remove('disabled');
                 }
+            });
+            addLog('Кнопки разблокированы');
+        }
+
+        // Проверка и создание пользователя в базе данных
+        async function initUserData(userData) {
+            try {
+                addLog('Начало инициализации пользователя');
+                
+                // Сначала пытаемся получить пользователя
+                let user = await getUserFromDB(userData.id);
+
+                if (user) {
+                    addLog(`Пользователь найден в БД: баланс=${user.coins}`, 'success');
+                    currentUserData = user;
+                    updateBalance(user.coins);
+                    saveCurrentUserData();
+                    return user;
+                }
+
+                // Если не найден - создаем
+                addLog('Пользователь не найден, создаем нового');
+                user = await createUserInDB(userData);
+
+                if (user) {
+                    addLog(`Новый пользователь создан: баланс=${user.coins}`, 'success');
+                    currentUserData = user;
+                    updateBalance(user.coins);
+                    saveCurrentUserData();
+                    showMessage('Добро пожаловать! Начальный баланс: 10 клюшек', 'success');
+                    return user;
+                }
+
+                throw new Error('Не удалось создать пользователя');
+
             } catch (error) {
-                addLog(`❌ Ошибка запроса: ${error.message}`, 'error');
-                addErrorDetails(error);
+                addLog(`Критическая ошибка инициализации: ${error.message}`, 'error');
+                showMessage(`Ошибка подключения к серверу: ${error.message}`);
+                updateBalance(0);
+                return null;
             }
         }
 
-        function clearLogs() {
-            document.getElementById('logs').textContent = 'Логи очищены...\n';
+        // Инициализация приложения
+        async function initApp() {
+            try {
+                addLog('=== НАЧАЛО ИНИЦИАЛИЗАЦИИ ПРИЛОЖЕНИЯ ===');
+                
+                // Инициализация URL API
+                initApiUrl();
+
+                // Инициализация Telegram WebApp
+                if (tg) {
+                    tg.ready();
+                    tg.expand();
+                    addLog('Telegram WebApp инициализирован');
+                } else {
+                    addLog('Telegram WebApp недоступен', 'warning');
+                }
+
+                // Получаем данные пользователя
+                userData = getTelegramUserData();
+                setUserAvatar(userData);
+
+                // Блокируем кнопки и показываем загрузку баланса
+                disableAllButtons();
+                showBalanceLoading();
+
+                // Подключаемся к базе данных
+                addLog('Подключение к серверу...');
+                await initUserData(userData);
+
+                addLog('=== ИНИЦИАЛИЗАЦИЯ ЗАВЕРШЕНА ===');
+
+            } catch (error) {
+                addLog(`Фатальная ошибка инициализации: ${error.message}`, 'error');
+                showMessage('Ошибка инициализации приложения');
+                updateBalance(0);
+                setUserAvatar(userData || {});
+            }
         }
 
-        // Автоматическая инициализация при загрузке страницы
-        window.addEventListener('load', () => {
-            addLog('🚀 Приложение загружено. Инициализация...', 'info');
-            initApiUrl();
-            
-            setTimeout(() => {
-                testServer();
-                setTimeout(() => {
-                    testDatabase();
-                }, 1000);
-            }, 500);
-        });
+        // Запуск при загрузке страницы
+        document.addEventListener('DOMContentLoaded', initApp);
+
+        // Сохранить данные в localStorage
+        function saveCurrentUserData() {
+            if (currentUserData) {
+                const dataToSave = {
+                    user: currentUserData,
+                    timestamp: Date.now()
+                };
+                localStorage.setItem('currentUserData', JSON.stringify(dataToSave));
+                sessionStorage.setItem('activeUserSession', JSON.stringify(dataToSave));
+                addLog('Данные пользователя сохранены в localStorage');
+            }
+        }
+
+        // Функция принудительного обновления данных
+        async function forceRefreshData() {
+            try {
+                addLog('=== ПРИНУДИТЕЛЬНОЕ ОБНОВЛЕНИЕ ДАННЫХ ===');
+                disableAllButtons();
+                showBalanceLoading();
+                showMessage('Обновление данных...', 'success');
+
+                // Очищаем кеш
+                localStorage.removeItem('currentUserData');
+                sessionStorage.removeItem('activeUserSession');
+                addLog('Кеш очищен');
+
+                await initUserData(userData);
+                showMessage('Данные обновлены!', 'success');
+                addLog('=== ОБНОВЛЕНИЕ ЗАВЕРШЕНО ===');
+            } catch (error) {
+                addLog(`Ошибка обновления: ${error.message}`, 'error');
+                showMessage('Не удалось обновить данные');
+            }
+        }
+
+        // Экспорт для других страниц
+        window.getCurrentUser = () => currentUserData;
+        window.refreshUserData = () => initUserData(userData);
+        window.forceRefreshData = forceRefreshData;
+        window.getTelegramUserData = getTelegramUserData;
+        window.API_BASE = API_BASE;
     </script>
 </body>
 </html>
