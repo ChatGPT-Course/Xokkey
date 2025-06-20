@@ -8,21 +8,22 @@
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
-            background-color: #f5f5f5;
+            background-color: var(--tg-theme-bg-color, #f5f5f5);
+            color: var(--tg-theme-text-color, #333);
         }
         .container {
-            background: white;
+            background: var(--tg-theme-secondary-bg-color, white);
             padding: 20px;
             border-radius: 10px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.1);
             margin-bottom: 20px;
         }
         h1, h2 {
-            color: #333;
+            color: var(--tg-theme-text-color, #333);
             text-align: center;
         }
         .button-group {
@@ -38,20 +39,15 @@
             cursor: pointer;
             font-size: 14px;
             transition: background-color 0.3s;
+            background-color: var(--tg-theme-button-color, #007bff);
+            color: var(--tg-theme-button-text-color, white);
         }
-        .btn-primary {
-            background-color: #007bff;
-            color: white;
-        }
-        .btn-primary:hover {
-            background-color: #0056b3;
+        button:hover {
+            opacity: 0.8;
         }
         .btn-success {
             background-color: #28a745;
             color: white;
-        }
-        .btn-success:hover {
-            background-color: #1e7e34;
         }
         input[type="url"] {
             width: 100%;
@@ -60,9 +56,11 @@
             border-radius: 5px;
             margin-bottom: 10px;
             box-sizing: border-box;
+            background-color: var(--tg-theme-secondary-bg-color, white);
+            color: var(--tg-theme-text-color, #333);
         }
         #logs {
-            background-color: #f8f9fa;
+            background-color: var(--tg-theme-secondary-bg-color, #f8f9fa);
             border: 1px solid #dee2e6;
             border-radius: 5px;
             padding: 15px;
@@ -108,6 +106,15 @@
             color: #28a745;
             margin: 20px 0;
         }
+        .telegram-data {
+            background-color: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+            font-size: 12px;
+            font-family: monospace;
+        }
     </style>
 </head>
 <body>
@@ -119,6 +126,9 @@
             <div id="userInfo" class="user-info">
                 Загрузка данных пользователя...
             </div>
+            <div id="telegramRawData" class="telegram-data" style="display: none;">
+                Сырые данные Telegram...
+            </div>
             <div id="userBalance" class="balance-display">
                 Баланс: ⏳ загрузка...
             </div>
@@ -128,18 +138,18 @@
             <h2>🔗 Настройки соединения</h2>
             <label for="apiUrl">URL сервера API:</label>
             <input type="url" id="apiUrl" placeholder="http://46.149.69.67:3000" value="">
-            <button class="btn-primary" onclick="updateApiUrl()">💾 Сохранить URL</button>
+            <button onclick="updateApiUrl()">💾 Сохранить URL</button>
             <div id="connectionInfo" class="connection-info" style="display: none;"></div>
         </div>
 
         <div class="container">
             <h2>🔗 Проверка соединений</h2>
             <div class="button-group">
-                <button class="btn-primary" onclick="testServer()">
+                <button onclick="testServer()">
                     <span id="server-status" class="status-indicator status-offline"></span>
                     Проверить сервер
                 </button>
-                <button class="btn-primary" onclick="testDatabase()">
+                <button onclick="testDatabase()">
                     <span id="db-status" class="status-indicator status-offline"></span>
                     Проверить БД
                 </button>
@@ -152,49 +162,128 @@
         <div class="container">
             <h2>📝 Логи операций</h2>
             <div id="logs">Логи операций будут отображаться здесь...\n</div>
-            <button class="btn-primary" onclick="clearLogs()" style="margin-top: 10px;">🧹 Очистить логи</button>
+            <button onclick="clearLogs()" style="margin-top: 10px;">🧹 Очистить логи</button>
         </div>
     </div>
 
     <script>
         let API_BASE = '';
         let currentUser = null;
+        let isInTelegram = false;
+
+        // Инициализация Telegram WebApp
+        function initTelegramWebApp() {
+            if (window.Telegram && window.Telegram.WebApp) {
+                addLog('🔵 Telegram WebApp API обнаружен', 'info');
+                
+                try {
+                    // Расширяем приложение на весь экран
+                    window.Telegram.WebApp.expand();
+                    
+                    // Устанавливаем цветовую схему
+                    window.Telegram.WebApp.setHeaderColor('#007bff');
+                    
+                    // Показываем кнопку "Назад" если нужно
+                    window.Telegram.WebApp.BackButton.hide();
+                    
+                    // Готовность к работе
+                    window.Telegram.WebApp.ready();
+                    
+                    isInTelegram = true;
+                    addLog('✅ Telegram WebApp инициализирован', 'success');
+                    
+                    return true;
+                } catch (error) {
+                    addLog(`❌ Ошибка инициализации Telegram WebApp: ${error.message}`, 'error');
+                    return false;
+                }
+            } else {
+                addLog('⚠️ Telegram WebApp API недоступен (режим разработки)', 'warning');
+                return false;
+            }
+        }
 
         // Получение данных из Telegram Mini App
         function getTelegramUserData() {
-            addLog('🔍 Попытка получения данных из Telegram WebApp...', 'info');
+            addLog('🔍 Попытка получения данных пользователя Telegram...', 'info');
             
             if (window.Telegram && window.Telegram.WebApp) {
-                addLog('✅ Telegram WebApp API найден', 'success');
-                
                 const webApp = window.Telegram.WebApp;
-                const initData = webApp.initDataUnsafe;
                 
-                addLog(`📱 initDataUnsafe: ${JSON.stringify(initData)}`, 'info');
+                // Показываем все доступные данные для отладки
+                const rawData = {
+                    initData: webApp.initData,
+                    initDataUnsafe: webApp.initDataUnsafe,
+                    version: webApp.version,
+                    platform: webApp.platform,
+                    colorScheme: webApp.colorScheme,
+                    themeParams: webApp.themeParams,
+                    isExpanded: webApp.isExpanded,
+                    viewportHeight: webApp.viewportHeight,
+                    viewportStableHeight: webApp.viewportStableHeight
+                };
                 
-                if (initData && initData.user) {
-                    const user = initData.user;
-                    addLog(`👤 Данные пользователя получены из Telegram: ID=${user.id}, name=${user.first_name}`, 'success');
+                document.getElementById('telegramRawData').innerHTML = 
+                    `<strong>Сырые данные Telegram:</strong><br>${JSON.stringify(rawData, null, 2)}`;
+                document.getElementById('telegramRawData').style.display = 'block';
+                
+                addLog(`📊 Telegram данные: ${JSON.stringify(rawData, null, 2)}`, 'info');
+                
+                const initDataUnsafe = webApp.initDataUnsafe;
+                const user = initDataUnsafe?.user;
+                
+                if (user && user.id) {
+                    addLog('✅ Данные пользователя Telegram успешно получены', 'success');
+                    addLog(`👤 ID: ${user.id}, Имя: ${user.first_name}, Username: ${user.username || 'не указан'}`, 'info');
                     
                     return {
                         id: user.id,
                         name: user.first_name + (user.last_name ? ' ' + user.last_name : ''),
-                        username: user.username || 'не указан'
+                        username: user.username || '',
+                        language_code: user.language_code || 'ru',
+                        is_premium: user.is_premium || false,
+                        photo_url: user.photo_url || '',
+                        source: 'telegram'
                     };
                 } else {
-                    addLog('⚠️ initDataUnsafe.user пуст или недоступен', 'warning');
-                    addLog(`🔍 Полный initDataUnsafe: ${JSON.stringify(initData)}`, 'info');
+                    addLog('⚠️ Пользователь Telegram не найден в initDataUnsafe', 'warning');
+                    
+                    // Попробуем другие методы получения данных
+                    if (webApp.initData) {
+                        addLog('🔍 Пытаемся парсить initData вручную...', 'info');
+                        try {
+                            const params = new URLSearchParams(webApp.initData);
+                            const userStr = params.get('user');
+                            if (userStr) {
+                                const userData = JSON.parse(userStr);
+                                addLog('✅ Данные пользователя получены из initData', 'success');
+                                return {
+                                    id: userData.id,
+                                    name: userData.first_name + (userData.last_name ? ' ' + userData.last_name : ''),
+                                    username: userData.username || '',
+                                    language_code: userData.language_code || 'ru',
+                                    is_premium: userData.is_premium || false,
+                                    photo_url: userData.photo_url || '',
+                                    source: 'telegram_parsed'
+                                };
+                            }
+                        } catch (e) {
+                            addLog(`❌ Ошибка парсинга initData: ${e.message}`, 'error');
+                        }
+                    }
                 }
-            } else {
-                addLog('❌ Telegram WebApp API недоступен', 'error');
             }
             
-            // Если не удалось получить данные из Telegram, показываем ошибку
-            addLog('❌ ВНИМАНИЕ: Используются тестовые данные! Откройте приложение через Telegram!', 'error');
+            // Тестовые данные для разработки
+            addLog('🧪 Используем тестовые данные для разработки', 'info');
             return {
-                id: 'NO_TELEGRAM_DATA',
-                name: 'ОШИБКА: Нет данных Telegram',
-                username: 'Откройте через Telegram!'
+                id: 123456789,
+                name: 'Тестовый Пользователь',
+                username: 'testuser',
+                language_code: 'ru',
+                is_premium: false,
+                photo_url: '',
+                source: 'test'
             };
         }
 
@@ -203,7 +292,11 @@
             userInfo.innerHTML = `
                 <strong>ID:</strong> ${userData.id}<br>
                 <strong>Имя:</strong> ${userData.name}<br>
-                <strong>Username:</strong> @${userData.username || 'не указан'}
+                <strong>Username:</strong> @${userData.username || 'не указан'}<br>
+                <strong>Язык:</strong> ${userData.language_code || 'не указан'}<br>
+                <strong>Premium:</strong> ${userData.is_premium ? 'Да' : 'Нет'}<br>
+                <strong>Источник:</strong> ${userData.source}<br>
+                ${userData.photo_url ? `<strong>Фото:</strong> <img src="${userData.photo_url}" width="50" height="50" style="border-radius: 25px;"><br>` : ''}
             `;
         }
 
@@ -213,15 +306,8 @@
         }
 
         function initApiUrl() {
-            // Автоматическое определение API URL
-            if (window.location.hostname === 'hocketgame.tw1.ru') {
-                API_BASE = 'https://hocketgame.tw1.ru';
-            } else if (window.location.hostname === '46.149.69.67') {
-                API_BASE = 'http://46.149.69.67:3000';
-            } else {
-                API_BASE = 'http://46.149.69.67:3000'; // fallback
-            }
-
+            // Всегда используем ваш сервер TimeWeb
+            API_BASE = 'http://46.149.69.67:3000';
             document.getElementById('apiUrl').value = API_BASE;
             addLog(`🌐 API URL установлен: ${API_BASE}`, 'info');
             updateConnectionInfo();
@@ -287,7 +373,8 @@
             try {
                 const response = await fetch(`${API_BASE}/api/test`, {
                     method: 'GET',
-                    headers: { 'Content-Type': 'application/json' }
+                    headers: { 'Content-Type': 'application/json' },
+                    mode: 'cors'
                 });
 
                 const data = await response.json();
@@ -313,7 +400,10 @@
 
             addLog(`🔄 Проверка БД: ${API_BASE}/api/test-db`, 'info');
             try {
-                const response = await fetch(`${API_BASE}/api/test-db`);
+                const response = await fetch(`${API_BASE}/api/test-db`, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
                 const data = await response.json();
 
                 if (response.ok) {
@@ -337,7 +427,10 @@
 
             addLog(`🔄 Проверка пользователя ID: ${currentUser.id}`, 'info');
             try {
-                const response = await fetch(`${API_BASE}/api/user/${currentUser.id}`);
+                const response = await fetch(`${API_BASE}/api/user/${currentUser.id}`, {
+                    method: 'GET',
+                    mode: 'cors'
+                });
                 const data = await response.json();
 
                 if (response.ok) {
@@ -362,11 +455,12 @@
                 return;
             }
 
-            addLog(`🔄 Создание нового пользователя...`, 'info');
+            addLog(`🔄 Создание нового пользователя ID: ${currentUser.id}...`, 'info');
             try {
                 const response = await fetch(`${API_BASE}/api/user`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
+                    mode: 'cors',
                     body: JSON.stringify({
                         id: currentUser.id,
                         name: currentUser.name,
@@ -385,7 +479,7 @@
                     addLog(`❌ ${data.message}`, 'error');
                 }
             } catch (error) {
-                addLog(`❌ Ошибка: ${error.message}`, 'error');
+                addLog(`❌ Ошибка создания пользователя: ${error.message}`, 'error');
             }
         }
 
@@ -393,38 +487,29 @@
             document.getElementById('logs').textContent = 'Логи очищены...\n';
         }
 
-        // Инициализация
+        // Инициализация при загрузке
         window.addEventListener('load', () => {
             addLog('🚀 Приложение загружено', 'info');
-
-            // Проверяем и настраиваем Telegram WebApp
-            if (window.Telegram && window.Telegram.WebApp) {
-                addLog('✅ Telegram WebApp API найден', 'success');
-                window.Telegram.WebApp.ready();
-                window.Telegram.WebApp.expand();
-                addLog('📱 Telegram WebApp инициализирован', 'success');
-                
-                // Логируем всю доступную информацию
-                const webApp = window.Telegram.WebApp;
-                addLog(`🔍 WebApp версия: ${webApp.version}`, 'info');
-                addLog(`🔍 Платформа: ${webApp.platform}`, 'info');
-                addLog(`🔍 initData: ${webApp.initData}`, 'info');
-            } else {
-                addLog('❌ Telegram WebApp API НЕ НАЙДЕН! Откройте через Telegram Mini App!', 'error');
-            }
-
-            // Получаем данные пользователя из Telegram
+            
+            // Инициализируем Telegram WebApp
+            const telegramInitialized = initTelegramWebApp();
+            
+            // Получаем данные пользователя
             currentUser = getTelegramUserData();
             displayUserInfo(currentUser);
-            addLog(`👤 Пользователь: ${currentUser.name} (ID: ${currentUser.id})`, 'info');
-
+            addLog(`👤 Пользователь загружен: ${currentUser.name} (ID: ${currentUser.id}, источник: ${currentUser.source})`, 'info');
+            
+            // Настраиваем API URL
             initApiUrl();
 
+            // Последовательно проверяем соединения
             setTimeout(() => {
                 testServer();
                 setTimeout(() => {
                     testDatabase();
-                    setTimeout(() => checkUser(), 1000);
+                    setTimeout(() => {
+                        checkUser();
+                    }, 1000);
                 }, 1000);
             }, 500);
         });
