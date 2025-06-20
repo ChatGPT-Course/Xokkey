@@ -1,11 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Telegram Mini App - User Balance</title>
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
         body {
             font-family: Arial, sans-serif;
@@ -163,23 +161,24 @@
         // Получение данных из Telegram Mini App
         function getTelegramUserData() {
             addLog('🔍 Попытка получения данных из Telegram WebApp...', 'info');
-            
+
             if (window.Telegram && window.Telegram.WebApp) {
                 addLog('✅ Telegram WebApp API найден', 'success');
-                
+
                 const webApp = window.Telegram.WebApp;
                 const initData = webApp.initDataUnsafe;
-                
+
                 addLog(`📱 initDataUnsafe: ${JSON.stringify(initData)}`, 'info');
-                
+
                 if (initData && initData.user) {
                     const user = initData.user;
                     addLog(`👤 Данные пользователя получены из Telegram: ID=${user.id}, name=${user.first_name}`, 'success');
-                    
+
                     return {
                         id: user.id,
                         name: user.first_name + (user.last_name ? ' ' + user.last_name : ''),
-                        username: user.username || 'не указан'
+                        username: user.username || 'не указан',
+                        isFromTelegram: true
                     };
                 } else {
                     addLog('⚠️ initDataUnsafe.user пуст или недоступен', 'warning');
@@ -188,13 +187,14 @@
             } else {
                 addLog('❌ Telegram WebApp API недоступен', 'error');
             }
-            
-            // Если не удалось получить данные из Telegram, показываем ошибку
-            addLog('❌ ВНИМАНИЕ: Используются тестовые данные! Откройте приложение через Telegram!', 'error');
+
+            // Тестовые данные для работы вне Telegram
+            addLog('⚠️ Используются тестовые данные для демонстрации', 'warning');
             return {
-                id: 'NO_TELEGRAM_DATA',
-                name: 'ОШИБКА: Нет данных Telegram',
-                username: 'Откройте через Telegram!'
+                id: 123456789,
+                name: 'Тестовый Пользователь',
+                username: 'testuser',
+                isFromTelegram: false
             };
         }
 
@@ -397,30 +397,36 @@
         window.addEventListener('load', () => {
             addLog('🚀 Приложение загружено', 'info');
 
-            // Проверяем и настраиваем Telegram WebApp
+            // Проверяем и настраиваем Telegram WebApp если доступен
             if (window.Telegram && window.Telegram.WebApp) {
                 addLog('✅ Telegram WebApp API найден', 'success');
-                window.Telegram.WebApp.ready();
-                window.Telegram.WebApp.expand();
-                addLog('📱 Telegram WebApp инициализирован', 'success');
-                
-                // Логируем всю доступную информацию
-                const webApp = window.Telegram.WebApp;
-                addLog(`🔍 WebApp версия: ${webApp.version}`, 'info');
-                addLog(`🔍 Платформа: ${webApp.platform}`, 'info');
-                addLog(`🔍 initData: ${webApp.initData}`, 'info');
+                try {
+                    window.Telegram.WebApp.ready();
+                    window.Telegram.WebApp.expand();
+                    addLog('📱 Telegram WebApp инициализирован', 'success');
+
+                    // Логируем информацию о WebApp
+                    const webApp = window.Telegram.WebApp;
+                    addLog(`🔍 WebApp версия: ${webApp.version}`, 'info');
+                    addLog(`🔍 Платформа: ${webApp.platform}`, 'info');
+                } catch (e) {
+                    addLog(`⚠️ Ошибка инициализации Telegram WebApp: ${e.message}`, 'warning');
+                }
             } else {
-                addLog('❌ Telegram WebApp API НЕ НАЙДЕН! Откройте через Telegram Mini App!', 'error');
+                addLog('ℹ️ Приложение открыто вне Telegram - используем тестовый режим', 'info');
             }
 
-            // Получаем данные пользователя из Telegram
+            // Получаем данные пользователя
             currentUser = getTelegramUserData();
             displayUserInfo(currentUser);
             addLog(`👤 Пользователь: ${currentUser.name} (ID: ${currentUser.id})`, 'info');
 
+            // Инициализируем API соединение
             initApiUrl();
 
+            // Запускаем проверки соединения через небольшие интервалы
             setTimeout(() => {
+                addLog('🔄 Запуск проверки соединений...', 'info');
                 testServer();
                 setTimeout(() => {
                     testDatabase();
