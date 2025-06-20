@@ -173,24 +173,48 @@
 
         // Инициализация Telegram WebApp
         function initTelegramWebApp() {
+            // Проверяем доступность Telegram WebApp
+            if (typeof window.Telegram === 'undefined') {
+                addLog('❌ Telegram объект недоступен', 'error');
+                return false;
+            }
+            
             if (window.Telegram && window.Telegram.WebApp) {
                 addLog('🔵 Telegram WebApp API обнаружен', 'info');
                 
+                const webApp = window.Telegram.WebApp;
+                
                 try {
+                    // Сначала вызываем ready()
+                    webApp.ready();
+                    addLog('✅ WebApp.ready() вызван', 'success');
+                    
                     // Расширяем приложение на весь экран
-                    window.Telegram.WebApp.expand();
+                    webApp.expand();
+                    addLog('📱 Приложение расширено на весь экран', 'info');
                     
-                    // Устанавливаем цветовую схему
-                    window.Telegram.WebApp.setHeaderColor('#007bff');
+                    // Устанавливаем цветовую схему если доступно
+                    if (webApp.setHeaderColor) {
+                        webApp.setHeaderColor('#007bff');
+                        addLog('🎨 Цвет заголовка установлен', 'info');
+                    }
                     
-                    // Показываем кнопку "Назад" если нужно
-                    window.Telegram.WebApp.BackButton.hide();
+                    // Скрываем кнопку "Назад"
+                    if (webApp.BackButton) {
+                        webApp.BackButton.hide();
+                        addLog('⬅️ Кнопка "Назад" скрыта', 'info');
+                    }
                     
-                    // Готовность к работе
-                    window.Telegram.WebApp.ready();
+                    // Включаем закрытие по свайпу вниз
+                    if (webApp.enableClosingConfirmation) {
+                        webApp.enableClosingConfirmation();
+                        addLog('✋ Подтверждение закрытия включено', 'info');
+                    }
                     
                     isInTelegram = true;
-                    addLog('✅ Telegram WebApp инициализирован', 'success');
+                    addLog('✅ Telegram WebApp полностью инициализирован', 'success');
+                    addLog(`📊 Версия WebApp: ${webApp.version}`, 'info');
+                    addLog(`📱 Платформа: ${webApp.platform}`, 'info');
                     
                     return true;
                 } catch (error) {
@@ -207,8 +231,21 @@
         function getTelegramUserData() {
             addLog('🔍 Попытка получения данных пользователя Telegram...', 'info');
             
+            // Ждем полной загрузки Telegram WebApp
+            if (typeof window.Telegram === 'undefined') {
+                addLog('⚠️ Telegram WebApp скрипт еще не загружен', 'warning');
+                // Попробуем через 500мс
+                setTimeout(() => {
+                    currentUser = getTelegramUserData();
+                    displayUserInfo(currentUser);
+                }, 500);
+                return null;
+            }
+            
             if (window.Telegram && window.Telegram.WebApp) {
                 const webApp = window.Telegram.WebApp;
+                
+                addLog('✅ Telegram WebApp обнаружен', 'success');
                 
                 // Показываем все доступные данные для отладки
                 const rawData = {
@@ -220,21 +257,54 @@
                     themeParams: webApp.themeParams,
                     isExpanded: webApp.isExpanded,
                     viewportHeight: webApp.viewportHeight,
-                    viewportStableHeight: webApp.viewportStableHeight
+                    viewportStableHeight: webApp.viewportStableHeight,
+                    MainButton: webApp.MainButton ? 'Available' : 'Not available',
+                    BackButton: webApp.BackButton ? 'Available' : 'Not available'
                 };
                 
                 document.getElementById('telegramRawData').innerHTML = 
-                    `<strong>Сырые данные Telegram:</strong><br>${JSON.stringify(rawData, null, 2)}`;
+                    `<strong>Сырые данные Telegram:</strong><br><pre>${JSON.stringify(rawData, null, 2)}</pre>`;
                 document.getElementById('telegramRawData').style.display = 'block';
                 
-                addLog(`📊 Telegram данные: ${JSON.stringify(rawData, null, 2)}`, 'info');
+                addLog(`📊 Telegram WebApp данные: version=${rawData.version}, platform=${rawData.platform}`, 'info');
                 
+                // Проверяем initData первым
+                if (webApp.initData && webApp.initData.length > 0) {
+                    addLog('🔍 Парсим initData...', 'info');
+                    addLog(`📝 initData: ${webApp.initData}`, 'info');
+                    
+                    try {
+                        const urlParams = new URLSearchParams(webApp.initData);
+                        const userParam = urlParams.get('user');
+                        
+                        if (userParam) {
+                            const userData = JSON.parse(decodeURIComponent(userParam));
+                            addLog('✅ Пользователь найден в initData!', 'success');
+                            addLog(`👤 Получены данные: ID=${userData.id}, Name=${userData.first_name}`, 'success');
+                            
+                            return {
+                                id: userData.id,
+                                name: userData.first_name + (userData.last_name ? ' ' + userData.last_name : ''),
+                                username: userData.username || '',
+                                language_code: userData.language_code || 'ru',
+                                is_premium: userData.is_premium || false,
+                                photo_url: userData.photo_url || '',
+                                source: 'telegram_initData'
+                            };
+                        } else {
+                            addLog('⚠️ Параметр user не найден в initData', 'warning');
+                        }
+                    } catch (e) {
+                        addLog(`❌ Ошибка парсинга initData: ${e.message}`, 'error');
+                    }
+                }
+                
+                // Проверяем initDataUnsafe как запасной вариант
                 const initDataUnsafe = webApp.initDataUnsafe;
-                const user = initDataUnsafe?.user;
-                
-                if (user && user.id) {
-                    addLog('✅ Данные пользователя Telegram успешно получены', 'success');
-                    addLog(`👤 ID: ${user.id}, Имя: ${user.first_name}, Username: ${user.username || 'не указан'}`, 'info');
+                if (initDataUnsafe && initDataUnsafe.user) {
+                    const user = initDataUnsafe.user;
+                    addLog('✅ Пользователь найден в initDataUnsafe!', 'success');
+                    addLog(`👤 Получены данные: ID=${user.id}, Name=${user.first_name}`, 'success');
                     
                     return {
                         id: user.id,
@@ -243,47 +313,48 @@
                         language_code: user.language_code || 'ru',
                         is_premium: user.is_premium || false,
                         photo_url: user.photo_url || '',
-                        source: 'telegram'
+                        source: 'telegram_unsafe'
                     };
                 } else {
-                    addLog('⚠️ Пользователь Telegram не найден в initDataUnsafe', 'warning');
-                    
-                    // Попробуем другие методы получения данных
-                    if (webApp.initData) {
-                        addLog('🔍 Пытаемся парсить initData вручную...', 'info');
-                        try {
-                            const params = new URLSearchParams(webApp.initData);
-                            const userStr = params.get('user');
-                            if (userStr) {
-                                const userData = JSON.parse(userStr);
-                                addLog('✅ Данные пользователя получены из initData', 'success');
-                                return {
-                                    id: userData.id,
-                                    name: userData.first_name + (userData.last_name ? ' ' + userData.last_name : ''),
-                                    username: userData.username || '',
-                                    language_code: userData.language_code || 'ru',
-                                    is_premium: userData.is_premium || false,
-                                    photo_url: userData.photo_url || '',
-                                    source: 'telegram_parsed'
-                                };
-                            }
-                        } catch (e) {
-                            addLog(`❌ Ошибка парсинга initData: ${e.message}`, 'error');
-                        }
+                    addLog('⚠️ initDataUnsafe пустой или не содержит пользователя', 'warning');
+                    addLog(`📊 initDataUnsafe содержимое: ${JSON.stringify(initDataUnsafe)}`, 'info');
+                }
+                
+                // Последняя попытка - прямое обращение к глобальным переменным Telegram
+                if (window.Telegram.WebApp.WebAppUser) {
+                    addLog('🔍 Пытаемся получить WebAppUser...', 'info');
+                    const webAppUser = window.Telegram.WebApp.WebAppUser;
+                    if (webAppUser.id) {
+                        addLog('✅ WebAppUser найден!', 'success');
+                        return {
+                            id: webAppUser.id,
+                            name: webAppUser.first_name + (webAppUser.last_name ? ' ' + webAppUser.last_name : ''),
+                            username: webAppUser.username || '',
+                            language_code: webAppUser.language_code || 'ru',
+                            is_premium: webAppUser.is_premium || false,
+                            photo_url: webAppUser.photo_url || '',
+                            source: 'telegram_webappuser'
+                        };
                     }
                 }
+                
+                addLog('❌ Все методы получения данных Telegram не сработали', 'error');
+                addLog('ℹ️ Это означает что приложение открыто НЕ как Telegram Mini App', 'info');
+            } else {
+                addLog('❌ Telegram WebApp API недоступен', 'error');
+                addLog('ℹ️ Убедитесь что приложение открыто через Telegram', 'warning');
             }
             
             // Тестовые данные для разработки
             addLog('🧪 Используем тестовые данные для разработки', 'info');
             return {
                 id: 123456789,
-                name: 'Тестовый Пользователь',
+                name: 'Тестовый Пользователь (НЕ из Telegram)',
                 username: 'testuser',
                 language_code: 'ru',
                 is_premium: false,
                 photo_url: '',
-                source: 'test'
+                source: 'test_data'
             };
         }
 
@@ -487,31 +558,58 @@
             document.getElementById('logs').textContent = 'Логи очищены...\n';
         }
 
-        // Инициализация при загрузке
-        window.addEventListener('load', () => {
-            addLog('🚀 Приложение загружено', 'info');
+        // Функция полной инициализации приложения
+        function initializeApp() {
+            addLog('🚀 Начинаем инициализацию приложения', 'info');
             
             // Инициализируем Telegram WebApp
             const telegramInitialized = initTelegramWebApp();
             
-            // Получаем данные пользователя
-            currentUser = getTelegramUserData();
-            displayUserInfo(currentUser);
-            addLog(`👤 Пользователь загружен: ${currentUser.name} (ID: ${currentUser.id}, источник: ${currentUser.source})`, 'info');
-            
-            // Настраиваем API URL
-            initApiUrl();
-
-            // Последовательно проверяем соединения
+            // Получаем данные пользователя с задержкой для полной загрузки Telegram
             setTimeout(() => {
-                testServer();
-                setTimeout(() => {
-                    testDatabase();
+                currentUser = getTelegramUserData();
+                if (currentUser) {
+                    displayUserInfo(currentUser);
+                    addLog(`👤 Пользователь загружен: ${currentUser.name} (ID: ${currentUser.id}, источник: ${currentUser.source})`, 'info');
+                    
+                    // Настраиваем API URL
+                    initApiUrl();
+
+                    // Последовательно проверяем соединения
                     setTimeout(() => {
-                        checkUser();
-                    }, 1000);
-                }, 1000);
-            }, 500);
+                        testServer();
+                        setTimeout(() => {
+                            testDatabase();
+                            setTimeout(() => {
+                                checkUser();
+                            }, 1000);
+                        }, 1000);
+                    }, 500);
+                } else {
+                    addLog('❌ Не удалось получить данные пользователя', 'error');
+                }
+            }, 1000);
+        }
+
+        // Ожидание загрузки Telegram WebApp скрипта
+        function waitForTelegram() {
+            if (typeof window.Telegram !== 'undefined' && window.Telegram.WebApp) {
+                addLog('✅ Telegram WebApp скрипт загружен', 'success');
+                initializeApp();
+            } else {
+                addLog('⏳ Ожидание загрузки Telegram WebApp...', 'info');
+                setTimeout(waitForTelegram, 100);
+            }
+        }
+
+        // Инициализация при загрузке
+        window.addEventListener('load', () => {
+            addLog('🚀 DOM загружен, ждем Telegram WebApp', 'info');
+            
+            // Даем время на загрузку Telegram скрипта
+            setTimeout(() => {
+                waitForTelegram();
+            }, 200);
         });
     </script>
 </body>
