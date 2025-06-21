@@ -1,264 +1,308 @@
+
 <!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram Mini App - User Balance</title>
+    <title>Hockey Shootouts</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body {
-            font-family: Arial, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background-color: #f5f5f5;
-        }
-        .container {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-        }
-        h1, h2 {
-            color: #333;
-            text-align: center;
-        }
-        .button-group {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-            margin-bottom: 20px;
-        }
-        button {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background-color 0.3s;
-        }
-        .btn-primary {
-            background-color: #007bff;
-            color: white;
-        }
-        .btn-primary:hover {
-            background-color: #0056b3;
-        }
-        .btn-success {
-            background-color: #28a745;
-            color: white;
-        }
-        .btn-success:hover {
-            background-color: #1e7e34;
-        }
-        input[type="url"] {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            margin-bottom: 10px;
+        * {
+            margin: 0;
+            padding: 0;
             box-sizing: border-box;
         }
-        #logs {
-            background-color: #f8f9fa;
-            border: 1px solid #dee2e6;
-            border-radius: 5px;
-            padding: 15px;
-            height: 400px;
-            overflow-y: auto;
-            font-family: monospace;
-            font-size: 12px;
-            white-space: pre-wrap;
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #2c3e50, #34495e, #2c3e50);
+            color: white;
+            min-height: 100vh;
+            position: relative;
+            overflow-x: hidden;
         }
-        .status-indicator {
-            display: inline-block;
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
-            margin-right: 10px;
+
+        .game-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 20px;
+            position: relative;
         }
-        .status-online {
-            background-color: #28a745;
-        }
-        .status-offline {
-            background-color: #dc3545;
-        }
-        .connection-info {
-            background-color: #d1ecf1;
-            border: 1px solid #bee5eb;
-            border-radius: 5px;
-            padding: 10px;
-            margin: 10px 0;
-            font-family: monospace;
-            font-size: 12px;
-        }
-        .user-info {
-            background-color: #d4edda;
-            border: 1px solid #c3e6cb;
-            border-radius: 5px;
-            padding: 15px;
-            margin: 10px 0;
-        }
-        .balance-display {
+
+        .game-title {
+            position: absolute;
+            top: 20px;
+            right: 20px;
             font-size: 24px;
             font-weight: bold;
+            color: #e74c3c;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+
+        .user-avatar {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 48px;
+            font-weight: bold;
+            color: white;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 32px rgba(231, 76, 60, 0.3);
+            border: 4px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .balance-display {
+            font-size: 18px;
+            margin-bottom: 40px;
+            color: #ecf0f1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .balance-icon {
+            font-size: 20px;
+        }
+
+        .game-buttons {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            width: 100%;
+            max-width: 280px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
             text-align: center;
-            color: #28a745;
-            margin: 20px 0;
+            text-decoration: none;
+            display: block;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-play {
+            background: linear-gradient(135deg, #e74c3c, #c0392b);
+            color: white;
+            box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
+        }
+
+        .btn-play:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(231, 76, 60, 0.6);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: #ecf0f1;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(10px);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .btn-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .btn-row .btn {
+            flex: 1;
+            padding: 12px 20px;
+            font-size: 14px;
+        }
+
+        .version-info {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .debug-panel {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #00ff00;
+            padding: 10px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 10px;
+            max-width: 300px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+
+        .debug-toggle {
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            cursor: pointer;
+            z-index: 1001;
+        }
+
+        .error-container {
+            background: rgba(231, 76, 60, 0.1);
+            border: 2px solid #e74c3c;
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            margin: 20px;
+            backdrop-filter: blur(10px);
+        }
+
+        .error-container h2 {
+            color: #e74c3c;
+            margin-bottom: 15px;
+        }
+
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #e74c3c;
+            animation: spin 1s ease-in-out infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-online {
+            background-color: #27ae60;
+            box-shadow: 0 0 10px rgba(39, 174, 96, 0.5);
+        }
+
+        .status-offline {
+            background-color: #e74c3c;
+            box-shadow: 0 0 10px rgba(231, 76, 60, 0.5);
+        }
+
+        @media (max-width: 480px) {
+            .game-title {
+                font-size: 20px;
+                top: 15px;
+                right: 15px;
+            }
+            
+            .user-avatar {
+                width: 100px;
+                height: 100px;
+                font-size: 40px;
+            }
+            
+            .game-buttons {
+                max-width: 260px;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🤖 Telegram Mini App - Баланс пользователя</h1>
+    <button class="debug-toggle" onclick="toggleDebug()">🐛</button>
+    
+    <div id="debugPanel" class="debug-panel">
+        <div id="debugLogs">Инициализация...</div>
+    </div>
 
-        <div class="container">
-            <h2>👤 Информация о пользователе</h2>
-            <div id="userInfo" class="user-info">
-                Загрузка данных пользователя...
-            </div>
-            <div id="userBalance" class="balance-display">
-                Баланс: ⏳ загрузка...
+    <div id="accessCheck" class="error-container" style="display: none;">
+        <h2>❌ Доступ запрещен</h2>
+        <p>Это приложение доступно только через Telegram Mini App</p>
+        <p>Пожалуйста, откройте приложение через бота в Telegram</p>
+    </div>
+
+    <div id="mainContent" class="game-container" style="display: none;">
+        <div class="game-title">Hockey Shootouts</div>
+        
+        <div class="user-avatar" id="userAvatar">
+            <span id="avatarText">?</span>
+        </div>
+        
+        <div class="balance-display" id="balanceDisplay">
+            <span class="balance-icon">🏒</span>
+            <span>Клюшек: </span>
+            <span id="balanceAmount">⏳</span>
+            <span class="loading-spinner" id="balanceLoader" style="display: none;"></span>
+        </div>
+        
+        <div class="game-buttons">
+            <button class="btn btn-play" onclick="playGame()">
+                Играть
+            </button>
+            
+            <button class="btn btn-secondary" onclick="showProfile()">
+                Мой профиль
+            </button>
+            
+            <div class="btn-row">
+                <button class="btn btn-secondary" onclick="showCraft()">
+                    Крафт
+                </button>
+                <button class="btn btn-secondary" onclick="showShop()">
+                    Магазин
+                </button>
             </div>
         </div>
-
-        <div class="container">
-            <h2>🔗 Настройки соединения</h2>
-            <label for="apiUrl">URL сервера API:</label>
-            <input type="url" id="apiUrl" placeholder="http://46.149.69.67:3000" value="">
-            <button class="btn-primary" onclick="updateApiUrl()">💾 Сохранить URL</button>
-            <div id="connectionInfo" class="connection-info" style="display: none;"></div>
-        </div>
-
-        <div class="container">
-            <h2>🔗 Проверка соединений</h2>
-            <div class="button-group">
-                <button class="btn-primary" onclick="testServer()">
-                    <span id="server-status" class="status-indicator status-offline"></span>
-                    Проверить сервер
-                </button>
-                <button class="btn-primary" onclick="testDatabase()">
-                    <span id="db-status" class="status-indicator status-offline"></span>
-                    Проверить БД
-                </button>
-                <button class="btn-success" onclick="checkUser()">
-                    🔄 Обновить данные пользователя
-                </button>
-            </div>
-        </div>
-
-        <div class="container">
-            <h2>📝 Логи операций</h2>
-            <div id="logs">Логи операций будут отображаться здесь...\n</div>
-            <button class="btn-primary" onclick="clearLogs()" style="margin-top: 10px;">🧹 Очистить логи</button>
+        
+        <div class="version-info">
+            Hockey Shootouts V_1.0b
         </div>
     </div>
 
     <script>
         let API_BASE = '';
+        let telegramUser = null;
         let currentUser = null;
+        let debugVisible = false;
 
-        // Получение данных из Telegram Mini App
-        function getTelegramUserData() {
-            addLog('🔍 Попытка получения данных из Telegram WebApp...', 'info');
-
-            if (window.Telegram && window.Telegram.WebApp) {
-                addLog('✅ Telegram WebApp API найден', 'success');
-
-                const webApp = window.Telegram.WebApp;
-                const initData = webApp.initDataUnsafe;
-
-                addLog(`📱 initDataUnsafe: ${JSON.stringify(initData)}`, 'info');
-
-                if (initData && initData.user) {
-                    const user = initData.user;
-                    addLog(`👤 Данные пользователя получены из Telegram: ID=${user.id}, name=${user.first_name}`, 'success');
-
-                    return {
-                        id: user.id,
-                        name: user.first_name + (user.last_name ? ' ' + user.last_name : ''),
-                        username: user.username || 'не указан',
-                        isFromTelegram: true
-                    };
-                } else {
-                    addLog('⚠️ initDataUnsafe.user пуст или недоступен', 'warning');
-                    addLog(`🔍 Полный initDataUnsafe: ${JSON.stringify(initData)}`, 'info');
-                }
-            } else {
-                addLog('❌ Telegram WebApp API недоступен', 'error');
-            }
-
-            // Тестовые данные для работы вне Telegram
-            addLog('⚠️ Используются тестовые данные для демонстрации', 'warning');
-            return {
-                id: 123456789,
-                name: 'Тестовый Пользователь',
-                username: 'testuser',
-                isFromTelegram: false
-            };
+        // Debug функции
+        function toggleDebug() {
+            debugVisible = !debugVisible;
+            document.getElementById('debugPanel').style.display = debugVisible ? 'block' : 'none';
         }
 
-        function displayUserInfo(userData) {
-            const userInfo = document.getElementById('userInfo');
-            userInfo.innerHTML = `
-                <strong>ID:</strong> ${userData.id}<br>
-                <strong>Имя:</strong> ${userData.name}<br>
-                <strong>Username:</strong> @${userData.username || 'не указан'}
-            `;
-        }
-
-        function updateBalance(balance) {
-            const balanceDiv = document.getElementById('userBalance');
-            balanceDiv.textContent = `Баланс: ${balance} 🪙`;
-        }
-
-        function initApiUrl() {
-            // Автоматическое определение API URL
-            if (window.location.hostname === 'hocketgame.tw1.ru') {
-                API_BASE = 'https://hocketgame.tw1.ru';
-            } else if (window.location.hostname === '46.149.69.67') {
-                API_BASE = 'http://46.149.69.67:3000';
-            } else {
-                API_BASE = 'http://46.149.69.67:3000'; // fallback
-            }
-
-            document.getElementById('apiUrl').value = API_BASE;
-            addLog(`🌐 API URL установлен: ${API_BASE}`, 'info');
-            updateConnectionInfo();
-        }
-
-        function updateApiUrl() {
-            const newUrl = document.getElementById('apiUrl').value.trim();
-            if (newUrl) {
-                API_BASE = newUrl.replace(/\/$/, '');
-                addLog(`🔧 API URL обновлен: ${API_BASE}`, 'info');
-                updateConnectionInfo();
-                setTimeout(() => testServer(), 500);
-            } else {
-                addLog('❌ Введите корректный URL сервера', 'error');
-            }
-        }
-
-        function updateConnectionInfo() {
-            const info = document.getElementById('connectionInfo');
-            try {
-                const url = new URL(API_BASE);
-                info.innerHTML = `
-                    <strong>Настройки подключения:</strong><br>
-                    🌐 Хост: ${url.hostname}<br>
-                    🔌 Порт: ${url.port || (url.protocol === 'https:' ? 443 : 80)}<br>
-                    🔒 Протокол: ${url.protocol}<br>
-                    📡 URL: ${API_BASE}
-                `;
-                info.style.display = 'block';
-            } catch (e) {
-                info.style.display = 'none';
-            }
-        }
-
-        function addLog(message, type = 'info') {
-            const logs = document.getElementById('logs');
-            const timestamp = new Date().toLocaleString('ru-RU');
+        function addDebugLog(message, type = 'info') {
+            const debugLogs = document.getElementById('debugLogs');
+            const timestamp = new Date().toLocaleTimeString();
             const icons = {
                 'success': '✅',
                 'error': '❌',
@@ -266,172 +310,199 @@
                 'warning': '⚠️'
             };
             const icon = icons[type] || 'ℹ️';
-            logs.textContent += `[${timestamp}] ${icon} ${message}\n`;
-            logs.scrollTop = logs.scrollHeight;
+            debugLogs.innerHTML += `[${timestamp}] ${icon} ${message}<br>`;
+            debugLogs.scrollTop = debugLogs.scrollHeight;
         }
 
-        function updateStatus(elementId, isOnline) {
-            const element = document.getElementById(elementId);
-            if (element) {
-                element.className = `status-indicator ${isOnline ? 'status-online' : 'status-offline'}`;
+        // Проверка доступа через Telegram
+        function checkTelegramAccess() {
+            addDebugLog('🔍 Проверка доступа через Telegram...', 'info');
+
+            if (!window.Telegram || !window.Telegram.WebApp) {
+                addDebugLog('❌ Telegram WebApp API недоступен', 'error');
+                showAccessDenied();
+                return false;
             }
+
+            const tg = window.Telegram.WebApp;
+            addDebugLog('✅ Telegram WebApp API найден', 'success');
+            
+            const initDataUnsafe = tg.initDataUnsafe;
+            addDebugLog(`📱 Данные: ${JSON.stringify(initDataUnsafe)}`, 'info');
+
+            if (!initDataUnsafe || !initDataUnsafe.user) {
+                addDebugLog('❌ Данные пользователя недоступны', 'error');
+                showAccessDenied();
+                return false;
+            }
+
+            telegramUser = initDataUnsafe.user;
+            addDebugLog(`✅ Пользователь: ${telegramUser.first_name} (ID: ${telegramUser.id})`, 'success');
+
+            tg.ready();
+            tg.expand();
+            
+            return true;
         }
 
-        async function testServer() {
-            if (!API_BASE) {
-                addLog('❌ Сначала настройте URL сервера', 'error');
+        function showAccessDenied() {
+            document.getElementById('accessCheck').style.display = 'block';
+            document.getElementById('mainContent').style.display = 'none';
+        }
+
+        function showMainContent() {
+            document.getElementById('accessCheck').style.display = 'none';
+            document.getElementById('mainContent').style.display = 'flex';
+        }
+
+        function updateUserAvatar() {
+            if (!telegramUser) return;
+            
+            const avatarText = document.getElementById('avatarText');
+            const firstLetter = telegramUser.first_name ? telegramUser.first_name.charAt(0).toUpperCase() : '?';
+            avatarText.textContent = firstLetter;
+        }
+
+        function updateBalance(balance) {
+            const balanceAmount = document.getElementById('balanceAmount');
+            const balanceLoader = document.getElementById('balanceLoader');
+            
+            balanceLoader.style.display = 'none';
+            balanceAmount.textContent = balance;
+            
+            addDebugLog(`✅ Баланс обновлен: ${balance}`, 'success');
+        }
+
+        function showBalanceLoading() {
+            const balanceAmount = document.getElementById('balanceAmount');
+            const balanceLoader = document.getElementById('balanceLoader');
+            
+            balanceAmount.textContent = '...';
+            balanceLoader.style.display = 'inline-block';
+        }
+
+        function initApiUrl() {
+            if (window.location.protocol === 'https:') {
+                API_BASE = window.location.origin;
+            } else {
+                API_BASE = `${window.location.protocol}//${window.location.hostname}:3000`;
+            }
+            addDebugLog(`🌐 API URL: ${API_BASE}`, 'info');
+        }
+
+        async function checkOrCreateUser() {
+            if (!telegramUser) {
+                addDebugLog('❌ Данные пользователя недоступны', 'error');
                 return;
             }
 
-            addLog(`🔄 Проверка сервера: ${API_BASE}/api/test`, 'info');
+            showBalanceLoading();
+            addDebugLog(`🔄 Проверка пользователя ID: ${telegramUser.id}`, 'info');
+            
             try {
-                const response = await fetch(`${API_BASE}/api/test`, {
-                    method: 'GET',
-                    headers: { 'Content-Type': 'application/json' }
-                });
-
-                const data = await response.json();
-
-                if (response.ok) {
-                    addLog(`✅ ${data.message} (Порт: ${data.port})`, 'success');
-                    updateStatus('server-status', true);
-                } else {
-                    addLog(`❌ Ошибка сервера: ${data.message}`, 'error');
-                    updateStatus('server-status', false);
-                }
-            } catch (error) {
-                addLog(`❌ Ошибка соединения: ${error.message}`, 'error');
-                updateStatus('server-status', false);
-            }
-        }
-
-        async function testDatabase() {
-            if (!API_BASE) {
-                addLog('❌ Сначала настройте URL сервера', 'error');
-                return;
-            }
-
-            addLog(`🔄 Проверка БД: ${API_BASE}/api/test-db`, 'info');
-            try {
-                const response = await fetch(`${API_BASE}/api/test-db`);
-                const data = await response.json();
-
-                if (response.ok) {
-                    addLog(`✅ ${data.message}`, 'success');
-                    updateStatus('db-status', true);
-                } else {
-                    addLog(`❌ Ошибка БД: ${data.message}`, 'error');
-                    updateStatus('db-status', false);
-                }
-            } catch (error) {
-                addLog(`❌ Ошибка соединения с БД: ${error.message}`, 'error');
-                updateStatus('db-status', false);
-            }
-        }
-
-        async function checkUser() {
-            if (!currentUser) {
-                addLog('❌ Данные пользователя не загружены', 'error');
-                return;
-            }
-
-            addLog(`🔄 Проверка пользователя ID: ${currentUser.id}`, 'info');
-            try {
-                const response = await fetch(`${API_BASE}/api/user/${currentUser.id}`);
+                const response = await fetch(`${API_BASE}/api/user/${telegramUser.id}`);
                 const data = await response.json();
 
                 if (response.ok) {
                     if (data.user) {
-                        addLog(`✅ Пользователь найден в БД. Баланс: ${data.user.balance}`, 'success');
+                        addDebugLog(`✅ Пользователь найден. Баланс: ${data.user.balance}`, 'success');
+                        currentUser = data.user;
                         updateBalance(data.user.balance);
                     } else {
-                        addLog(`ℹ️ Новый пользователь. Создание записи...`, 'info');
+                        addDebugLog(`ℹ️ Новый пользователь. Создание...`, 'info');
                         await createUser();
                     }
                 } else {
-                    addLog(`❌ ${data.message}`, 'error');
+                    addDebugLog(`❌ ${data.message}`, 'error');
                 }
             } catch (error) {
-                addLog(`❌ Ошибка: ${error.message}`, 'error');
+                addDebugLog(`❌ Ошибка: ${error.message}`, 'error');
             }
         }
 
         async function createUser() {
-            if (!currentUser) {
-                addLog('❌ Данные пользователя не загружены', 'error');
-                return;
-            }
+            if (!telegramUser) return;
 
-            addLog(`🔄 Создание нового пользователя...`, 'info');
+            addDebugLog(`🔄 Создание пользователя...`, 'info');
+            
             try {
+                const userData = {
+                    id: telegramUser.id,
+                    first_name: telegramUser.first_name,
+                    last_name: telegramUser.last_name || null,
+                    username: telegramUser.username || null,
+                    language_code: telegramUser.language_code || 'ru',
+                    is_premium: telegramUser.is_premium || false,
+                    photo_url: telegramUser.photo_url || null,
+                    allows_write_to_pm: telegramUser.allows_write_to_pm || false
+                };
+
                 const response = await fetch(`${API_BASE}/api/user`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        id: currentUser.id,
-                        name: currentUser.name,
-                        username: currentUser.username,
-                        balance: 10,
-                        cards: []
-                    })
+                    body: JSON.stringify(userData)
                 });
 
                 const data = await response.json();
 
                 if (response.ok) {
-                    addLog(`✅ Пользователь создан! Начальный баланс: ${data.user.balance}`, 'success');
+                    addDebugLog(`✅ ${data.message} Баланс: ${data.user.balance}`, 'success');
+                    currentUser = data.user;
                     updateBalance(data.user.balance);
                 } else {
-                    addLog(`❌ ${data.message}`, 'error');
+                    addDebugLog(`❌ ${data.message}`, 'error');
                 }
             } catch (error) {
-                addLog(`❌ Ошибка: ${error.message}`, 'error');
+                addDebugLog(`❌ Ошибка создания: ${error.message}`, 'error');
             }
         }
 
-        function clearLogs() {
-            document.getElementById('logs').textContent = 'Логи очищены...\n';
+        // Функции кнопок (пока что заглушки)
+        function playGame() {
+            addDebugLog('🎮 Кнопка "Играть" нажата', 'info');
+            // TODO: Добавить логику игры
         }
 
-        // Инициализация
-        window.addEventListener('load', () => {
-            addLog('🚀 Приложение загружено', 'info');
+        function showProfile() {
+            addDebugLog('👤 Кнопка "Мой профиль" нажата', 'info');
+            // TODO: Добавить логику профиля
+        }
 
-            // Проверяем и настраиваем Telegram WebApp если доступен
-            if (window.Telegram && window.Telegram.WebApp) {
-                addLog('✅ Telegram WebApp API найден', 'success');
-                try {
-                    window.Telegram.WebApp.ready();
-                    window.Telegram.WebApp.expand();
-                    addLog('📱 Telegram WebApp инициализирован', 'success');
+        function showCraft() {
+            addDebugLog('🔨 Кнопка "Крафт" нажата', 'info');
+            // TODO: Добавить логику крафта
+        }
 
-                    // Логируем информацию о WebApp
-                    const webApp = window.Telegram.WebApp;
-                    addLog(`🔍 WebApp версия: ${webApp.version}`, 'info');
-                    addLog(`🔍 Платформа: ${webApp.platform}`, 'info');
-                } catch (e) {
-                    addLog(`⚠️ Ошибка инициализации Telegram WebApp: ${e.message}`, 'warning');
-                }
-            } else {
-                addLog('ℹ️ Приложение открыто вне Telegram - используем тестовый режим', 'info');
+        function showShop() {
+            addDebugLog('🛒 Кнопка "Магазин" нажата', 'info');
+            // TODO: Добавить логику магазина
+        }
+
+        // Инициализация приложения
+        window.addEventListener('load', async () => {
+            addDebugLog('🚀 Запуск приложения...', 'info');
+
+            if (!checkTelegramAccess()) {
+                return;
             }
 
-            // Получаем данные пользователя
-            currentUser = getTelegramUserData();
-            displayUserInfo(currentUser);
-            addLog(`👤 Пользователь: ${currentUser.name} (ID: ${currentUser.id})`, 'info');
-
-            // Инициализируем API соединение
+            showMainContent();
+            updateUserAvatar();
             initApiUrl();
 
-            // Запускаем проверки соединения через небольшие интервалы
-            setTimeout(() => {
-                addLog('🔄 Запуск проверки соединений...', 'info');
-                testServer();
-                setTimeout(() => {
-                    testDatabase();
-                    setTimeout(() => checkUser(), 1000);
-                }, 1000);
+            // Проверяем сервер и создаем пользователя
+            setTimeout(async () => {
+                try {
+                    const response = await fetch(`${API_BASE}/api/test`);
+                    if (response.ok) {
+                        addDebugLog('✅ Сервер доступен', 'success');
+                        await checkOrCreateUser();
+                    } else {
+                        addDebugLog('❌ Сервер недоступен', 'error');
+                    }
+                } catch (error) {
+                    addDebugLog(`❌ Ошибка сервера: ${error.message}`, 'error');
+                }
             }, 500);
         });
     </script>
