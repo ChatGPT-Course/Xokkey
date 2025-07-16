@@ -1994,25 +1994,21 @@
 
         // Функции онлайна
         async function loadOnlineCount() {
-            try {
-                const response = await fetch(`${API_BASE}/api/online-count`);
-                const data = await response.json();
-
-                if (response.ok) {
-                    const onlineCountElement = document.getElementById('onlineCount');
-                    onlineCountElement.textContent = data.onlineCount || 0;
-                    addDebugLog(`✅ Онлайн загружен: ${data.onlineCount}`, 'success');
-                } else {
-                    addDebugLog(`❌ Ошибка загрузки онлайна: ${data.message}`, 'error');
-                }
-            } catch (error) {
-                addDebugLog(`❌ Ошибка загрузки онлайна: ${error.message}`, 'error');
+          try {
+            const response = await fetch(`${API_BASE}/api/online-count`);
+            const data = await response.json();
+            if (response.ok) {
+              document.getElementById('onlineCount').textContent = data.onlineCount;
+              document.getElementById('currentTime').textContent = data.currentTime;
             }
+          } catch (error) {
+            console.error('Ошибка загрузки онлайна:', error);
+          }
         }
 
         function startOnlineUpdates() {
             // Обновляем онлайн каждую минуту
-            setInterval(loadOnlineCount, 60000);
+            setInterval(loadOnlineCount, 50000);
         }
 
         async function checkSubscription() {
