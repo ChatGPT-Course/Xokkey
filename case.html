@@ -1,0 +1,829 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Кейсы — Hockey Shootouts</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+      -webkit-user-select: none;
+      -khtml-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+
+    body {
+      background: linear-gradient(135deg, #1a1e2b, #2c3e50);
+      color: #fff;
+      font-family: 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', sans-serif;
+      margin: 0; 
+      min-height: 100vh;
+    }
+
+    .header-panel {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      background: rgba(30, 39, 53, 0.95);
+      backdrop-filter: blur(10px);
+      padding: 15px 20px;
+      box-shadow: 0 2px 15px rgba(0,0,0,0.2);
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .back-btn {
+      background: none;
+      color: rgba(255,255,255,0.8);
+      border: 2px solid rgba(255,255,255,0.3);
+      padding: 8px 16px;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      text-decoration: none;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s;
+    }
+
+    .back-btn:hover {
+      background: rgba(255,255,255,0.1);
+      color: white;
+    }
+
+    .game-title {
+      font-size: 22px;
+      font-weight: bold;
+      color: #f39c12;
+      letter-spacing: 0.5px;
+    }
+
+    .balance-display {
+      position: fixed;
+      top: 70px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      font-size: 18px;
+      font-weight: bold;
+      color: #f6c36e;
+      padding: 10px;
+      background: rgba(0,0,0,0.3);
+      backdrop-filter: blur(5px);
+      z-index: 99;
+    }
+
+    .main-block {
+      max-width: 400px; 
+      margin: 130px auto 0 auto;
+      padding: 20px; 
+      display: flex; 
+      flex-direction: column; 
+      align-items: center;
+    }
+
+    .case-preview {
+      background: rgba(255,255,255,0.05);
+      border-radius: 20px; 
+      padding: 30px 25px;
+      display: flex; 
+      flex-direction: column; 
+      align-items: center;
+      width: 100%;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+      border: 1px solid rgba(255,255,255,0.05);
+      margin-bottom: 20px;
+    }
+
+    .case-image {
+      width: 120px; 
+      height: 120px; 
+      margin-bottom: 15px;
+      border-radius: 50%; 
+      background: linear-gradient(135deg, #2c3e50, #34495e);
+      display: flex; 
+      align-items: center; 
+      justify-content: center;
+      font-size: 50px; 
+      color: #f6c36e;
+      border: 4px solid #f39c12;
+      box-shadow: 0 5px 25px rgba(243, 156, 18, 0.3);
+      position: relative;
+      overflow: hidden;
+      transition: transform 0.3s;
+    }
+
+    .case-image.epic {
+      border-color: #9b59b6;
+      color: #9b59b6;
+      box-shadow: 0 5px 25px rgba(155, 89, 182, 0.3);
+    }
+
+    .case-image:hover {
+      transform: scale(1.05);
+    }
+
+    .case-name { 
+      font-size: 24px; 
+      font-weight: 700; 
+      color: #f6c36e; 
+      margin: 10px 0;
+      text-align: center;
+    }
+
+    .case-name.epic {
+      color: #9b59b6;
+    }
+
+    .case-desc { 
+      opacity: 0.8; 
+      font-size: 15px; 
+      margin-bottom: 20px; 
+      text-align: center;
+      line-height: 1.4;
+    }
+
+    .case-price {
+      font-size: 16px;
+      font-weight: bold;
+      color: #f39c12;
+      margin-bottom: 15px;
+    }
+
+    .case-price.epic {
+      color: #9b59b6;
+    }
+
+    .chance-list { 
+      width:100%; 
+      margin: 20px 0;
+      background: rgba(0,0,0,0.2);
+      border-radius: 12px;
+      padding: 15px;
+    }
+
+    .chance-row { 
+      display:flex; 
+      justify-content:space-between; 
+      margin-bottom: 8px; 
+      font-size: 14px;
+      align-items: center;
+    }
+
+    .chance-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .chance-dot { 
+      width:12px; 
+      height:12px; 
+      border-radius:50%; 
+      display:inline-block; 
+      margin-right:10px; 
+      vertical-align:middle;
+      box-shadow: 0 0 8px currentColor;
+    }
+
+    .dot-rare { 
+      background: #2ecc71;
+      color: #2ecc71;
+    }
+
+    .dot-superrare { 
+      background: #3498db;
+      color: #3498db;
+    }
+
+    .dot-epic { 
+      background: #9b59b6;
+      color: #9b59b6;
+    }
+
+    .dot-mythic { 
+      background: #e74c3c;
+      color: #e74c3c;
+    }
+
+    .dot-legendary { 
+      background: #f1c40f;
+      color: #f1c40f;
+    }
+
+    .open-btn {
+      margin: 15px 0 10px 0; 
+      background: linear-gradient(135deg,#f39c12,#e67e22);
+      color: #fff; 
+      border: none; 
+      font-size: 18px; 
+      font-weight: 600; 
+      border-radius: 15px;
+      padding: 14px 40px; 
+      cursor: pointer; 
+      transition: all 0.2s;
+      box-shadow: 0 5px 20px rgba(243, 156, 18, 0.4);
+      width: 100%;
+      max-width: 220px;
+    }
+
+    .open-btn.epic {
+      background: linear-gradient(135deg,#9b59b6,#8e44ad);
+      box-shadow: 0 5px 20px rgba(155, 89, 182, 0.4);
+    }
+
+    .open-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 7px 25px rgba(243, 156, 18, 0.5);
+    }
+
+    .open-btn.epic:hover {
+      box-shadow: 0 7px 25px rgba(155, 89, 182, 0.5);
+    }
+
+    .open-btn:active { 
+      transform: translateY(0);
+      background: linear-gradient(135deg,#e67e22,#f39c12);
+    }
+
+    .open-btn.epic:active {
+      background: linear-gradient(135deg,#8e44ad,#9b59b6);
+    }
+
+    .open-btn[disabled] { 
+      opacity: 0.5; 
+      cursor: not-allowed;
+      transform: none !important;
+      box-shadow: 0 5px 20px rgba(243, 156, 18, 0.2) !important;
+    }
+
+    .open-btn.epic[disabled] {
+      box-shadow: 0 5px 20px rgba(155, 89, 182, 0.2) !important;
+    }
+
+    .timer {
+      margin-top: 15px; 
+      color: #f6c36e; 
+      font-size: 16px;
+      height: 20px;
+      font-weight: 500;
+    }
+
+    .timer.epic {
+      color: #9b59b6;
+    }
+
+    /* Модальное окно */
+    .modal-bg {
+      position: fixed; 
+      left:0; 
+      top:0; 
+      width:100vw; 
+      height:100vh;
+      z-index: 9999; 
+      background: rgba(0,0,0,0.9);
+      display: none; 
+      justify-content: center; 
+      align-items: center;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .modal-bg.active { 
+      display: flex;
+      opacity: 1;
+    }
+
+    .case-modal-content {
+      background: #1a1e2b;
+      border-radius: 20px; 
+      padding: 30px;
+      width: 90%;
+      max-width: 300px;
+      display: flex; 
+      flex-direction: column; 
+      align-items: center; 
+      position: relative;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.4);
+      border: 1px solid rgba(255,255,255,0.1);
+      transform: scale(0.9);
+      transition: transform 0.3s;
+    }
+
+    .modal-bg.active .case-modal-content {
+      transform: scale(1);
+    }
+
+    .modal-title {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 25px;
+      color: #f6c36e;
+      text-align: center;
+    }
+
+    /* Анимация открытия карточки */
+    .card-reveal {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      animation: cardReveal 0.8s cubic-bezier(0.2, 0.8, 0.3, 1) both;
+    }
+
+    @keyframes cardReveal {
+      0% { opacity: 0; transform: scale(0.8); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .card-avatar {
+      width: 140px;
+      height: 140px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 20px;
+      border: 4px solid;
+      box-shadow: 0 0 30px currentColor;
+      overflow: hidden;
+      position: relative;
+      animation: avatarGlow 2s infinite alternate;
+    }
+
+    @keyframes avatarGlow {
+      0% { box-shadow: 0 0 20px currentColor; }
+      100% { box-shadow: 0 0 40px currentColor; }
+    }
+
+    .avatar-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+    }
+
+    .card-name { 
+      font-size: 22px; 
+      font-weight: 700; 
+      margin-bottom: 5px;
+      text-align: center;
+      line-height: 1.3;
+    }
+
+    .card-rarity { 
+      font-size:13px; 
+      font-weight: 600;
+      padding: 5px 15px;
+      border-radius: 20px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    }
+
+    .rarity-rare {
+      background: linear-gradient(135deg, #2ecc71, #27ae60);
+      color: white;
+      border: 1px solid #2ecc71;
+    }
+
+    .rarity-superrare {
+      background: linear-gradient(135deg, #3498db, #2980b9);
+      color: white;
+      border: 1px solid #3498db;
+    }
+
+    .rarity-epic {
+      background: linear-gradient(135deg, #9b59b6, #8e44ad);
+      color: white;
+      border: 1px solid #9b59b6;
+    }
+
+    .rarity-mythic {
+      background: linear-gradient(135deg, #e74c3c, #c0392b);
+      color: white;
+      border: 1px solid #e74c3c;
+    }
+
+    .rarity-legendary {
+      background: linear-gradient(135deg, #f1c40f, #f39c12);
+      color: #000;
+      border: 1px solid #f1c40f;
+    }
+
+    .close-win-btn {
+      margin-top: 25px;
+      background: linear-gradient(135deg,#f39c12,#e67e22);
+      color: white; 
+      border: none; 
+      font-size: 16px; 
+      font-weight: 600;
+      border-radius: 15px; 
+      padding: 12px 35px; 
+      cursor: pointer;
+      transition: all 0.2s;
+      box-shadow: 0 5px 20px rgba(243, 156, 18, 0.4);
+    }
+
+    .close-win-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 7px 25px rgba(243, 156, 18, 0.5);
+    }
+
+    .close-win-btn:active { 
+      transform: translateY(0);
+      background: linear-gradient(135deg,#e67e22,#f39c12);
+    }
+
+    .error { 
+      color: #e74c3c; 
+      font-size: 16px; 
+      margin: 15px auto 0 auto; 
+      text-align: center;
+      min-height: 20px;
+    }
+
+    .card-placeholder {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,0.1);
+      color: #f6c36e;
+      font-size: 30px;
+      font-weight: bold;
+    }
+
+    /* Анимация вопроса перед открытием */
+    .question-mark {
+      font-size: 70px;
+      animation: pulse 1.5s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); opacity: 0.7; }
+      50% { transform: scale(1.1); opacity: 1; }
+      100% { transform: scale(1); opacity: 0.7; }
+    }
+  </style>
+</head>
+<body>
+  <div class="header-panel">
+    <button class="back-btn" onclick="window.location='index.html'">← Назад</button>
+    <div class="game-title">Hockey Shootouts</div>
+  </div>
+
+  <div class="balance-display" id="balanceDisplay">
+    Баланс: <span id="balanceAmount">0</span> 🏒
+  </div>
+
+  <div class="main-block">
+    <!-- Бесплатный кейс -->
+    <div class="case-preview">
+      <div class="case-image">🎁</div>
+      <div class="case-name">Бесплатный кейс</div>
+      <div class="case-desc">Откройте кейс и получите случайную карточку игрока. Доступно каждые 6 часов</div>
+      <div class="chance-list">
+        <div class="chance-row"><span><span class="chance-dot dot-rare"></span>Редкий</span><span>60%</span></div>
+        <div class="chance-row"><span><span class="chance-dot dot-superrare"></span>Сверхредкий</span><span>30%</span></div>
+        <div class="chance-row"><span><span class="chance-dot dot-epic"></span>Эпический</span><span>6%</span></div>
+        <div class="chance-row"><span><span class="chance-dot dot-mythic"></span>Мифический</span><span>3%</span></div>
+        <div class="chance-row"><span><span class="chance-dot dot-legendary"></span>Легендарный</span><span>1%</span></div>
+      </div>
+      <button class="open-btn" id="openFreeBtn" onclick="openCase('free')" disabled>Открыть кейс</button>
+      <div class="timer" id="freeTimer"></div>
+      <div class="error" id="freeErrorText"></div>
+    </div>
+
+    <!-- Эпический кейс -->
+    <div class="case-preview">
+      <div class="case-image epic">💎</div>
+      <div class="case-name epic">Эпический кейс</div>
+      <div class="case-desc">Откройте кейс и получите карточку высокой редкости</div>
+      <div class="case-price epic">Цена: 150 🏒</div>
+      <div class="chance-list">
+        <div class="chance-row"><span><span class="chance-dot dot-epic"></span>Эпический</span><span>60%</span></div>
+        <div class="chance-row"><span><span class="chance-dot dot-superrare"></span>Сверхредкий</span><span>25%</span></div>
+        <div class="chance-row"><span><span class="chance-dot dot-mythic"></span>Мифический</span><span>15%</span></div>
+      </div>
+      <button class="open-btn epic" id="openEpicBtn" onclick="openCase('epic')" disabled>Открыть за 150 🏒</button>
+      <div class="error" id="epicErrorText"></div>
+    </div>
+  </div>
+
+  <div class="modal-bg" id="caseModal">
+    <div class="case-modal-content">
+      <div class="modal-title">Вы получили</div>
+      <div id="cardContainer">
+        <!-- Здесь будет отображаться карточка -->
+      </div>
+      <button class="close-win-btn" style="display:none;" id="closeBtn" onclick="closeModal()">Отлично!</button>
+    </div>
+  </div>
+
+  <script>
+    // Все карточки с их редкостями и правильными названиями
+    const allCards = {
+      'rare': [
+        {key: 'сериков', name: 'Сериков'},
+        {key: 'бикмуллин', name: 'Бикмуллин'},
+        {key: 'бойко', name: 'Бойко'},
+        {key: 'брынцев', name: 'Брынцев'},
+        {key: 'данияр', name: 'Данияр'},
+        {key: 'капустин', name: 'Капустин'},
+        {key: 'киселевич', name: 'Киселевич'},
+        {key: 'коновалов', name: 'Коновалов'},
+        {key: 'корягин', name: 'Корягин'}
+      ],
+      'superrare': [
+        {key: 'абросимов', name: 'Абросимов'},
+        {key: 'барулин', name: 'Барулин'},
+        {key: 'уильям', name: 'Уильям'},
+        {key: 'гераськин', name: 'Гераськин'},
+        {key: 'дыняк', name: 'Дыняк'},
+        {key: 'камара', name: 'Камара'},
+        {key: 'классон', name: 'Классон'},
+        {key: 'конюшков', name: 'Конюшков'},
+        {key: 'ли', name: 'Ли'}
+      ],
+      'epic': [
+        {key: 'грицюк', name: 'Грицюк'},
+        {key: 'ткачев_а', name: 'Ткачев А.'},
+        {key: 'барабанов', name: 'Барабанов'},
+        {key: 'аймурзин', name: 'Аймурзин'},
+        {key: 'бориков', name: 'Бориков'},
+        {key: 'глотов', name: 'Глотов'},
+        {key: 'демченко', name: 'Демченко'},
+        {key: 'дроздов', name: 'Дроздов'},
+        {key: 'ильенко', name: 'Ильенко'},
+        {key: 'кара', name: 'Кара'},
+        {key: 'мамин', name: 'Мамин'},
+        {key: 'локтионов', name: 'Локтионов'},
+        {key: 'фу', name: 'Фу'},
+        {key: 'рушан', name: 'Рушан'}
+      ],
+      'mythic': [
+        {key: 'демидов', name: 'Демидов'},
+        {key: 'хмелевский', name: 'Хмелевский'},
+        {key: 'гутик', name: 'Гутик'},
+        {key: 'кагарлицкий', name: 'Кагарлицкий'},
+        {key: 'каюмов', name: 'Каюмов'},
+        {key: 'голдобин', name: 'Голдобин'}
+      ],
+      'legendary': [
+        {key: 'шабанов', name: 'Шабанов'},
+        {key: 'галимов_арт', name: 'Галимов Арт.'},
+        {key: 'кравцов', name: 'Кравцов'},
+        {key: 'кузнецов', name: 'Кузнецов'},
+        {key: 'радулов', name: 'Радулов'},
+        {key: 'ливо', name: 'Ливо'}
+      ]
+    };
+
+    // Rarity цвета и ru-имена
+    const rarityConfig = {
+      rare:      { ru: 'Редкий',      class:'rarity-rare', color: '#2ecc71' },
+      superrare: { ru: 'Сверхредкий', class:'rarity-superrare', color: '#3498db' },
+      epic:      { ru: 'Эпический',   class:'rarity-epic', color: '#9b59b6' },
+      mythic:    { ru: 'Мифический',  class:'rarity-mythic', color: '#e74c3c' },
+      legendary: { ru: 'Легендарный', class:'rarity-legendary', color: '#f1c40f' }
+    };
+
+    function getCookie(name) {
+      const nameEQ = name + "=";
+      const ca = document.cookie.split(';');
+      for(let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) == 0) {
+          return c.substring(nameEQ.length, c.length);
+        }
+      }
+      return null;
+    }
+
+    // Форматирование времени
+    function formatTime(seconds) {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const secs = seconds % 60;
+      
+      return `${hours > 0 ? hours + 'ч ' : ''}${minutes > 0 ? minutes + 'м ' : ''}${secs}с`;
+    }
+
+    // Получаем userId
+    let userId = getCookie('hockey_user_id');
+    let userBalance = 0;
+
+    async function updateBalance() {
+      if (!userId) return;
+      
+      try {
+        const res = await fetch(`/api/user/${userId}`);
+        const data = await res.json();
+        if (data && data.user && data.user.balance) {
+          userBalance = Number(data.user.balance);
+          document.getElementById('balanceAmount').textContent = userBalance;
+          
+          // Обновляем состояние кнопки эпического кейса
+          const epicBtn = document.getElementById('openEpicBtn');
+          epicBtn.disabled = userBalance < 150;
+        }
+      } catch (e) {
+        console.error('Ошибка обновления баланса:', e);
+      }
+    }
+
+    async function updateFreeTimer() {
+      const timer = document.getElementById('freeTimer');
+      const openBtn = document.getElementById('openFreeBtn');
+      timer.textContent = '';
+      openBtn.disabled = true;
+      document.getElementById('freeErrorText').textContent = '';
+      
+      if (!userId) return;
+      let canOpen = true;
+      let wait = 0;
+      
+      try {
+        const res = await fetch(`/api/user/${userId}`);
+        const data = await res.json();
+        if (data && data.user && data.user.case_free) {
+          const now = Date.now();
+          if (now < Number(data.user.case_free)) {
+            wait = Math.ceil((Number(data.user.case_free)-now)/1000);
+            canOpen = false;
+          }
+        }
+      } catch {}
+      
+      if (!canOpen && wait > 0) {
+        openBtn.disabled = true;
+        timer.textContent = `Доступно через: ${formatTime(wait)}`;
+        setTimeout(updateFreeTimer, 1000);
+      } else {
+        openBtn.disabled = false;
+        timer.textContent = 'Доступно сейчас!';
+      }
+    }
+
+    // Функция для получения случайной карточки по редкости
+    function getRandomCard(rarity) {
+      const cards = allCards[rarity];
+      const randomIndex = Math.floor(Math.random() * cards.length);
+      return {
+        key: cards[randomIndex].key,
+        name: cards[randomIndex].name,
+        rarity: rarity
+      };
+    }
+
+    // Функция для определения редкости карточки по шансам (бесплатный кейс)
+    function determineFreeRarity() {
+      const random = Math.random() * 100;
+      
+      if (random < 1) return 'legendary';    // 1%
+      if (random < 4) return 'mythic';       // 3%
+      if (random < 10) return 'epic';        // 6%
+      if (random < 40) return 'superrare';   // 30%
+      return 'rare';                         // 60%
+    }
+
+    // Функция для определения редкости карточки по шансам (эпический кейс)
+    function determineEpicRarity() {
+      const random = Math.random() * 100;
+      
+      if (random < 15) return 'mythic';      // 15%
+      if (random < 40) return 'superrare';   // 25%
+      return 'epic';                         // 60%
+    }
+
+    async function openCase(type) {
+      if (!userId) return;
+      
+      const openBtn = type === 'free' ? document.getElementById('openFreeBtn') : document.getElementById('openEpicBtn');
+      const error = type === 'free' ? document.getElementById('freeErrorText') : document.getElementById('epicErrorText');
+      
+      error.textContent = '';
+      openBtn.disabled = true;
+
+      // Открываем модалку с анимацией
+      const modal = document.getElementById('caseModal');
+      const cardContainer = document.getElementById('cardContainer');
+      const closeBtn = document.getElementById('closeBtn');
+      
+      // Показываем анимацию вопроса
+      cardContainer.innerHTML = '<div class="question-mark">❓</div>';
+      closeBtn.style.display = 'none';
+      modal.classList.add('active');
+
+      // Ждём анимацию, затем — сервер
+      setTimeout(async ()=>{
+        let card = null;
+        try {
+          // Определяем редкость карточки
+          const rarity = type === 'free' ? determineFreeRarity() : determineEpicRarity();
+          // Получаем случайную карточку этой редкости
+          card = getRandomCard(rarity);
+          
+          // Отправляем запрос на сервер с выпавшей карточкой
+          const endpoint = type === 'free' ? 'free-case' : 'epic-case';
+          const res = await fetch(`/api/user/${userId}/${endpoint}`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              cardKey: card.key // Отправляем ключ выпавшей карточки
+            })
+          });
+          
+          const data = await res.json();
+          if (data.status === 'error') {
+            error.textContent = data.message || 'Ошибка!';
+            modal.classList.remove('active');
+            openBtn.disabled = false;
+            if (type === 'free') {
+              updateFreeTimer();
+            } else {
+              updateBalance();
+            }
+            return;
+          }
+          
+          // Обновляем баланс после открытия кейса
+          if (type === 'epic') {
+            userBalance -= 150;
+            document.getElementById('balanceAmount').textContent = userBalance;
+          }
+        } catch(e) {
+          error.textContent = "Ошибка сервера!";
+          modal.classList.remove('active');
+          openBtn.disabled = false;
+          if (type === 'free') {
+            updateFreeTimer();
+          } else {
+            updateBalance();
+          }
+          return;
+        }
+
+        // Готовим карточку для отображения
+        const rConf = rarityConfig[card.rarity] || {ru:card.rarity, class:'', color: '#f39c12'};
+        // Формируем правильное имя файла (первая буква заглавная)
+        const formattedName = card.name.split(' ')[0]; // Берем только первую часть имени (без точки, если есть)
+        const imageUrl = `https://raw.githubusercontent.com/ChatGPT-Course/Xokkey/main/avatar/${formattedName}.jpg`;
+        
+        // Создаем HTML для карточки
+        cardContainer.innerHTML = `
+          <div class="card-reveal">
+            <div class="card-avatar" style="border-color: ${rConf.color}">
+              <img src="${imageUrl}" alt="${card.name}" class="avatar-image" 
+                   onerror="this.style.display='none'; this.parentNode.style.display='flex'; 
+                            this.parentNode.style.alignItems='center'; 
+                            this.parentNode.style.justifyContent='center'; 
+                            this.parentNode.innerHTML='<span style=\'font-size:50px;color:white\'>${card.name.charAt(0).toUpperCase()}</span>';">
+            </div>
+            <div class="card-name" style="color: ${rConf.color}">${card.name}</div>
+            <div class="card-rarity ${rConf.class}">${rConf.ru}</div>
+          </div>
+        `;
+
+        // Показываем кнопку закрытия
+        setTimeout(()=>{ 
+          closeBtn.style.display = 'block';
+          closeBtn.style.animation = 'fadeIn 0.5s';
+        }, 800);
+        
+        // Обновляем таймер и баланс
+        if (type === 'free') {
+          updateFreeTimer();
+        } else {
+          updateBalance();
+        }
+      }, 1500);
+    }
+
+    function closeModal() {
+      document.getElementById('caseModal').classList.remove('active');
+    }
+
+    window.onload = function() {
+      updateFreeTimer();
+      updateBalance();
+    }
+  </script>
+</body>
+</html>
