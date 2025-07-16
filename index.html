@@ -15,14 +15,15 @@
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
             background: 
-                linear-gradient(rgba(0, 0, 0, 0.6), rgba(0, 0, 0, 0.6)), /* Затемнение */
+                linear-gradient(rgba(0, 0, 0, 0.85), 
+                rgba(0, 0, 0, 0.85)),
                 url('https://raw.githubusercontent.com/ChatGPT-Course/Xokkey/main/avatar/fon.jpg') no-repeat center center fixed;
             background-size: cover;
             color: white;
             min-height: 100vh;
             position: relative;
             overflow-x: hidden;
-            -webkit-tap-highlight-color: transparent;
+            -webkit-tap-highlight-color: transparent; /* Убираем синий фон при нажатии на iOS */
         }
 
         .game-container {
@@ -1994,21 +1995,25 @@
 
         // Функции онлайна
         async function loadOnlineCount() {
-          try {
-            const response = await fetch(`${API_BASE}/api/online-count`);
-            const data = await response.json();
-            if (response.ok) {
-              document.getElementById('onlineCount').textContent = data.onlineCount;
-              document.getElementById('currentTime').textContent = data.currentTime;
+            try {
+                const response = await fetch(`${API_BASE}/api/online-count`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    const onlineCountElement = document.getElementById('onlineCount');
+                    onlineCountElement.textContent = data.onlineCount || 0;
+                    addDebugLog(`✅ Онлайн загружен: ${data.onlineCount}`, 'success');
+                } else {
+                    addDebugLog(`❌ Ошибка загрузки онлайна: ${data.message}`, 'error');
+                }
+            } catch (error) {
+                addDebugLog(`❌ Ошибка загрузки онлайна: ${error.message}`, 'error');
             }
-          } catch (error) {
-            console.error('Ошибка загрузки онлайна:', error);
-          }
         }
 
         function startOnlineUpdates() {
             // Обновляем онлайн каждую минуту
-            setInterval(loadOnlineCount, 50000);
+            setInterval(loadOnlineCount, 60000);
         }
 
         async function checkSubscription() {
