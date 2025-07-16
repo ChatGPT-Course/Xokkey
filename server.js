@@ -1679,36 +1679,32 @@ app.get('/api/check-subscription/:user_id', async (req, res) => {
   }
 });
 
-// Получить количество пользователей онлайн (активность в течение 5 минут)
 app.get('/api/online-count', async (req, res) => {
   logRequest(req, '📊 Получение количества пользователей онлайн');
-
   let client;
   try {
     client = await pool.connect();
-
-    // Подсчитываем пользователей, которые были активны в течение последних 5 минут
+    const now = new Date();
+    const lastActivity = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+    await client.query(
+      'UPDATE users SET last_activity = $1, updated_at = CURRENT_TIMESTAMP WHERE id = $2',
+      [lastActivity, userId]
+    );
+    const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
+    
     const result = await client.query(`
       SELECT COUNT(*) as online_count 
       FROM users 
-      WHERE updated_at > NOW() - INTERVAL '5 minutes'
-    `);
-
-    const onlineCount = parseInt(result.rows[0].online_count) || 0;
-
-    console.log(`✅ Пользователей онлайн: ${onlineCount}`);
+      WHERE last_activity LIKE $1 || '%'
+    `, [currentTime]);
 
     res.json({ 
       status: 'success', 
-      onlineCount: onlineCount
+      onlineCount: parseInt(result.rows[0].online_count) || 0,
+      currentTime: currentTime
     });
   } catch (err) {
-    console.error(`❌ Ошибка получения онлайна:`, err.message);
-    res.status(500).json({ 
-      status: 'error', 
-      message: 'Ошибка получения онлайна', 
-      error: err.message
-    });
+    res.status(500).json({ status: 'error', message: 'Ошибка получения онлайна' });
   } finally {
     if (client) client.release();
   }
