@@ -16,7 +16,7 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
             background: 
                 linear-gradient(rgba(0, 0, 0, 0.85), 
-                rgba(0, 0, 0, 0.65)),
+                rgba(0, 0, 0, 0.25)),
                 url('https://raw.githubusercontent.com/ChatGPT-Course/Xokkey/main/avatar/fon.jpg') no-repeat center center fixed;
             background-size: cover;
             color: white;
@@ -122,6 +122,16 @@
             background: linear-gradient(135deg, #e74c3c, #c0392b);
             color: white;
             box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
+        }
+        .buttons-container {
+            background: rgba(0, 0, 0, 0.6); /* Полупрозрачный черный фон */
+            backdrop-filter: blur(10px); /* Эффект размытия для красивого вида */
+            border-radius: 16px; /* Закругленные углы */
+            padding: 20px; /* Отступы внутри контейнера */
+            width: 100%;
+            max-width: 280px;
+            margin-bottom: 20px; /* Отступ снизу */
+            border: 1px solid rgba(255, 255, 255, 0.1); /* Тонкая светлая граница */
         }
 
         .btn-play:hover {
@@ -1261,45 +1271,52 @@
         </div>
 
         <div class="game-buttons">
-            <!-- Новая строка с кнопкой играть и балансом -->
-            <div class="play-balance-row">
-                <button class="btn-play-new" onclick="playGame()">
-                    Играть
-                </button>
-                <div class="balance-button">
-                    <span class="balance-icon">🏒</span>
-                    <span class="balance-amount" id="balanceAmountNew">
-                        <div class="balance-loading"></div>
-                    </span>
+            <!-- Добавьте этот div как обертку для всех кнопок -->
+            <div class="buttons-container">
+                <!-- Новая строка с кнопкой играть и балансом -->
+                <div class="play-balance-row">
+                    <button class="btn-play-new" onclick="playGame()">
+                        Играть
+                    </button>
+                    <div class="balance-button">
+                        <span class="balance-icon">🏒</span>
+                        <span class="balance-amount" id="balanceAmountNew">
+                            <div class="balance-loading"></div>
+                        </span>
+                    </div>
+                </div>
+        
+                <!-- Новая строка с профилем и статистикой -->
+                <div class="profile-row">
+                    <button class="btn btn-secondary" onclick="showProfile()" style="flex: 1;">
+                        Мой профиль
+                    </button>
+                    <button class="btn-info-square" onclick="showStatistics()" title="Статистика">
+                        ℹ️
+                    </button>
+                </div>
+        
+                <div class="btn-row-menu">
+                    <button class="btn btn-menu-rect" onclick="showCraft()">
+                        Крафт
+                    </button>
+                    <button class="btn btn-menu-square" onclick="showLeaderboard()" title="Лидерборд">
+                        🏆
+                    </button>
+                    <button class="btn btn-menu-rect" onclick="showShop()">
+                        Магазин
+                    </button>
+                </div>
+        
+                <div class="btn-row">
+                    <button class="btn btn-secondary" onclick="showCases()">
+                        📦 Кейсы
+                    </button>
                 </div>
             </div>
-
-            <!-- Новая строка с профилем и статистикой -->
-            <div class="profile-row">
-                <button class="btn btn-secondary" onclick="showProfile()" style="flex: 1;">
-                    Мой профиль
-                </button>
-                <button class="btn-info-square" onclick="showStatistics()" title="Статистика">
-                    ℹ️
-                </button>
-            </div>
-
-            <div class="btn-row-menu">
-                <button class="btn btn-menu-rect" onclick="showCraft()">
-                    Крафт
-                </button>
-                <button class="btn btn-menu-square" onclick="showLeaderboard()" title="Лидерборд">
-                    🏆
-                </button>
-                <button class="btn btn-menu-rect" onclick="showShop()">
-                    Магазин
-                </button>
-            </div>
-
-            <div class="btn-row">
-                <button class="btn btn-secondary" onclick="showCases()">
-                    📦 Кейсы
-                </button>
+            
+            <div class="version-info">
+                Hockey Shootouts V_1.3b
             </div>
         </div>
 
