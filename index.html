@@ -1,258 +1,485 @@
-Создать полноценный сайт на одной странице объемом около 500 строк — задача сложная, но выполнимая. Ниже представлен шаблон сайта-визитки с простым функционалом и адаптивным дизайном. Сайт включает следующие элементы:
-
-- Анимационный заголовок.
-- Несколько секций с описанием услуг и портфолио.
-- Простую форму обратной связи.
-- Интерактивную карту Google Maps.
-- Мобильную версию дизайна.
-
-## Финальная версия сайта (~500 строк)
-
-```html
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"/>
-    <link href="https://fonts.googleapis.com/css2?family=Lato&display=swap" rel="stylesheet">
-    <title>Крутой веб-сайт визитка</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-
-        /* Общие стили */
-        body {
-            font-family: 'Lato', sans-serif;
-            line-height: 1.6;
-            background-color: #fdfdfd;
-            color: #333;
-        }
-
-        header {
-            position: relative;
-            z-index: 1;
-            background-image: linear-gradient(to bottom right, rgba(100, 100, 100, 0.8), rgba(0, 0, 0, 0.8)), url('https://images.unsplash.com/photo-1504674900247-0877df9cc836');
-            background-size: cover;
-            color: white;
-            text-shadow: 0 1px 3px rgba(0,0,0,.5);
-            padding-top: 10rem;
-            padding-bottom: 10rem;
-            clip-path: polygon(0 0, 100% 0%, 100% 90%, 0% 100%);
-        }
-
-        h1 {
-            font-size: 3em;
-            letter-spacing: 0.1em;
-            text-transform: uppercase;
-            animation: moveDown 1s cubic-bezier(.25,.46,.45,.94) both infinite alternate-reverse;
-        }
-
-        h2 {
-            font-size: 1.5em;
-            margin-bottom: 1.5rem;
-        }
-
-        p {
-            font-size: 1.2em;
-            line-height: 1.6;
-            margin-bottom: 1.5rem;
-        }
-
-        button {
-            cursor: pointer;
-            background-color: transparent;
-            color: inherit;
-            border: 2px solid currentColor;
-            padding: 0.5em 1em;
-            font-weight: bold;
-            font-size: 1em;
-            transition: background-color 0.3s ease;
-        }
-
-        button:focus, button:hover {
-            outline: none;
-            background-color: rgba(255, 255, 255, 0.1);
-        }
-
-        .hero-container {
-            display: grid;
-            place-items: center;
-            gap: 2rem;
-        }
-
-        main {
-            padding: 3rem 1rem;
-        }
-
-        section {
-            margin-bottom: 3rem;
-        }
-
-        .card {
-            background-color: #fff;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-            padding: 1.5rem;
-            margin-bottom: 1.5rem;
-            transition: transform 0.3s ease;
-        }
-
-        .card img {
-            width: 100%;
-            object-fit: cover;
-            border-radius: 10px;
-            margin-bottom: 1rem;
-        }
-
-        .card h3 {
-            font-size: 1.2em;
-            margin-bottom: 0.5rem;
-        }
-
-        form input[type="email"],
-        form input[type="text"] {
-            width: 100%;
-            padding: 0.75em;
-            margin-bottom: 1rem;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-
-        form textarea {
-            resize: vertical;
-            width: 100%;
-            padding: 0.75em;
-            margin-bottom: 1rem;
-            border: 1px solid #ccc;
-            border-radius: 5px;
-        }
-
-        footer {
-            background-color: #333;
-            color: #fff;
-            padding: 1rem 0;
-            text-align: center;
-        }
-
-        footer a {
-            color: #fff;
-            text-decoration: underline;
-        }
-
-        /* Анимации */
-        @keyframes moveDown {
-            0% {transform: translateY(-10px);}
-            100% {transform: translateY(10px);}
-        }
-
-        /* Адаптация под мобильные устройства */
-        @media screen and (max-width: 768px) {
-            h1 {
-                font-size: 2.5em;
-            }
-
-            .hero-container {
-                gap: 1rem;
-            }
-
-            main {
-                padding: 1.5rem;
-            }
-
-            .card {
-                padding: 1rem;
-            }
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SweetBerries_Bot | Магазин</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background: linear-gradient(135deg, #ff6b6b 0%, #ff8e8e 100%);
+      min-height: 100vh;
+    }
+    
+    .container {
+      width: 100%;
+      height: 100vh;
+      background: #f5f5f5;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .header {
+      background: #ff4757;
+      color: white;
+      padding: 10px;
+      text-align: center;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    }
+    
+    .header h1 {
+      font-size: 18px;
+      margin: 0;
+      font-weight: bold;
+    }
+    
+    .content {
+      flex: 1;
+      padding: 15px;
+      overflow-y: auto;
+    }
+    
+    .info-header {
+      display: flex;
+      align-items: center;
+      background: #e3f2fd;
+      border-radius: 12px;
+      padding: 12px 15px;
+      margin-bottom: 15px;
+      border-left: 4px solid #2196f3;
+    }
+    
+    .info-icon {
+      width: 24px;
+      height: 24px;
+      background: #2196f3;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: bold;
+      margin-right: 12px;
+      flex-shrink: 0;
+    }
+    
+    .info-text {
+      font-size: 14px;
+      color: #1565c0;
+      line-height: 1.4;
+    }
+    
+    .search-box {
+      display: flex;
+      align-items: center;
+      background: #fff;
+      border: 2px solid #ff4757;
+      border-radius: 12px;
+      padding: 10px 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 8px rgba(255, 71, 87, 0.1);
+    }
+    
+    .search-icon {
+      margin-right: 10px;
+      font-size: 18px;
+      color: #ff4757;
+    }
+    
+    .search-box input {
+      border: none;
+      outline: none;
+      font-size: 16px;
+      flex: 1;
+      color: #000000;
+      background: transparent;
+    }
+    
+    .search-box input::placeholder {
+      color: #888;
+    }
+    
+    .clear-search {
+      cursor: pointer;
+      font-size: 18px;
+      color: #888;
+      padding: 0 5px;
+      display: none;
+    }
+    
+    .games-container {
+      background: white;
+      border-radius: 12px;
+      border: 2px solid #ff4757;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(255, 71, 87, 0.1);
+      max-height: 280px;
+      overflow-y: auto;
+    }
+    
+    ul { 
+      list-style: none; 
+      padding: 0; 
+      margin: 0; 
+    }
+    
+    li {
+      padding: 6px 15px;
+      border-bottom: 1px solid #ffe6e6;
+      transition: all 0.2s ease;
+      font-size: 14px;
+      color: #000000 !important;
+      min-height: 28px;
+      display: flex;
+      align-items: center;
+      background: white;
+    }
+    
+    li:last-child { 
+      border-bottom: none; 
+    }
+    
+    li:hover { 
+      background: #fff5f5; 
+      cursor: pointer; 
+    }
+    
+    li.selected {
+      background-color: #fffaf0;
+      border-left: 4px solid #ff7f50;
+      color: #ff7f50 !important;
+      font-weight: 600;
+    }
+    
+    .selection-panel {
+      background: #fffaf0;
+      border-radius: 12px;
+      padding: 15px;
+      margin-top: 15px;
+      border: 2px solid #ff7f50;
+    }
+    
+    .selected-game {
+      margin-bottom: 12px;
+      font-weight: bold;
+      color: #ff4757;
+      font-size: 16px;
+      text-align: center;
+    }
+    
+    .buttons {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+    
+    .btn {
+      padding: 12px;
+      border: none;
+      border-radius: 10px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-size: 16px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .btn-buy {
+      background: #4CAF50;
+      color: white;
+      box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+      position: relative;
+    }
+    
+    .btn-buy:hover {
+      background: #45a049;
+      transform: translateY(-2px);
+    }
+    
+    .btn-buy::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+      animation: wave 5s ease-in-out infinite;
+    }
+    
+    @keyframes wave {
+      0% {
+        left: -100%;
+      }
+      15% {
+        left: 100%;
+      }
+      100% {
+        left: 100%;
+      }
+    }
+    
+    .btn-info {
+      background: #2d3748;
+      color: white;
+      box-shadow: 0 4px 12px rgba(45, 55, 72, 0.3);
+    }
+    
+    .btn-info:hover {
+      background: #4a5568;
+      transform: translateY(-2px);
+    }
+    
+    .instructions {
+      margin: 12px 0;
+      color: #666;
+      font-size: 14px;
+      text-align: center;
+      line-height: 1.4;
+    }
+    
+    .info-panel {
+      background: #e3f2fd;
+      border-radius: 12px;
+      padding: 15px;
+      margin-top: 15px;
+      border-left: 4px solid #2196f3;
+    }
+    
+    .info-panel p {
+      margin-bottom: 10px;
+      color: #1565c0;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+  </style>
 </head>
 <body>
-    <header>
-        <div class="hero-container">
-            <h1>Привет!<br>Это мой крутецкий сайт</h1>
-            <p>Что-то невероятное ждёт вас впереди...</p>
-            <button type="button">Начнём путешествие</button>
+  <div class="container">
+    <div class="header">
+      <h1>SweetBerries_Bot</h1>
+    </div>
+
+    <div class="content">
+      <div class="info-header">
+        <div class="info-icon">i</div>
+        <div class="info-text">Выберите нужную игру для оформления заказа</div>
+      </div>
+
+      <div class="search-box">
+        <div class="search-icon">🔍</div>
+        <input type="text" id="searchInput" onkeyup="searchGame()" placeholder="Введите название игры...">
+        <div class="clear-search" id="clearSearch" onclick="clearSearch()">✕</div>
+      </div>
+
+      <div class="games-container">
+        <ul id="gameList">
+          <li onclick="selectGame(this)">Аэропорт Сити: Построй Город</li>
+          <li onclick="selectGame(this)">Базарт Дизайн и Оформление</li>
+          <li onclick="selectGame(this)">Банг Банг Выживший</li>
+          <li onclick="selectGame(this)">Баттл-Арена</li>
+          <li onclick="selectGame(this)">Башня и Луки</li>
+          <li onclick="selectGame(this)">Бесконечная Граница</li>
+          <li onclick="selectGame(this)">Бизнес Тур</li>
+          <li onclick="selectGame(this)">Битва за Галактику</li>
+          <li onclick="selectGame(this)">Ваплог: Знакомства и Общение</li>
+        </ul>
+      </div>
+
+      <!-- Информационная панель под списком -->
+      <div class="info-panel">
+        <p>Мы поможем пополнить любую мобильную игру или приложение, даже если их нет в нашем списке!</p>
+        <p>Просто выберите игру и нажмите "Купить донат" для связи с администратором.</p>
+      </div>
+
+      <div class="selection-panel" id="selectionPanel" style="display: none;">
+        <div class="selected-game">Вы выбрали: <span id="gameName"></span></div>
+        <div class="instructions">
+          Чтобы перейти к диалогу с администратором или узнать, как происходит процесс, нажмите ниже.
         </div>
-    </header>
+        <div class="buttons">
+          <button class="btn btn-buy" onclick="buyDonate()">Купить донат</button>
+          <button class="btn btn-info" onclick="showProcess()">Как происходит процесс покупки</button>
+        </div>
+      </div>
+    </div>
+  </div>
 
-    <main>
-        <section id="about">
-            <h2>Обо мне</h2>
-            <p>Привет! Меня зовут Алексей, я увлечённый разработчик фронтенда. Я создаю красивые и функциональные веб-сайты и приложения.</p>
-        </section>
+  <script>
+    const PUZZLE_API_TOKEN = 'yTD7c90cVx0kkfvpRWYzs2PrXyTgX9pa';
+    
+    let selectedGame = null;
+    let tgUserID = null;
+    
+    function getTelegramUserID() {
+      try {
+        if (window.Telegram && Telegram.WebApp) {
+          const user = Telegram.WebApp.initDataUnsafe.user;
+          if (user && user.id) {
+            return user.id.toString();
+          }
+        }
+        return 'unknown_user';
+      } catch (error) {
+        return 'error_user';
+      }
+    }
+    
+    function closeMiniApp() {
+      if (window.Telegram && Telegram.WebApp) {
+        Telegram.WebApp.close();
+      }
+    }
+    
+    function initialize() {
+      tgUserID = getTelegramUserID();
+      console.log('User ID:', tgUserID);
+    }
+    
+    function searchGame() {
+      const input = document.getElementById("searchInput");
+      const filter = input.value.toLowerCase();
+      const clearBtn = document.getElementById("clearSearch");
+      
+      clearBtn.style.display = filter ? "block" : "none";
+      
+      const ul = document.getElementById("gameList");
+      const li = ul.getElementsByTagName("li");
+      let hasResults = false;
 
-        <section id="services">
-            <h2>Услуги</h2>
-            <div class="cards">
-                <div class="card">
-                    <img src="https://via.placeholder.com/300x200.png?text=Frontend+Development" alt="Frontend Development">
-                    <h3>Фронтенд разработка</h3>
-                    <p>Создание интерфейсов и анимаций для вашего продукта.</p>
-                </div>
-                <div class="card">
-                    <img src="https://via.placeholder.com/300x200.png?text=UI+Design" alt="UI Design">
-                    <h3>Дизайн UI</h3>
-                    <p>Красивый дизайн и интуитивно понятные интерфейсы.</p>
-                </div>
-                <div class="card">
-                    <img src="https://via.placeholder.com/300x200.png?text=SEO+Optimization" alt="SEO Optimization">
-                    <h3>Оптимизация SEO</h3>
-                    <p>Повышение видимости вашего сайта в поисковых системах.</p>
-                </div>
-            </div>
-        </section>
-
-        <section id="portfolio">
-            <h2>Портфолио</h2>
-            <div class="cards">
-                <div class="card">
-                    <img src="https://via.placeholder.com/300x200.png?text=Project+One" alt="Project One">
-                    <h3>Проект №1</h3>
-                    <p>Описание первого проекта.</p>
-                </div>
-                <div class="card">
-                    <img src="https://via.placeholder.com/300x200.png?text=Project+Two" alt="Project Two">
-                    <h3>Проект №2</h3>
-                    <p>Описание второго проекта.</p>
-                </div>
-                <div class="card">
-                    <img src="https://via.placeholder.com/300x200.png?text=Project+Three" alt="Project Three">
-                    <h3>Проект №3</h3>
-                    <p>Описание третьего проекта.</p>
-                </div>
-            </div>
-        </section>
-
-        <section id="contact">
-            <h2>Свяжитесь со мной</h2>
-            <form action="#">
-                <input type="text" placeholder="Имя" required />
-                <input type="email" placeholder="Email" required />
-                <textarea rows="5" placeholder="Сообщение"></textarea>
-                <button type="submit">Отправить сообщение</button>
-            </form>
-        </section>
-
-        <iframe src="https://www.google.com/maps/embed/v1/view?zoom=12&center=55.7558%2C37.6173&key=YOUR_API_KEY_HERE" style="border:0; width: 100%; height: 300px;" allowfullscreen="" loading="lazy"></iframe>
-    </main>
-
-    <footer>
-        &copy; 2025 My Awesome Website | Created by Alexey Kovalenko
-    </footer>
+      for (let i = 0; i < li.length; i++) {
+        const txtValue = li[i].textContent || li[i].innerText;
+        if (txtValue.toLowerCase().includes(filter)) {
+          li[i].style.display = "";
+          hasResults = true;
+        } else {
+          li[i].style.display = "none";
+        }
+      }
+      
+      if (!hasResults) {
+        const noResults = document.createElement('li');
+        noResults.textContent = 'Игры не найдены. Нажмите для связи с администратором.';
+        noResults.onclick = function() {
+          buyDonate();
+        };
+        noResults.style.color = '#ff4757';
+        noResults.style.fontStyle = 'italic';
+        
+        const existingNoResults = ul.querySelector('.no-results');
+        if (existingNoResults) {
+          ul.removeChild(existingNoResults);
+        }
+        
+        noResults.className = 'no-results';
+        ul.appendChild(noResults);
+      } else {
+        const noResults = ul.querySelector('.no-results');
+        if (noResults) {
+          ul.removeChild(noResults);
+        }
+      }
+    }
+    
+    function clearSearch() {
+      const input = document.getElementById("searchInput");
+      input.value = '';
+      input.focus();
+      searchGame();
+    }
+    
+    function selectGame(element) {
+      if (selectedGame) {
+        selectedGame.classList.remove('selected');
+      }
+      
+      element.classList.add('selected');
+      selectedGame = element;
+      
+      const selectionPanel = document.getElementById('selectionPanel');
+      const gameNameSpan = document.getElementById('gameName');
+      
+      gameNameSpan.textContent = element.textContent;
+      selectionPanel.style.display = 'block';
+    }
+    
+    function buyDonate() {
+      if (!selectedGame) {
+        alert('Пожалуйста, выберите игру сначала');
+        return;
+      }
+      
+      const userID = getTelegramUserID();
+      const gameName = selectedGame.textContent;
+      
+      console.log('Sending purchase command for:', gameName);
+      sendPuzzleBotCommand(userID, gameName, 'покупка');
+      
+      setTimeout(() => {
+        closeMiniApp();
+      }, 200);
+    }
+    
+    function sendPuzzleBotCommand(userID, gameName, commandName) {
+      const apiUrl = `https://api.puzzlebot.top/`;
+      
+      const params = new URLSearchParams();
+      params.append('token', PUZZLE_API_TOKEN);
+      params.append('method', 'sendCommand');
+      params.append('command_name', commandName);
+      params.append('tg_chat_id', userID);
+      params.append('game', encodeURIComponent(gameName));
+      params.append('source', 'webapp');
+      params.append('timestamp', Date.now());
+      
+      const fullUrl = `${apiUrl}?${params.toString()}`;
+      console.log('Sending request to:', fullUrl);
+      
+      // Используем fetch вместо iframe для лучшей обработки
+      fetch(fullUrl, {
+        method: 'GET',
+        mode: 'no-cors'
+      })
+      .then(() => {
+        console.log('Command sent successfully:', commandName);
+      })
+      .catch(error => {
+        console.error('Error sending command:', error);
+        // Fallback к iframe если fetch не работает
+        const iframe = document.createElement('iframe');
+        iframe.style.display = 'none';
+        iframe.src = fullUrl;
+        document.body.appendChild(iframe);
+        
+        setTimeout(() => {
+          if (document.body.contains(iframe)) {
+            document.body.removeChild(iframe);
+          }
+        }, 1000);
+      });
+    }
+    
+    function showProcess() {
+      const userID = getTelegramUserID();
+      const gameName = selectedGame ? selectedGame.textContent : 'Не выбрана';
+      
+      console.log('Sending stages command');
+      sendPuzzleBotCommand(userID, gameName, 'Этапы');
+      
+      setTimeout(() => {
+        closeMiniApp();
+      }, 200);
+    }
+    
+    window.onload = initialize;
+  </script>
 </body>
 </html>
-```
-
-### Что включено?
-
-- **Шапка с эффектами анимации:** Заголовок плавно движется вверх и вниз.
-- **Основные блоки с услугами:** Карточки для каждого типа услуги с изображениями и текстом.
-- **Портфолио:** Примеры выполненных проектов с картинками и описаниями.
-- **Форма обратной связи:** Возможность отправить письмо прямо с сайта.
-- **Интеграция карты Google Maps:** Плавно интегрированная карта с координатами Москвы.
-- **Подвал сайта:** Информация о владельце и авторские права.
-
-Этот проект отлично подойдёт для демонстрации ваших навыков разработки фронтэнда, адаптируется под различные размеры экранов благодаря использованию CSS Grid и Flexbox, а также имеет приятные визуальные эффекты, такие как тени и плавные переходы.
