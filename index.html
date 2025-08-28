@@ -20,7 +20,7 @@
     .container {
       width: 100%;
       height: 100vh;
-      background: #f5f5f5;
+      background: white;
       display: flex;
       flex-direction: column;
     }
@@ -43,36 +43,6 @@
       flex: 1;
       padding: 15px;
       overflow-y: auto;
-    }
-    
-    .info-header {
-      display: flex;
-      align-items: center;
-      background: #e3f2fd;
-      border-radius: 12px;
-      padding: 12px 15px;
-      margin-bottom: 15px;
-      border-left: 4px solid #2196f3;
-    }
-    
-    .info-icon {
-      width: 24px;
-      height: 24px;
-      background: #2196f3;
-      border-radius: 50%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-weight: bold;
-      margin-right: 12px;
-      flex-shrink: 0;
-    }
-    
-    .info-text {
-      font-size: 14px;
-      color: #1565c0;
-      line-height: 1.4;
     }
     
     .search-box {
@@ -119,7 +89,7 @@
       border: 2px solid #ff4757;
       overflow: hidden;
       box-shadow: 0 4px 12px rgba(255, 71, 87, 0.1);
-      max-height: 280px;
+      max-height: 220px;
       overflow-y: auto;
     }
     
@@ -197,11 +167,7 @@
       color: white;
       box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
       position: relative;
-    }
-    
-    .btn-buy:hover {
-      background: #45a049;
-      transform: translateY(-2px);
+      overflow: hidden;
     }
     
     .btn-buy::before {
@@ -211,15 +177,21 @@
       left: -100%;
       width: 100%;
       height: 100%;
-      background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
-      animation: wave 5s ease-in-out infinite;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.4),
+        transparent
+      );
+      transition: 0.5s;
+      animation: shine 2s infinite;
     }
     
-    @keyframes wave {
+    @keyframes shine {
       0% {
         left: -100%;
       }
-      15% {
+      20% {
         left: 100%;
       }
       100% {
@@ -227,15 +199,84 @@
       }
     }
     
+    .btn-buy:hover {
+      background: #45a049;
+      transform: translateY(-2px);
+    }
+    
     .btn-info {
       background: #2d3748;
       color: white;
       box-shadow: 0 4px 12px rgba(45, 55, 72, 0.3);
+      position: relative;
     }
     
     .btn-info:hover {
       background: #4a5568;
       transform: translateY(-2px);
+    }
+    
+    .btn-info::before {
+      content: '';
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      right: -2px;
+      bottom: -2px;
+      border-radius: 12px;
+      background: linear-gradient(45deg, #ff7f00, #ffaa00, #ff7f00, #ffaa00);
+      z-index: -1;
+      animation: border-pulse 3s linear infinite;
+    }
+    
+    @keyframes border-pulse {
+      0% {
+        background-position: 0% 50%;
+      }
+      50% {
+        background-position: 100% 50%;
+      }
+      100% {
+        background-position: 0% 50%;
+      }
+    }
+    
+    .info-panel {
+      background: #1e88e5;
+      border-radius: 12px;
+      padding: 15px;
+      margin-top: 15px;
+      text-align: center;
+      position: relative;
+      color: white;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    
+    .info-icon {
+      font-size: 24px;
+      margin-bottom: 10px;
+      background: white;
+      color: #1e88e5;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+    }
+    
+    .info-panel p {
+      margin-bottom: 10px;
+      font-size: 14px;
+      line-height: 1.4;
+    }
+    
+    .info-panel .highlight {
+      font-weight: bold;
+      font-size: 15px;
     }
     
     .instructions {
@@ -245,80 +286,357 @@
       text-align: center;
       line-height: 1.4;
     }
-    
-    .info-panel {
-      background: #e3f2fd;
-      border-radius: 12px;
-      padding: 15px;
-      margin-top: 15px;
-      border-left: 4px solid #2196f3;
-    }
-    
-    .info-panel p {
-      margin-bottom: 10px;
-      color: #1565c0;
-      font-size: 14px;
-      line-height: 1.4;
-    }
   </style>
 </head>
 <body>
   <div class="container">
+    <!-- 🔴 Верхняя панель с названием -->
     <div class="header">
       <h1>SweetBerries_Bot</h1>
     </div>
 
+    <!-- 📱 Основное содержимое -->
     <div class="content">
-      <div class="info-header">
-        <div class="info-icon">i</div>
-        <div class="info-text">Выберите нужную игру для оформления заказа</div>
-      </div>
-
+      <!-- 🔍 Поиск с лупой -->
       <div class="search-box">
         <div class="search-icon">🔍</div>
         <input type="text" id="searchInput" onkeyup="searchGame()" placeholder="Введите название игры...">
         <div class="clear-search" id="clearSearch" onclick="clearSearch()">✕</div>
       </div>
 
+      <!-- 🎮 Список игр -->
       <div class="games-container">
-        <ul id="gameList">
-          <li onclick="selectGame(this)">Аэропорт Сити: Построй Город</li>
-          <li onclick="selectGame(this)">Базарт Дизайн и Оформление</li>
-          <li onclick="selectGame(this)">Банг Банг Выживший</li>
-          <li onclick="selectGame(this)">Баттл-Арена</li>
-          <li onclick="selectGame(this)">Башня и Луки</li>
-          <li onclick="selectGame(this)">Бесконечная Граница</li>
-          <li onclick="selectGame(this)">Бизнес Тур</li>
-          <li onclick="selectGame(this)">Битва за Галактику</li>
-          <li onclick="selectGame(this)">Ваплог: Знакомства и Общение</li>
-        </ul>
+        <ul id="gameList"></ul>
       </div>
 
-      <!-- Информационная панель под списком -->
-      <div class="info-panel">
-        <p>Мы поможем пополнить любую мобильную игру или приложение, даже если их нет в нашем списке!</p>
-        <p>Просто выберите игру и нажмите "Купить донат" для связи с администратором.</p>
+      <!-- 📝 Панель информации (показывается до выбора игры) -->
+      <div class="info-panel" id="infoPanel">
+        <div class="info-icon">i</div>
+        <p class="highlight">Пополнение любых игр и приложений</p>
+        <p>Даже если вашей игры нет в списке — мы обязательно поможем!</p>
       </div>
 
+      <!-- 📝 Панель выбора (скрыта до выбора игры) -->
       <div class="selection-panel" id="selectionPanel" style="display: none;">
         <div class="selected-game">Вы выбрали: <span id="gameName"></span></div>
         <div class="instructions">
-          Чтобы перейти к диалогу с администратором или узнать, как происходит процесс, нажмите ниже.
+          Выберите действие для продолжения
         </div>
         <div class="buttons">
           <button class="btn btn-buy" onclick="buyDonate()">Купить донат</button>
-          <button class="btn btn-info" onclick="showProcess()">Как происходит процесс покупки</button>
+          <button class="btn btn-info" onclick="showProcess()">Этапы покупки</button>
         </div>
       </div>
     </div>
   </div>
 
+  <!-- ⚡️ Скрипты -->
   <script>
-    const PUZZLE_API_TOKEN = 'yTD7c90cVx0kkfvpRWYzs2PrXyTgX9pa';
+    // Конфигурация API Puzzle Bot
+    const PUZZLE_API_TOKEN = 'cCjCKD1Ma6d2gGAGZS59k2llOIaZurgX';
+    const COMMAND_NAME = 'покупка';
+    const STAGES_COMMAND = 'этапы';
+    
+    // Полный список игр из файла (сокращенные названия)
+    const gamesList = [
+      "#Drive", "1945 Air Force", "3DTuning", "7DS Seven Deadly Sins", "8 Ball Pool", 
+      "Abyss: Chosen Heirs", "Ace Defender", "Acies Battle Runes", "Adobe Express", "Adobe Lightroom", 
+      "Adventure Bay", "Adventure of White Chord", "AdventureQuest 3D", "AFK Arena", "AFK Journey", 
+      "AFK Master", "AFK Призывателей", "After Inc.", "Agar.io", "Age of Apes", 
+      "Age of Empires Mobile", "Age of Kings", "Age of Magic", "Age of Origins", "Age of Warring Empire", 
+      "AI Video Generator", "Air Attack 2", "Air Combat", "AirConsole", "AirDroid", 
+      "AIRLINE COMMANDER", "Airlines Manager", "Airmirror", "Albion Online", "Alchemy Stars", 
+      "Alien Creeps", "Alien Shooter 2", "Alien Shooter World", "Alight Motion", "AllTracker", 
+      "Almora Darkosen", "Almost A Hero", "Among Gods", "Among Party", "Among Us", 
+      "Angel Stone", "Angry Birds 2", "Angry Birds Transformers", "Animal Jam", "Anothereidos", 
+      "Ant Legion", "Apex Girl", "Apex Racing", "Arcane Heroes", "Arcane Rush", 
+      "Archer Hunter", "Archero", "Archero 2", "Arena Breakout", "Arena of Valor", 
+      "Ark of War", "Art of War 3", "Art of War Legions", "Asphalt 9", "Asphalt Legends", 
+      "Assassin Creed", "Assoluto Racing", "ASTRA", "ATHENA", "Attack on Time", 
+      "Avakin Life", "Avalar", "Awaken: Chaos Era", "Azur Lane", "B612", 
+      "Backpack Brawl", "Bad 2 Bad", "Badland Brawl", "Badoo", "Bandits vs. Lords", 
+      "BarbarQ", "Basketball Arena", "Basketball Rivals", "Basketball Stars", "Battle Arena", 
+      "Battle Bay", "Battle for Life", "Battle for the Galaxy", "Battle Lines", "Battle Night", 
+      "Battle of Warships", "Battle Prime", "Battle Tanks", "Battle Through the Heavens", "Battlesmiths", 
+      "Bazart", "Be The King", "Beach Buggy Racing 2", "Beast Lord", "Beat Battle", 
+      "Beatstar", "Bed Wars", "BeyondWarrior", "Big Farm", "Big Rig Racing", 
+      "Bigo Live", "Billionaire Casino", "Bionics", "Bit Heroes", "Black Beacon", 
+      "Black Clover M", "Black Deck", "Black Desert Mobile", "Blade of Eternity", "Bladebound", 
+      "Blades of Brim", "Bleach Brave Souls", "Bleach Immortal Soul", "Bleach Mobile 3D", "Bleach Mobile 3D SEA", 
+      "Bleach Soul Reaper", "Bleach: Brave Souls", "Block Strike", "Blockman Go", "Blockpost Mobile", 
+      "Blocky Cars", "Bloon Adventure", "Bloons TD 5", "Bloons TD Battles", "Bomber Friends", 
+      "Bonehead", "Boo Friends", "Boom Beach", "Boom Castle", "Bounce Arena", 
+      "Bounty Bash", "Boxing Star", "Brawl Stars", "Brawlhalla", "BTS Cooking On", 
+      "BTS Island", "Bubble for JYPNation", "Bubble for STARSHIP", "Bubble with Stars", "Bullet Echo", 
+      "Bullet League", "Burrito Bison", "Bus Simulator", "Busuu", "BuzzCast", 
+      "C.A.T.S", "Cabal Mobile", "Calibur Knights", "Call of Antia", "Call of Dragons", 
+      "Call of Duty", "Call of Duty: Warzone", "Call of Spartan", "Call of War", "Call of War 2", 
+      "Candy Crush Saga", "Capybara Go", "Car Eats Car 3", "Car Parking", "Car Parking Multiplayer", 
+      "CarbitLink", "Card Heroes", "Cards, Universe", "Case Battle", "Case Opener", 
+      "Case Unboxer", "Cash Billionaire", "Cash Frenzy", "Cash Tornado", "Castle Cast", 
+      "Castle Clash", "Castle Crush", "Castle Defense", "Castle Duels", "Cat & Knights", 
+      "Cat Hero", "Cat Mine", "Cat Snack Bar", "CatDog World", "Celestial Fantasy", 
+      "Cell Idle Factory", "Century: Age", "Chai", "Chamet", "Champion Strike", 
+      "Chaos Citadel", "Character AI", "Chatbot AI", "ChatGPT", "ChatOn", 
+      "CherryyTree", "Chess Clash", "Chess Online", "Chikii", "Chronicle Isekai", 
+      "Chronicle of Infinity", "Chsmpion Strike", "Clash", "Clash of Clans", 
+      "Clash of Destiny", "Clash of Kings", "Clash of Kings: Legacy", "Clash of Legends", "Clash of Lords", 
+      "Clash of Queens", "Clash Royale", "Clone Evolution", "Cloud Moon", "Club Cooee", 
+      "Club Vegas", "Coddess of Victory", "Coin Master", "Coin Tales", "Combat Master", 
+      "Conflict of Nations", "Conquerors 2", "Conquerors", "Contra Returns", "Cookie Run: Kingdom", 
+      "Cookie Run: OvenBreak", "Cookie Run: Tower", "Cookie Run: Witch", "Cooking Diary", 
+      "Cops N Robbers", "Couchsurfing", "Counter Attack", "Counter Knights", "Couple Joy", 
+      "Crab War", "Craft The World", "Crash of Cars", "Crasher: Origin", "Crazy Dino Park", 
+      "Crazy Fox", "Critical Ops", "Critical Strike", "Crystal Knights", "Crystal Legends", 
+      "Cunt Wars", "Curse of Aros", "Customuse", "Cut the Rope 2", "Cyber Hunter", 
+      "Cyberika", "D4DJ Groovy", "Dark Divinity", "Dark Slayer", "Dark War", 
+      "Darkest AFK", "Darkrise", "Darts Club", "Dash Quest", "Dawn of Ages", 
+      "Dawn of Zombies", "Days Bygone", "DC: Dark Legion", "Dead by Daylight", "Dead Empire", 
+      "Dead Target", "Dead Trigger 2", "Deck Heroes", "Defender 3", "Defender LV", 
+      "Defenders 2", "DEFENSE WAR", "Delta Force", "Demon Awaken", "Demon God", 
+      "Demon Hunter Idle", "Demon Hunter", "Demon Hunter: Rebirth", "Demon Legend", "Demon Reborn", 
+      "Demon Slayer", "Den the Man", "Designer City", "Designer City 2", "Devil May Cry", 
+      "Devil Slayer", "Dey R Survival", "Dicast", "Dice Dreams", "Dino Squad", 
+      "Dinosaur Park", "Dinosaur Universe", "Dislyte", "DLS 25", "Domain Awakening", 
+      "DomiNations", "Doomsday", "Dragon Ball Legends", "Dragon Ball Z", "Dragon Champions", 
+      "Dragon City", "Dragon Raja", "Dragon Storm", "Dragon Strike", "Dragon Survival", 
+      "Dragon Tamer", "Dragon Village", "Dragonheir", "Dragonicle", "Dragons: Rise", 
+      "Dragonscapes", "Drift Clash", "Drift Max Pro", "Drive Ahead", "Drive Zone", 
+      "Drops", "Drops Корейский", "Dungeon & Heroes", "Dungeon Crusher", "Dungeon Hunter 5", 
+      "Dungeon Hunter 6", "Dungeon Knight", "Dunidle", "Dusk of Dragons", 
+      "Dust Lands", "Dynasty Legends 2", "Dynasty Origins", "Eatventure", "Echocalypse", 
+      "Eclipsoul", "Efootball", "EHW Premium", "Elemental Titans", "Elemental World", 
+      "ELive", "Emochi", "Empire City", "Empire War", "Empire: Four Kingdoms", 
+      "EMPIRES & PUZZLES", "Empires Puzzles", "Enigma of Sepia", "Ensemble Stars", "Epic Age", 
+      "Epic Apes", "Epic Conquest 2", "Epic Quest", "Epic Seven", "Epic Shaman", 
+      "Epic Stickman", "Epic War", "Era of Celestials", "Era of Heroes", "Eternal Empire", 
+      "Eternal Evolution", "Eternal Hero", "Eternal Night", "Eternal Saga", "Eve Echoes", 
+      "Eve Galaxy", "EverMerge", "Everskies", "Evertale", "Everyday Puzzles", 
+      "Evil Hunter", "Evolution 2", "Extreme Car", "F Class Adventy", "Fairy Legends", 
+      "Falcon Squad", "Falla", "Family Farm", "Family Farm Adventure", "Family Island", 
+      "Fantasy Tales", "Farlight 84", "Farming Simulator", "Farmington", "Fashion Fantasy", 
+      "Fashion Nova", "Fastlane", "FC Mobile", "Final Fantasy 7", "Final Fantasy XV", 
+      "Final Fantasy XV: War", "Final Fighter", "Final Shinobi", "Fire Strike", "Firestone", 
+      "Fish Farm 3", "Fish On", "Fishing Baron", "Fishing Clash", "Fishing Master", 
+      "Fishing Planet", "Fishing Rival", "FIST OF THE NORTH STAR", "FitAI", "FlashGet Kids", 
+      "FleshGet Kids", "Flex City", "Flo", "Flowkey", "Foodvisor", 
+      "Football Agent", "Football Rivals", "Football Strike", "Force of Warships", "Forge of Empires", 
+      "Forge Shop", "Formacar Action", "Forsaken World", "Forsaken World 2", "Fortress Saga", 
+      "Front War", "Frontier Justice", "Frostborn", "Frostpunk", "Frozen City", 
+      "Fruit Ninja", "Funny", "Furious Tank", "Game of Empires", "Game of Khans", 
+      "Game of Kings", "Game of Thrones", "Game of War", "Game Twist", "Gaminator", 
+      "Gaminik Auto", "Gangstar Vegas", "Gangster Vegas", "Gear Fight", "Gems of War", 
+      "Genie-AI", "Genshin Impact", "Gerand Tanks", "GG Mouse Pro", "GIRLS' FRONTLINE 2", 
+      "Gladiator Arena", "Gladiator Heroes", "Gladiator Manager", "Glory of Generals", "Glory of Infinite", 
+      "God of Night", "God Sacrifice", "Godcher", "Goddess Era", "Goddess Era: 2331", 
+      "Goddess: Primal", "GODS RAID", "Golden Stone", "Golf Battle", "Golf Blitz", 
+      "Goose Goose Duck", "Gossip Harbor", "Grand Chase", "Grand Criminal", "Grand Mobile", 
+      "Grand Summoners", "Grand War 2", "Grand War", "Grand Wars: Mafia", "Grand Wars", 
+      "Granny House", "Granny's House", "Grepolis", "Gridpunk", "Grim Defender", 
+      "Grim Soul", "Grimguard Tactics", "Grow Castle", "GT Manager", "Guilds Merchant", 
+      "Gumslinger", "Guns of Boom", "Guns of Glory", "Guns of Glory Asia", "GUNS UP", 
+      "Gunship Sequel", "Hades Star", "Haikyuu", "Harekat 2", "Hearthstone", "HelloTalk", 
+      "Her.Al", "Hero Assemble", "Hero Blitz", "Hero Bump", "Hero Dino", 
+      "Hero Hunters", "Hero Making", "Hero Raid", "Hero Tactics", "Hero Tales", 
+      "Heroes & Magic", "Heroes Bang", "Heroes Charge", "Heroes Evolved", "Heroes Magic", 
+      "Heroes of the Dark", "Heroes vs Hordes", "Heroics", "Heroll", "Hevy", 
+      "Hi.Al", "High Seas", "Highrise", "Hilo", "HiWaifu", 
+      "Hoc Legends", "Hole Em All", "Hollywood Crush", "Homescapes", "Homestreet", 
+      "Honkai Impact", "Honkai: Star Rail", "Honor of Kings", "Honorbound", "Hoosegow", 
+      "Hornet", "Hot Slide", "House of Poker", "Hundredth", "Hunting Clash", 
+      "Hunting Sniper", "Hustle Castle", "Huuuge Casino", "I, Viking", 
+      "Idle Angels", "Idle Bank", "IDLE Berserker", "Idle Breaker", "Idle Brick", 
+      "Idle Dragon", "Idle Food Bar", "Idle Hero TD", "Idle Heroes", "Idle Kingdom Boss", 
+      "Idle Kingdom", "Idle Kingdom Defense", "Idle Mafia", "Idle Magic", "Idle Miner", 
+      "Idle Moon Rabbit", "Idle Obelisk", "Idle Planet", "Idle Siege", "Idle Space Business", 
+      "Idle Space", "Idle Sword", "Idle War", "Idle Weapon", "Idle Wizard", 
+      "IDLEMMO", "Immortal Awakening", "Immortal Legend", "Immortal Rising", "Immortal Rising 2", 
+      "Imperia Online", "Inariel Legend", "Indies Lies", "Indomitable", "Infinite Empires", 
+      "Infinite Flight", "Infinite Galaxy", "Infinite Lagrange", "Infinite Magicraid", "Infinitode 2", 
+      "Infinity Kingdom", "Infinity Nikki", "Infinity Ops", "Injustice 2", "Iron Desert", 
+      "Iron Force", "Iron Maiden", "Iruna Online", "Isekai Feast", "Isekai Saga", 
+      "Isekai: Slow Life", "Island War", "Jackpot Master", "Jackpot World", "Jackpotland", 
+      "Jijutsu Kaisen", "JOKER", "Journey", "Journey to Immortality", "JoyArk", 
+      "Jujutsu Kaisen", "Jujutsuphanpara", "Jungle Heat", "Jurassic Monster", "Jurassic Survival", 
+      "Jurassic World", "Jurassic World Alive", "Just Dance Now", "K2er", "KARDS", 
+      "King God Castle", "King of Defense", "King of Thieves", "King's Choice", "Kings Empire", 
+      "Kingshot", "Kis Kis", "Kiss Kiss", "Kladbische", "Klondike", 
+      "Knight's Edge", "Knighthood", "Konoha Ninja", "KUBOOM", "Kwit", 
+      "LagoFast", "Land of Empires", "Last Awakened", "Last Day on Earth", "Last Fortress", 
+      "Last Hero", "Last Island", "Last Island LITE", "Last Land", "Last Shelter", 
+      "Last Survivor", "Last War", "Last Z", "League of Angels", "League of Legends", 
+      "League of Tanks", "Left to Survive", "Legend City", "Legend of Ace", "Legend of Fighters", 
+      "Legend of Hunters", "Legend of Mushroom", "Legend of Slime", "Legend of Survivors", "Legendary Heroes", 
+      "Legendary", "Legends of Runeterra", "Legends of Runterra", "Lezhin Comics", "Life on Earth", 
+      "Lifeafter", "Limbus Company", "Lineage W", "Lineage2 Revolution", "Lineage2M", 
+      "Lineage2M Korea", "Lingvist", "Little Big Snake", "Loklok", "Lord of Heroes", "Lord of Nazarick", 
+      "Lord of Seas", "Lords & Knights", "Lords Mobile", "Lost Crown", "LOST in BLUE", 
+      "LOST in BLUE 2", "Lost Vault", "LostMiner", "Love and Deepspace", "Lucky Defense", 
+      "Lucky Offence", "Ludus", "Lumbercat", "Lumberwhack", "Luv", 
+      "LYSSA", "MadOut2", "Mafia City", "Mafia King", "Mafia Sniper", 
+      "Mafia World", "Magic Fantasy", "Magic Hero", "Magic Rampage", "Magic Rush", 
+      "Magic Stones", "Magic Survival", "Magic the Gathering", "Mahjong Club", "Maiden Academy", 
+      "Mamoball", "MamoBall", "Manor Cafe", "Manor Matters", "Marsaction2", 
+      "MARVEL Future Fight", "Marvel Mystic", "MARVEL SNAP", "Marvel Strike", "Mast Masters", 
+      "Master Ball", "Masters of Dreams", "Match Masters", "Matchpub", "MATR1X FIRE", 
+      "Mech Wars", "Mecha Arena", "Mecha Domination", "Mecha Domination: Rampage", "Mechs Domination", 
+      "Medieval Merge", "Mega Hit Poker", "Mega Tower 2", "Mega Tower", "Megapolis", 
+      "Melia", "Melon Sandbox", "Merge Adventure", "Merge County", "Merge Dragons", 
+      "Merge Fashion", "Merge Hotel", "Merge Manor", "Merge Prison", "Merge Survival", 
+      "MetaTrace", "Mighty Doom", "Mighty Party", "Million Lords", "Mimicry", 
+      "Mimo", "Mini DayZ 2", "Mini Football", "Mini Golf King", "Mini Soccer", 
+      "Mini Survival", "Mini World", "MiniBattle", "Minion Rush", "Mir4", 
+      "MLB 9 Innings", "MLB Perfect", "MMA Manager 2", "MO.co", "Mob Control", 
+      "Mobile Legends Adventure", "Mobile Legends", "Mobile Strike", "Modern Air Combat", "Modern Combat 5", 
+      "Modern Ops", "Modern Strike", "Modern Warplanes", "Modern Warships", "Moescape", 
+      "Monster Legends", "Monster Never Cry", "Monster Super League", "Monster Survivors", "Monster Warlord", 
+      "Moonlight Lovers", "Moonshades", "Mordor RP", "Mortal Kombat", "Mortal Kombat Onslaught", 
+      "Moto Traffic", "Motorsport Manager", "MouseBot", "Mr Autofire", "Mult.dev", 
+      "Musk Empire", "Mutants Genetic", "Mutiny: Pirate", "My Cruise", "My Heroes", 
+      "My Little Pony", "My Little Universe", "My Singing Monsters", "My Singing Monsters: Dawn", "Mystic Messenger", 
+      "Mythic Heroes", "Mythic Samkok", "Myths of Moonrise", "MythWars", "Mythwars Puzzles", 
+      "Narcos", "Naruto Boruto", "NBA 2K", "NBA 2K25", "Nebulous.io", 
+      "Need For Speed", "NetBoom", "Neuro Nation", "NEW STATE", "Ni no Kuni", 
+      "NIGHT CROWS", "Night of the Full Moon", "Nightall Kingdom", "Nightfall: Kingdom", "Nighty Knight", 
+      "NIIMBOT", "Nikke", "Ninja Ogi", "Ninjas Master", "Nobody's Adventures", 
+      "NordVPN", "Notability", "Nova", "Now VPN", "Obsidian Knight", 
+      "Oddmar", "Odin Valhalla", "Odin: Valhalla", "Office Cat", "Ogu and the Secret", 
+      "Omniheroes", "One Piece BountyRush", "One Piece: Treasure", "One Punch Man", "ONE PUNCH MAN: WORLD", 
+      "One State RP", "One-Punch Man", "OneTap", "Onmyoji", "Onmyoji Arena", 
+      "Orna", "Osm 25", "Outfire", "Outlaw Cowboy", "Oxide Survival", 
+      "PACIFIC WARSHIPS", "Pal Go", "Palmon Survival", "Paper War", "Parking Master", 
+      "Path of Immortals", "Path of Nowhere", "Path of Titan", "Path of Titans", "Pazzles Chaos", 
+      "PC Remote", "Perfect World", "Perfect World: Ascend", "PGR", "Pianista", 
+      "Pickcrafter", "Pickle Pete", "Piggy GO", "Ping Pong Fury", "Pink AI", 
+      "Pirate Bay", "Pirate Ships", "Pirates of Everseas", "PIXEL BLADE M", "Pixel Generation", 
+      "Pixel Gun 3D", "Pixel Heroes", "Pixel Hunter", "Pixel Starships", "Pixel Stike 3D", 
+      "PLAUD", "Play Together", "Pocket Ants", "Pocket Arena", "Pocket Champs", 
+      "Pocket Champs: 3D", "Pocket Rogues", "Poker Game", "Poker Heat", "PokerGaga", 
+      "Polgun Arena", "POLYWAR", "Pool Empire", "Pool Stars", "Post Apo Tycoon", 
+      "Postknight 2", "Potion Punch 2", "Power Rangers", "Prey Day", "Primitive Era", 
+      "Primon Legion", "Prison Empire", "Project Clean Earth", "Project Entropy", "Project Makeover", 
+      "Project Z", "Proton VPN", "PUBG LITE", "PUBG Mobile", "Pure Sniper", 
+      "Pure VPN", "PureVPN", "PutMask", "Puzzles & Chaos", "Puzzles & Conquest", 
+      "Puzzles & Survival", "Puzzles Conquest", "Quest of Valor", "Questland", "Race Max Pro", 
+      "Racing Rivals", "Raid Rush", "RAID: Shadow", "Rail Nation", "Random Dic", 
+      "Random Dice", "Rasytalk", "Real Driving", "Realm Defense", "Realm of Mystery", 
+      "Realms of Pixel", "Rebel Inc", "Rebirth of Myths", "Rec Room", "Refantasia", 
+      "Rekordbox", "Relic Bag", "Resources", "Rest Poker", "Return of Shadow", 
+      "Reverse: 1999", "Rhythm Hive", "Rhythm Rush", "Riddibooks", "Rider", 
+      "Ridi", "Rise of Arks", "Rise of Castles", "Rise of Cultures", "Rise of Dune", 
+      "Rise of Firstborn", "Rise of Kingdoms", "Rise of the Kings", "Rising: War", "Rival Stars", 
+      "Rivengard", "Road to Valor: Empires", "Road to Valor: WW2", "Road Warrior", "Roblox", 
+      "Robot Warfare", "Roger That", "Royal Farm", "Royal Kingdom", "Royal Match", 
+      "Royal Revolt 2", "Royal Spin", "RTHD", "Rucoy Online", "Run! Goddess", 
+      "Rush Arena", "Rush Defense", "Rush Royale", "Rush Royale: Tower", "Saiyan Descent", 
+      "Sandship", "SAS: Zombie", "Sausage Man", "Saya", "Scatter Slots", 
+      "Score Match", "Seka", "Self-Service Knight", "Seven Knights", "Shades", 
+      "Shadow Fight 2", "Shadow Fight 3", "Shadow Fight 4", "Shadow Hunt", "Shadow Hunter", 
+      "Shadow Knight", "Shadow of Death", "Shadow of Death 2", "Shadow Slayer", "Shadow War", 
+      "Shadowgun Legends", "Shattered Pixel", "Shinobi Chronicles", "Shinobi Odyssey", "Shop Titans", 
+      "SIEGE: WW2", "Simcity", "SimpleMMO", "Sky Clash", "Sky Combat", 
+      "Sky Warriors", "Sky: Дети Света", "Skylore", "Slime Castle", "Slimeidle", 
+      "Slotomania", "Slotomania VIP", "Slotpark", "Smash Legends", "Smashing Four", 
+      "Smithing Master", "Snake Rivals", "Sniper 3D", "Sniper Strike", "Sniper War", 
+      "Snowbreak", "Soccer Battle", "Soccer Stars", "SocialAut", "Soda Dungeon 2", 
+      "Solo Leveling", "Soul Land", "Soul Strike", "Souls", "South Park", 
+      "Space Arena", "Space Marines", "Space Shooter", "Space Tower", "Special Forces", 
+      "Spellers", "Spellstone", "SpongeBob Adventures", "Spotify", "SpotRacers", 
+      "Squad Alpha", "Squad Busters", "Star Chef", "Star Equestrian", "Star Stable", 
+      "Star Trek", "Star Wars", "Star Wars: Охотники", "StarMaker", "Starparks", 
+      "State of Survival", "State of Survival: Outbreack", "State of Survival: Zombie", "Static Shift", "Stellar Wind", 
+      "Stellaris", "Stickman Archer", "Stickmans Wars", "Stormfall", "Stormshot", 
+      "StoryZone", "StoryZone История", "Strongest Knight", "Stronghold Kingdom", "Stumble Guys", 
+      "Subdivision Infinity", "Subtransit", "Summoners Greed", "Summoners Kingdom", "Summoners War: Chronicles", 
+      "Summoners War: Sky", "Suno", "Sunshine Island", "Super Mario Run", "Super Mecha", 
+      "Super Space", "Super Sus", "Supercats", "Superkickoff", "Superstar Hockey", 
+      "SUPERSTAR SMTOWN", "Supremacy 1914", "Supremacy: WW3", "Survivor Kingdoms", "Survivor.io", 
+      "Swamp Attack 2", "Swapify", "Sweet Dance", "Sword Master", "Sword of Chaos", 
+      "Sword of Convallaria", "Swordsman", "T3 Arena", "Tactical OPS", "Tacticool", 
+      "Taichi Panda", "Tailed Demon", "Tales of Gallant", "Talion", "Tandem", 
+      "Tanghulu Master", "Tank Arena", "Tank Combat", "Tank Company", "Tank Firing", 
+      "Tank Forza", "Tank Legion", "Tank Warfare", "Tanks Blitz", "Tanks vs Bugs", 
+      "TanksAlot", "Tap Force", "Tap Titans 2", "Taptap Heroes", "Tarisland", 
+      "TeamFight Tactics", "Telegram Premium", "Tempest RPG", "Tennis Clash", "Texas Poker", 
+      "Texas Poker Boyaa", "The Ants", "The Archers 2", "The Battle Cats", "The Demonized", 
+      "The Elder Scrolls", "The Fishercat", "The Gang", "The Ghost", "The Godfather", 
+      "The Grand Mafia", "The Last Rafts", "The Last Survivor", "The Legend of Neverland", "The Pirate: Caribbean", 
+      "The Pirate: Plague", "The Rogue Witch", "The Seven Deadly Sins", "The Sims", "The Spike", 
+      "The Tiger", "The Walking Dead", "The Walking Dead Season", "The Walking Dead: Road", "The Walking Dead: Survivors", 
+      "The Walking Hero", "The Walking Zombie", "The Wild Darkness", "The Wolf", "Thelast.io", 
+      "Thetan Arena", "Thetan Immortal", "Throne Holder", "Throne Kingdom", "Throne Rush", 
+      "TickTick", "Tile Club", "Tiles Survive", "Time Princess", "Titan Slayer", 
+      "Toon Blast", "Top Drives", "Top Eleven", "Top Football", "Top Heroes", 
+      "Top Troops", "Top War", "Torchlight", "Total Battle", "Total Football", 
+      "TotAL Футбол", "Touhou Lost", "Tower Destiny", "Tower of Fantasy", "Tower of God", 
+      "Tower of Saviors", "Toy Match", "Traffic Rider", "Train Manager", "Transformers Tactical", 
+      "Transist King", "Trials of Heroes", "Trovo", "Truck Manager", "Truck Star", 
+      "Truckers of Europe", "True Skate", "Twilight School", "TwinsU", "Two Dots", 
+      "Two Guys", "Tycoon Casino", "Uboat Attack", "Ultimate Arena", "Ultimate Clash", 
+      "Ultimate Fishing", "Ultimate Myth", "Ultimate Ninja", "Ulётный Клёв", "UNKILLED", 
+      "UNO", "Vampire's Fall 2", "Vampire's Fall", "Vector", "Vega Conflict", 
+      "Viking Rise", "Vikings at War", "Vikings: War", "Village and Farm", "Virtual Droid 2", 
+      "Voidpet Dungeon", "VORAZ", "War Alliance", "War and Magic", "War and Order", 
+      "War Comnander", "War Drone", "War Elite", "War Eternal", "War Machines", 
+      "War of Destiny", "War of Evolution", "War Planet", "War Robots", "War Sniper", 
+      "War Spell", "War Thunder", "War Zone", "Warface", "Warface Go", 
+      "Warhammer 40,000: Freeblade", "Warhammer 40,000: Tacticus", "Warhammer Combat", "Warhammer Horus", "Warhammer Warpforge", 
+      "Warhammer: Chaos", "Warpath", "Warplanes: WW2", "Warships Fury", "Warships Mobile 2", 
+      "Warships Mobile 2: Beta", "Warspear", "Wartime Glory", "We Are Warriors", "WebNovel", 
+      "WePlay", "Whiteout Survival", "Wild Castle", "Wild Hunt", "Wild Sky", 
+      "Wild Tamer", "Wild West", "Wildshade", "Wind Legends", "Windy.app", 
+      "Windy.com", "Wing Fighter", "Winscribe", "Wolvesville", "Wooparoo Odyssey", 
+      "World Conqueror 3", "World Conqueror 4", "World Football", "World of Robots", "World of Tanks", 
+      "World of War 2", "World of War Machines", "World of Warships Blitz", "World of Warships Legends", "World Robot", 
+      "World War 2", "World War 2 Battle", "World War Heroes", "World War Polygon", "World War2", 
+      "Wormix", "Wormix.io", "WWE Supercard", "Wyak", "X-Samkok", 
+      "XBack", "XENO BALL", "YAZIO", "YouSician", "Yu-Gi-Oh", 
+      "Z Day", "Z Day Герои", "Z: The Ultra", "Zenles Zone", "ZEPETO", 
+      "Zgirls", "Zombastic", "Zombi Castaways", "Zombie Castaways", "Zombie Frontier 4", 
+      "Zombie Gunship", "Zombie Hunter", "Zombie Miner", "Zombie Sniper", "Zombie State", 
+      "Zombie State: FPS", "Zombie War", "Zombie War Finding", "Zombie Warfare", "Zombie Waves", 
+      "Zombieland", "Zombiflux", "Zombix Online", "ZombsRoyale", "Zoo 2", 
+      "Zoo City", "Zoo Craft", "Zooba", "Zynga Poker", "Вк VK", 
+      "Властелин Колец", "Власть", "Волны Зомби", "Волшебные Королевства", "ГВИНТ", 
+      "Герои Камелота", "Герой Этрии", "Гильдия Героев", "Говорящий Том", "Город Облаков", 
+      "Горожане", "Губернатор Покера", "Губка Боб", "Дрон Тень", "Дурак Онлайн", 
+      "Дурак Онлайн Pokerist", "Железный Десант", "Замок Монстров", "Замок Слизи", "Зов Войны", 
+      "Зомби Ферма", "История Пустоши", "Калькулятор Калорий", "Кис Кис", "Кладоискатель", 
+      "Конфликт Хидзюцу", "Королевская Кровь", "Король Гольфа", "Космическая Война", "Кошки и Суп", 
+      "Крестьяне и Герои", "Кровавый Поцелуй", "Крёстный Отец", "Кулинарное Безумие", "Лаплас", 
+      "Легенда Галактики", "Легенда Обороны 5", "Легенды Дракономании", "Магическая Защита", "Магнат-Монополия", 
+      "Маджонг Клуб", "Маленький Большой", "Мастер Винтов", "Мастера Монстров", "Мастера Снов", 
+      "Мега Пиксели", "Мидгард", "Моя Говорящая Анджела 2", "Моя Кофейня", "Мяу - Тауэр", 
+      "Операция Снайпер", "Печка", "Пещера Жадности", "Пико-Танки", "Пиксель Петз", 
+      "Планировка Квартиры", "Покер Онлайн", "Покорение Башен", "Последний Выживший", "Пять Ночей", 
+      "Рагнарок М", "Расписной Покер", "Реальная Рыбалка", "Реальная Рыбалка 2", "Ритуал", 
+      "Ронин Последний", "Ронин", "Рулетка Онлайн", "Рыбацкие Точки", "Рынок Пацана", 
+      "Сверхсмертный", "Славяне: Ферма", "Снайпер Арена", "Сто Одно", "Стужа и Пламя", 
+      "Суперстилист", "Счетчик Каллорий", "Тайцзи Панда", "Танки Онлайн", "Таро Гадание", 
+      "Теневой Рыцарь", "Техасский Покер", "Трансформеры", "Фитнес Тренировки", "Фронт 1942", 
+      "Хорошая Пицца", "Храброземье", "Хроники Хаоса", "Часовщик", "Червяки на Охоте", 
+      "Черепашки-Ниндзя", "Шахматы", "Эволюция Не", "Эволюция Планеты", "Элементальные Титаны", 
+      "ЭС2", "Я - Император", "Японский для", "ハイキュー", "ラストエスケイプ", 
+      "斗羅大陸3D", "봄툰"
+    ];
     
     let selectedGame = null;
     let tgUserID = null;
     
+    // Инициализация списка игр
+    function initializeGameList() {
+      const gameListElement = document.getElementById('gameList');
+      gameListElement.innerHTML = '';
+      
+      gamesList.forEach(game => {
+        const li = document.createElement('li');
+        li.textContent = game;
+        li.onclick = function() { selectGame(this); };
+        gameListElement.appendChild(li);
+      });
+    }
+    
+    // Получаем ID пользователя из Telegram Web App
     function getTelegramUserID() {
       try {
         if (window.Telegram && Telegram.WebApp) {
@@ -333,22 +651,26 @@
       }
     }
     
+    // Закрытие мини-приложения
     function closeMiniApp() {
       if (window.Telegram && Telegram.WebApp) {
         Telegram.WebApp.close();
       }
     }
     
+    // Инициализация при загрузке страницы
     function initialize() {
       tgUserID = getTelegramUserID();
-      console.log('User ID:', tgUserID);
+      initializeGameList();
     }
     
+    // Поиск игр
     function searchGame() {
       const input = document.getElementById("searchInput");
       const filter = input.value.toLowerCase();
       const clearBtn = document.getElementById("clearSearch");
       
+      // Показываем/скрываем кнопку очистки
       clearBtn.style.display = filter ? "block" : "none";
       
       const ul = document.getElementById("gameList");
@@ -365,15 +687,18 @@
         }
       }
       
+      // Если нет результатов поиска
       if (!hasResults) {
         const noResults = document.createElement('li');
         noResults.textContent = 'Игры не найдены. Нажмите для связи с администратором.';
         noResults.onclick = function() {
-          buyDonate();
+          sendPuzzleBotCommand(tgUserID, 'Не найдена', true);
+          setTimeout(() => closeMiniApp(), 200);
         };
         noResults.style.color = '#ff4757';
         noResults.style.fontStyle = 'italic';
         
+        // Удаляем предыдущее сообщение, если есть
         const existingNoResults = ul.querySelector('.no-results');
         if (existingNoResults) {
           ul.removeChild(existingNoResults);
@@ -382,6 +707,7 @@
         noResults.className = 'no-results';
         ul.appendChild(noResults);
       } else {
+        // Удаляем сообщение о отсутствии результатов, если есть
         const noResults = ul.querySelector('.no-results');
         if (noResults) {
           ul.removeChild(noResults);
@@ -389,6 +715,7 @@
       }
     }
     
+    // Очистка поиска
     function clearSearch() {
       const input = document.getElementById("searchInput");
       input.value = '';
@@ -396,6 +723,7 @@
       searchGame();
     }
     
+    // Выбор игры
     function selectGame(element) {
       if (selectedGame) {
         selectedGame.classList.remove('selected');
@@ -405,12 +733,15 @@
       selectedGame = element;
       
       const selectionPanel = document.getElementById('selectionPanel');
+      const infoPanel = document.getElementById('infoPanel');
       const gameNameSpan = document.getElementById('gameName');
       
       gameNameSpan.textContent = element.textContent;
       selectionPanel.style.display = 'block';
+      infoPanel.style.display = 'none';
     }
     
+    // Покупка доната
     function buyDonate() {
       if (!selectedGame) {
         alert('Пожалуйста, выберите игру сначала');
@@ -420,65 +751,64 @@
       const userID = getTelegramUserID();
       const gameName = selectedGame.textContent;
       
-      console.log('Sending purchase command for:', gameName);
-      sendPuzzleBotCommand(userID, gameName, 'покупка');
+      // Отправляем команду через Puzzle Bot API
+      sendPuzzleBotCommand(userID, gameName, false, COMMAND_NAME);
       
+      // Закрытие приложения через 0.2 секунды
       setTimeout(() => {
         closeMiniApp();
       }, 200);
     }
     
-    function sendPuzzleBotCommand(userID, gameName, commandName) {
+    // Показать этапы покупки
+    function showProcess() {
+      if (!selectedGame) {
+        alert('Пожалуйста, выберите игру сначала');
+        return;
+      }
+      
+      const userID = getTelegramUserID();
+      const gameName = selectedGame.textContent;
+      
+      // Отправляем команду через Puzzle Bot API
+      sendPuzzleBotCommand(userID, gameName, false, STAGES_COMMAND);
+      
+      // Закрытие приложения через 0.2 секунды
+      setTimeout(() => {
+        closeMiniApp();
+      }, 200);
+    }
+    
+    // Функция отправки команды через Puzzle Bot API
+    function sendPuzzleBotCommand(userID, gameName, isAdminRequest, command) {
       const apiUrl = `https://api.puzzlebot.top/`;
       
       const params = new URLSearchParams();
       params.append('token', PUZZLE_API_TOKEN);
       params.append('method', 'sendCommand');
-      params.append('command_name', commandName);
+      params.append('command_name', isAdminRequest ? 'админ' : command);
       params.append('tg_chat_id', userID);
       params.append('game', encodeURIComponent(gameName));
       params.append('source', 'webapp');
       params.append('timestamp', Date.now());
       
       const fullUrl = `${apiUrl}?${params.toString()}`;
-      console.log('Sending request to:', fullUrl);
       
-      // Используем fetch вместо iframe для лучшей обработки
-      fetch(fullUrl, {
-        method: 'GET',
-        mode: 'no-cors'
-      })
-      .then(() => {
-        console.log('Command sent successfully:', commandName);
-      })
-      .catch(error => {
-        console.error('Error sending command:', error);
-        // Fallback к iframe если fetch не работает
-        const iframe = document.createElement('iframe');
-        iframe.style.display = 'none';
-        iframe.src = fullUrl;
-        document.body.appendChild(iframe);
-        
-        setTimeout(() => {
-          if (document.body.contains(iframe)) {
-            document.body.removeChild(iframe);
-          }
-        }, 1000);
-      });
-    }
-    
-    function showProcess() {
-      const userID = getTelegramUserID();
-      const gameName = selectedGame ? selectedGame.textContent : 'Не выбрана';
+      // Создаем скрытый iframe для отправки запроса
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = fullUrl;
+      document.body.appendChild(iframe);
       
-      console.log('Sending stages command');
-      sendPuzzleBotCommand(userID, gameName, 'Этапы');
-      
+      // Удаляем iframe через короткое время
       setTimeout(() => {
-        closeMiniApp();
-      }, 200);
+        if (document.body.contains(iframe)) {
+          document.body.removeChild(iframe);
+        }
+      }, 1000);
     }
     
+    // Инициализация при загрузке страницы
     window.onload = initialize;
   </script>
 </body>
